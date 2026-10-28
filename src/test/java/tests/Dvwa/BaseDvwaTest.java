@@ -1,13 +1,17 @@
-
 package tests.Dvwa;
 
 import automation.ZapManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.*;
 import pom.Dvwa.*;
 import utilities.Docker.DvwaEnvironment;
 import utilities.ExcelFileReader;
+
+import java.time.Duration;
 
 public abstract class BaseDvwaTest {
 
@@ -25,6 +29,7 @@ public abstract class BaseDvwaTest {
         baseUrl = container.getInternalURL();
 
         ZapManager.initZap();
+        initializeDatabase();
     }
 
     @AfterSuite(alwaysRun = true)
@@ -53,26 +58,41 @@ public abstract class BaseDvwaTest {
         ZapManager.quitZapDriver();
     }
 
-    @BeforeClass
-    public void initDvwaDatabase() {
+    // Called once for the fresh suite container, before any payload tests.
+    private void initializeDatabase() {
         ZapManager.initZapDriver();
         WebDriver driver = ZapManager.getDriver();
-        LoginPage loginPage = new LoginPage(driver);
+        WebDriverWait wait =
+                new WebDriverWait(driver, Duration.ofSeconds(30));
 
-        driver.get(baseUrl + loginPage.loginEndpoint);
-        loginPage.login("admin", "password");
+        try {
+            driver.get(baseUrl + "/setup.php");
 
-        driver.get(baseUrl + "/setup.php");
-        driver.findElement(By.name("create_db")).click();
+            WebElement createDatabase = wait.until(
+                    ExpectedConditions.elementToBeClickable(
+                            By.name("create_db")));
 
-        System.out.println("Global DB Initialized");
-        ZapManager.quitZapDriver();
+            createDatabase.click();
+            wait.until(ExpectedConditions.stalenessOf(createDatabase));
+
+            // Prove that the seeded users table is usable.
+            driver.get(baseUrl + LoginPage.loginEndpoint);
+            new LoginPage(driver).login("admin", "password");
+
+            System.out.println(
+                    "DVWA database initialized and authenticated successfully");
+        } finally {
+            ZapManager.quitZapDriver();
+        }
     }
 
     @DataProvider(name = "securityAndPayloads")
     public Object[][] getSecurityAndPayloads() {
-        Object[][] payloadsFromExcel = ExcelFileReader.extractData(payloadSource, null);
-        Object[][] testData = new Object[payloadsFromExcel.length * securityLevels.length][2];
+        Object[][] payloadsFromExcel =
+                ExcelFileReader.extractData(payloadSource, null);
+
+        Object[][] testData =
+                new Object[payloadsFromExcel.length * securityLevels.length][2];
 
         int index = 0;
 

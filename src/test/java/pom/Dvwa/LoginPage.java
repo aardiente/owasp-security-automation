@@ -1,8 +1,8 @@
-
 package pom.Dvwa;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 public class LoginPage extends BasePage {
@@ -18,11 +18,24 @@ public class LoginPage extends BasePage {
     }
 
     public void login(String username, String password) {
-        wait.until(ExpectedConditions.visibilityOfElementLocated(usernameField)).sendKeys(username);
-        wait.until(ExpectedConditions.visibilityOfElementLocated(passwordField)).sendKeys(password);
-        wait.until(ExpectedConditions.elementToBeClickable(loginButton)).click();
+        WebElement user = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(usernameField));
+        user.clear();
+        user.sendKeys(username);
 
-        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains(loginEndpoint)));
+        WebElement pass = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(passwordField));
+        pass.clear();
+        pass.sendKeys(password);
+
+        wait.until(
+                ExpectedConditions.elementToBeClickable(loginButton)).click();
+
+        // Leaving login.php can also mean a setup or error redirect.
+        // Require evidence of an authenticated page.
+        wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.linkText("Logout")));
     }
 
     public WebDriver getDriver() {
