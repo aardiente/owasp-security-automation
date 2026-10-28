@@ -46,11 +46,11 @@ public class SearchPage extends BasePage
         } catch (TimeoutException e)
         {
             throw new TimeoutException("Search component interaction failed. URL: "
-                            + driver.getCurrentUrl()
-                            + " | Search components found: "
-                            + driver.findElements(searchComponent).size()
-                            + " | Toggle buttons found: "
-                            + driver.findElements(searchToggle).size(), e);
+                    + driver.getCurrentUrl()
+                    + " | Search components found: "
+                    + driver.findElements(searchComponent).size()
+                    + " | Toggle buttons found: "
+                    + driver.findElements(searchToggle).size(), e);
         }
     }
 
@@ -63,6 +63,17 @@ public class SearchPage extends BasePage
         input.clear();
         input.sendKeys(payload);
         input.sendKeys(Keys.ENTER);
+    }
+
+    public void searchFromHome(String baseUrl, String payload) {
+        driver.get(baseUrl);
+        dismissInitialOverlays();
+        search(payload);
+    }
+
+    public void waitForSoundCloudPlayer() {
+        new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(15))
+                .until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("iframe[src*='soundcloud.com/player']")));
     }
 
     // Keep compatibility with your existing tests.

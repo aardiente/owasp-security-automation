@@ -103,6 +103,14 @@ public class LoginPage extends BasePage {
         wait.until(ExpectedConditions.elementToBeClickable(loginButton)).click();
     }
 
+    public void loginFromHome(String baseUrl, String email, String password) {
+        driver.get(baseUrl);
+        dismissInitialOverlays();
+        navigateToLoginViaNavbar();
+        login(email, password);
+        new WebDriverWait(driver, Duration.ofSeconds(15)).until(ExpectedConditions.urlContains("/search"));
+    }
+
     public boolean isUserLoggedIn() {
         try {
             if (driver.findElements(accountMenu).stream().anyMatch(WebElement::isDisplayed)) {
