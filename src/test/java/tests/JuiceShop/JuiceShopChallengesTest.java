@@ -16,7 +16,7 @@ import pom.JuiceShop.ScoreBoardPage;
 import pom.JuiceShop.SearchPage;
 import utilities.JuiceShop.JuiceShopApi;
 import utilities.JuiceShop.JuiceShopChallengeActions;
-import utilities.ScreenshotHelper;
+import utilities.ScreenshotManager;
 
 import java.net.URI;
 import java.time.Duration;
@@ -38,7 +38,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         LoginPage loginPage = new LoginPage(driver);
         loginPage.loginFromHome(baseUrl, "admin@juice-sh.op'--", "anything");
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         Assert.assertTrue(loginPage.isUserLoggedIn(), "SQL Injection authentication bypass failed: user is not logged in.");
     }
 
@@ -52,14 +52,14 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertEquals(alert.getText(), "xss", "DOM XSS payload did not execute correctly.");
         alert.accept();
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         System.out.println("DOM XSS payload executed successfully.");
     }
 
     @Test(priority = 3)
     public void testConfidentialDocumentChallenge() throws Exception {
         var response = api.get("/ftp/acquisitions.md");
-        ScreenshotHelper.captureResponse(ZapManager.getDriver(), response);
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
 
         Assert.assertEquals(response.statusCode(), 200, "Confidential document was not accessible.");
         Assert.assertFalse(response.body().isBlank(), "Confidential document was empty.");
@@ -76,7 +76,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
 
         var driver = ZapManager.getDriver();
         new ScoreBoardPage(driver).open(baseUrl);
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Exposed Metrics");
     }
 
@@ -86,7 +86,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         new LoginPage(driver).loginFromHome(baseUrl, "admin@juice-sh.op'--", "anything");
         new AdministrationPage(driver).open(baseUrl);
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Admin Section");
     }
 
@@ -97,7 +97,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         resource.open(URI.create(baseUrl).resolve("/.well-known/security.txt").toString());
         Assert.assertTrue(resource.bodyText().contains("Contact:"), "Security policy was not retrieved.");
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Security Policy");
     }
 
@@ -109,7 +109,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         new ResourcePage(driver).open(URI.create(baseUrl).resolve(path).toString());
         Assert.assertTrue(driver.getCurrentUrl().contains("%23zatschi"), "Encoded image request was not made.");
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Missing Encoding");
     }
 
@@ -118,7 +118,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         var driver = ZapManager.getDriver();
         new ResourcePage(driver).open(URI.create(baseUrl).resolve("/assets/i18n/tlh_AA.json").toString());
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Extra Language");
     }
 
@@ -127,7 +127,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         var driver = ZapManager.getDriver();
         new PrivacyPolicyPage(driver).open(baseUrl);
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Privacy Policy");
     }
 
@@ -138,7 +138,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         resource.open(URI.create(baseUrl).resolve("/rest/products/search?q=%27%3B").toString());
         resource.waitForBodyText("SQLITE_ERROR", 10);
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Error Handling");
     }
 
@@ -149,7 +149,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         loginPage.loginFromHome(baseUrl, "admin@juice-sh.op", "admin123");
         Assert.assertTrue(loginPage.isUserLoggedIn(), "Administrator login failed.");
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Password Strength");
     }
 
@@ -160,7 +160,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         loginPage.loginFromHome(baseUrl, "bender@juice-sh.op'--", "anything");
         Assert.assertTrue(loginPage.isUserLoggedIn(), "Bender login bypass failed.");
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Login Bender");
     }
 
@@ -171,7 +171,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         loginPage.loginFromHome(baseUrl, "jim@juice-sh.op'--", "anything");
         Assert.assertTrue(loginPage.isUserLoggedIn(), "Jim login bypass failed.");
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Login Jim");
     }
 
@@ -183,7 +183,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         String logUrl = resource.findLinkContaining("access.log", 15);
         Assert.assertNotNull(logUrl, "No access log link was found.");
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         resource.open(logUrl);
         assertChallengeSolved("Access Log");
     }
@@ -196,7 +196,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         resource.waitForBodyText("provider", 15);
         Assert.assertTrue(resource.bodyText().contains("resource"), "Terraform configuration was not exposed.");
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Misplaced IaC Files");
     }
 
@@ -212,7 +212,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         searchPage.searchFromHome(baseUrl, payload);
         searchPage.waitForSoundCloudPlayer();
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Bonus Payload");
     }
 
@@ -226,7 +226,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         var response = api.get("/ftp/eastere.gg%2500.md");
         Assert.assertEquals(response.statusCode(), 200, "Easter Egg file was not accessible.");
 
-        ScreenshotHelper.captureResponse(driver, response);
+        ScreenshotManager.captureResponse(driver, response);
         assertChallengeSolved("Easter Egg");
     }
 
@@ -242,7 +242,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         System.out.println("[POISON NULL BYTE] Response length: " + response.body().length());
         Assert.assertEquals(response.statusCode(), 200, "Developer backup request did not return HTTP 200.");
 
-        ScreenshotHelper.captureResponse(driver, response);
+        ScreenshotManager.captureResponse(driver, response);
         assertChallengeSolved("Forgotten Developer Backup");
         assertChallengeSolved("Poison Null Byte");
     }
@@ -252,7 +252,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         var response = api.get("/ftp/coupons_2013.md.bak%2500.pdf");
         Assert.assertEquals(response.statusCode(), 200, "Sales backup was not accessible.");
 
-        ScreenshotHelper.captureResponse(ZapManager.getDriver(), response);
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
         assertChallengeSolved("Forgotten Sales Backup");
     }
 
@@ -261,7 +261,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         var response = api.get("/ftp/suspicious_errors.yml%2500.md");
         Assert.assertEquals(response.statusCode(), 200, "SIEM signature file was not accessible.");
 
-        ScreenshotHelper.captureResponse(ZapManager.getDriver(), response);
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
         assertChallengeSolved("Misplaced Signature File");
     }
 
@@ -274,7 +274,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertEquals(response.statusCode(), 302, "Expected a redirect response.");
         Assert.assertEquals(location, destination, "Unexpected redirect destination.");
 
-        ScreenshotHelper.captureResponse(driver, response);
+        ScreenshotManager.captureResponse(driver, response);
         assertChallengeSolved("Outdated Allowlist");
     }
 
@@ -294,20 +294,20 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         }
 
         new PrivacyPolicyPage(driver).showInspectionEvidence(baseUrl, imageAvailable);
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
     }
 
     @Test(priority = 24)
     public void testRepetitiveRegistrationChallenge() throws Exception {
         var response = actions.registerWithMismatchedPasswords();
-        ScreenshotHelper.captureResponse(ZapManager.getDriver(), response);
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
         assertChallengeSolved("Repetitive Registration");
     }
 
     @Test(priority = 25)
     public void testEmptyUserRegistrationChallenge() throws Exception {
         var response = actions.registerEmptyUser();
-        ScreenshotHelper.captureResponse(ZapManager.getDriver(), response);
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
         assertChallengeSolved("Empty User Registration");
     }
 
@@ -319,7 +319,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertNotEquals(result.targetBasketId(), result.ownBasketId(), "Target belongs to the authenticated user.");
         Assert.assertEquals(result.response().statusCode(), 200, "Another user's basket was not accessible.");
 
-        ScreenshotHelper.captureResponse(ZapManager.getDriver(), result.response());
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), result.response());
         assertChallengeSolved("View Basket");
     }
 
@@ -331,7 +331,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertNotEquals(result.forgedUserId(), result.authenticatedUserId(), "Feedback must reference another user.");
         Assert.assertEquals(result.response().statusCode(), 201, "Forged feedback was not accepted.");
 
-        ScreenshotHelper.captureResponse(ZapManager.getDriver(), result.response());
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), result.response());
         assertChallengeSolved("Forged Feedback");
     }
 
@@ -341,7 +341,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(result.fiveStarsRemain(), "Five-star customer feedback still exists.");
         System.out.println("[FIVE-STAR FEEDBACK] Entries removed: " + result.deletedCount());
 
-        ScreenshotHelper.captureResponse(ZapManager.getDriver(), result.response());
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), result.response());
         assertChallengeSolved("Five-Star Feedback");
     }
 
@@ -356,7 +356,7 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         scoreBoard.open(baseUrl);
         Assert.assertTrue(scoreBoard.isOpen(), "Score Board page did not load.");
 
-        ScreenshotHelper.capture(driver);
+        ScreenshotManager.capture(driver);
         assertChallengeSolved("Score Board");
     }
 

@@ -375,7 +375,7 @@ Additional scanning and reporting functionality is planned.
 
 ## Automated Screenshots
 
-The framework includes a reusable `ScreenshotHelper` utility.
+The framework includes a reusable `ScreenshotManager` utility.
 
 Screenshots are saved in:
 
