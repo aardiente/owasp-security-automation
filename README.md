@@ -375,33 +375,112 @@ Additional scanning and reporting functionality is planned.
 
 ## Automated Screenshots
 
-The framework includes a reusable `ScreenshotManager` utility.
+The framework uses a centralized `ScreenshotManager` utility to capture visual evidence during DVWA and OWASP Juice Shop security tests.
 
-Screenshots are saved in:
+**Source:** `src/test/java/utilities/ScreenshotManager.java`
+
+Screenshots are stored under:
 
 `target/screenshots/`
 
-Each screenshot uses the associated TestNG test method name.
+The screenshot manager dynamically creates a directory for each application and test class. New test classes are supported automatically without manually creating folders or configuring screenshot paths.
 
-Example:
+### Screenshot Directory Structure
 
 ```text
 target/
 ├── screenshots/
-│   ├── testSqlInjectionLoginBypass.png
-│   ├── testDomXssChallenge.png
-│   └── testScoreBoardChallenge.png
+│   ├── dvwa/
+│   │   ├── DvwaSqlInjection/
+│   │   │   ├── sqlInjection_Low-low-a82f34c5b012.png
+│   │   │   ├── sqlInjection_Low-low-b71e49a0c235.png
+│   │   │   └── sqlInjection_Low-low-c23d5087e941.png
+│   │   └── DvwaXSSReflection/
+│   │       ├── XSS_Reflected-low-b91f23a746c0.png
+│   │       ├── XSS_Reflected-medium-f834a903b572.png
+│   │       └── XSS_Reflected-high-714ca2bb5601.png
+│   └── juiceshop/
+│       └── JuiceShopChallengesTest/
+│           ├── testSqlInjectionLoginBypass-20261028-120000-1.png
+│           ├── testDomXssChallenge-20261028-120005-2.png
+│           └── testScoreBoardChallenge-20261028-120010-3.png
 ├── zap-dvwa.html
 └── zap-juiceshop.html
 ```
 
-Screenshots with matching names are overwritten during subsequent runs.
+*Filenames are illustrative. Actual filenames depend on executed tests, DataProvider parameters, and timestamps.*
+
+### DVWA Screenshot Evidence
+
+DVWA tests capture screenshots after executing vulnerability payloads and before reporting security findings through TestNG assertions.
+
+**SQL Injection**
+
+- Captures the actual DVWA webpage after an SQL injection payload is submitted.
+- Attempts to capture the complete rendered page, including the injection form, returned database records, and SQL error messages.
+- Temporarily adjusts the browser window dimensions to accommodate the webpage's full content.
+- Restores the original browser window dimensions after capture.
+- Falls back to a normal browser screenshot if full-page capture fails.
+
+**Reflected XSS**
+
+- Detects JavaScript alerts through Selenium WebDriver.
+- Records the alert text before dismissing the dialog.
+- Captures the DVWA browser page and adds a labeled panel containing the observed alert text.
+- Captures the normal browser page when no JavaScript alert executes.
+
+Native JavaScript alerts are not reliably included in Selenium browser screenshots. The labeled XSS evidence panel represents the actual alert text observed by WebDriver, rather than a native browser-dialog screenshot.
+
+### Data-Driven Screenshot Management
+
+DVWA tests use TestNG DataProviders to execute multiple payloads across supported security levels.
+
+To prevent screenshots from overwriting unrelated test results or creating unlimited duplicates, the screenshot manager generates filenames using:
+
+- TestNG test method name
+- Security level
+- A deterministic hash of the DataProvider parameters
+
+Each unique payload and security-level combination receives its own screenshot.
+
+**Running the same test again with identical parameters overwrites the matching screenshot.**
+
+This provides consistent evidence filenames while preserving separate screenshots for different vulnerability payloads.
+
+Previously generated screenshots using older naming conventions are not automatically deleted.
+
+### OWASP Juice Shop Screenshot Evidence
+
+Juice Shop tests capture screenshots during security challenge execution.
+
+Screenshot coverage includes:
+
+- Browser-based security challenge demonstrations
+- SQL injection and XSS challenge results
+- Authentication and authorization challenge evidence
+- HTTP response previews for API-based challenges
+- Completed challenge verification
+- Final Score Board progress
+
+Juice Shop screenshot filenames include timestamps and sequence numbers to preserve captures from individual test executions.
 
 ### Juice Shop Score Board
 
-The Score Board challenge test is configured with TestNG priority `1000` so that it executes after lower-priority challenge tests in the same execution context.
+The Score Board challenge test uses TestNG priority `1000` to execute after lower-priority challenge tests in the same execution context.
 
-Its screenshot provides a visual summary of completed Juice Shop challenges.
+The final Score Board screenshot provides a visual summary of completed Juice Shop challenges.
+
+### Screenshot Behavior
+
+Screenshots are supported during both headed and headless browser execution.
+
+When SlowMo presentation mode is enabled, supported screenshot operations can pause after capture to keep the relevant result visible.
+
+The screenshot manager is intended to record evidence without changing vulnerability detection logic or TestNG assertions.
+
+**Screenshot output format:** PNG.
+
+No separate text evidence files are generated for DVWA SQL injection or reflected XSS screenshots.
 
 ---
 
