@@ -1,8 +1,10 @@
+
 package utilities.JuiceShop;
 
 import automation.ZapManager;
 import org.openqa.selenium.json.Json;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
@@ -15,6 +17,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public final class JuiceShopApi {
 
@@ -25,10 +28,14 @@ public final class JuiceShopApi {
     public record JuiceSession(String token, int basketId, int userId) {}
 
     public JuiceShopApi(String baseUrl) {
-        this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        this.baseUrl = baseUrl.endsWith("/")
+                ? baseUrl.substring(0, baseUrl.length() - 1)
+                : baseUrl;
 
         URI proxyUri = URI.create("http://" + ZapManager.getProxyAddress());
-        ProxySelector proxy = ProxySelector.of(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()));
+        ProxySelector proxy = ProxySelector.of(
+                new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort())
+        );
 
         client = HttpClient.newBuilder()
                 .proxy(proxy)
@@ -49,11 +56,13 @@ public final class JuiceShopApi {
         return sendApi("POST", path, json.toJson(body), null);
     }
 
-    public HttpResponse<String> post(String path, Object body, String token) throws IOException, InterruptedException {
+    public HttpResponse<String> post(String path, Object body, String token)
+            throws IOException, InterruptedException {
         return sendApi("POST", path, json.toJson(body), token);
     }
 
-    public HttpResponse<String> put(String path, Object body, String token) throws IOException, InterruptedException {
+    public HttpResponse<String> put(String path, Object body, String token)
+            throws IOException, InterruptedException {
         return sendApi("PUT", path, json.toJson(body), token);
     }
 
@@ -72,8 +81,11 @@ public final class JuiceShopApi {
                 .header("User-Agent", "JuiceShopSecurityAutomation/1.0")
                 .header("Accept", "application/json");
 
-        if (token != null && !token.isBlank()) request.header("Authorization", "Bearer " + token);
-        if (body != null) request.header("Content-Type", "application/json");
+        if (token != null && !token.isBlank())
+            request.header("Authorization", "Bearer " + token);
+
+        if (body != null)
+            request.header("Content-Type", "application/json");
 
         HttpRequest.BodyPublisher publisher = body == null
                 ? HttpRequest.BodyPublishers.noBody()
@@ -84,7 +96,11 @@ public final class JuiceShopApi {
                 HttpResponse.BodyHandlers.ofString()
         );
 
-        System.out.println("[JUICE-SHOP API] " + method.toUpperCase() + " " + normalizedPath + " -> " + response.statusCode());
+        System.out.println(
+                "[JUICE-SHOP API] " + method.toUpperCase()
+                        + " " + normalizedPath + " -> " + response.statusCode()
+        );
+
         return response;
     }
 
@@ -94,42 +110,58 @@ public final class JuiceShopApi {
 
     @SuppressWarnings("unchecked")
     public JuiceSession login(String email, String password) throws IOException, InterruptedException {
-        HttpResponse<String> response = post("/rest/user/login", Map.of("email", email, "password", password));
+        HttpResponse<String> response = post(
+                "/rest/user/login",
+                Map.of("email", email, "password", password)
+        );
 
-        if (response.statusCode() != 200) {
-            throw new IllegalStateException("Juice Shop API login failed. HTTP " + response.statusCode());
-        }
+        if (response.statusCode() != 200)
+            throw new IllegalStateException(
+                    "Juice Shop API login failed. HTTP " + response.statusCode()
+            );
 
         Map<String, Object> result = json.toType(response.body(), Map.class);
-        Map<String, Object> authentication = (Map<String, Object>) result.get("authentication");
+        Map<String, Object> authentication =
+                (Map<String, Object>) result.get("authentication");
 
-        if (authentication == null) throw new IllegalStateException("Authentication response is missing.");
+        if (authentication == null)
+            throw new IllegalStateException("Authentication response is missing.");
 
         String token = (String) authentication.get("token");
-        if (token == null || token.isBlank()) throw new IllegalStateException("Authentication token is missing.");
+
+        if (token == null || token.isBlank())
+            throw new IllegalStateException("Authentication token is missing.");
 
         Object basketValue = authentication.get("bid");
-        if (!(basketValue instanceof Number)) throw new IllegalStateException("Authentication basket ID is missing.");
+
+        if (!(basketValue instanceof Number))
+            throw new IllegalStateException("Authentication basket ID is missing.");
 
         int basketId = ((Number) basketValue).intValue();
         int userId = extractUserId(token);
 
         System.out.println("[JUICE-SHOP API] Authenticated user ID: " + userId);
+
         return new JuiceSession(token, basketId, userId);
     }
 
     @SuppressWarnings("unchecked")
     private int extractUserId(String token) {
         String[] parts = token.split("\\.");
-        if (parts.length != 3) throw new IllegalStateException("Unexpected authentication token format.");
 
-        String decoded = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+        if (parts.length != 3)
+            throw new IllegalStateException("Unexpected authentication token format.");
+
+        String decoded = new String(
+                Base64.getUrlDecoder().decode(parts[1]),
+                StandardCharsets.UTF_8
+        );
+
         Map<String, Object> claims = json.toType(decoded, Map.class);
         Map<String, Object> user = (Map<String, Object>) claims.get("data");
 
-        if (user == null || !(user.get("id") instanceof Number)) {
+        if (user == null || !(user.get("id") instanceof Number))
             throw new IllegalStateException("Authenticated user ID is missing from token.");
-        }
 
         return ((Number) user.get("id")).intValue();
     }
@@ -139,9 +171,8 @@ public final class JuiceShopApi {
         Map<String, Object> response = json.toType(responseBody, Map.class);
         Object records = response.get("data");
 
-        if (!(records instanceof List<?>)) {
+        if (!(records instanceof List<?>))
             throw new IllegalStateException("Feedback API did not return a record list.");
-        }
 
         return (List<Map<String, Object>>) records;
     }
@@ -149,9 +180,10 @@ public final class JuiceShopApi {
     public boolean isChallengeSolved(String challengeName) throws IOException, InterruptedException {
         HttpResponse<String> response = get("/api/Challenges");
 
-        if (response.statusCode() != 200) {
-            throw new IllegalStateException("Unable to retrieve Juice Shop challenges. HTTP " + response.statusCode());
-        }
+        if (response.statusCode() != 200)
+            throw new IllegalStateException(
+                    "Unable to retrieve Juice Shop challenges. HTTP " + response.statusCode()
+            );
 
         return isChallengeSolved(response.body(), challengeName);
     }
@@ -161,15 +193,64 @@ public final class JuiceShopApi {
         Map<String, Object> response = json.toType(responseBody, Map.class);
         Object data = response.get("data");
 
-        if (!(data instanceof List<?>)) {
+        if (!(data instanceof List<?>))
             throw new IllegalStateException("Challenge API did not return a challenge list.");
-        }
 
         for (Object item : (List<?>) data) {
             if (!(item instanceof Map<?, ?> challenge)) continue;
-            if (challengeName.equals(challenge.get("name"))) return Boolean.TRUE.equals(challenge.get("solved"));
+
+            if (challengeName.equals(challenge.get("name")))
+                return Boolean.TRUE.equals(challenge.get("solved"));
         }
 
         throw new IllegalArgumentException("Challenge not found: " + challengeName);
+    }
+
+    public HttpResponse<String> uploadMultipart(
+            String path,
+            String filename,
+            String contentType,
+            byte[] fileContent,
+            String token
+    ) throws IOException, InterruptedException {
+
+        String boundary = "juice-shop-" + UUID.randomUUID();
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+
+        body.write(("--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\n"
+                + "Content-Type: " + contentType + "\r\n\r\n"
+        ).getBytes(StandardCharsets.UTF_8));
+
+        body.write(fileContent);
+
+        body.write(("\r\n--" + boundary + "--\r\n")
+                .getBytes(StandardCharsets.UTF_8));
+
+        URI uri = URI.create(
+                baseUrl + (path.startsWith("/") ? path : "/" + path)
+        );
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
+                .timeout(Duration.ofSeconds(30))
+                .header("User-Agent", "JuiceShopSecurityAutomation/1.0")
+                .header("Accept", "*/*")
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()));
+
+        if (token != null && !token.isBlank())
+            builder.header("Authorization", "Bearer " + token);
+
+        HttpResponse<String> response = client.send(
+                builder.build(),
+                HttpResponse.BodyHandlers.ofString()
+        );
+
+        System.out.println(
+                "[JUICE-SHOP API] multipart POST "
+                        + path + " -> " + response.statusCode()
+        );
+
+        return response;
     }
 }

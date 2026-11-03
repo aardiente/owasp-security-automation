@@ -29,13 +29,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class ScreenshotManager {
 
     private static final Path SCREENSHOT_DIR = Path.of("target", "screenshots");
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS");
     private static final AtomicLong SEQUENCE = new AtomicLong();
+    private static final AtomicBoolean JUICE_LEGACY_CLEANED = new AtomicBoolean();
+    private static final Pattern OLD_JUICE_NAME = Pattern.compile(".+-\\d{8}-\\d{6}-\\d{3}-\\d+\\.png");
 
     private ScreenshotManager() {}
 
@@ -45,6 +50,7 @@ public class ScreenshotManager {
         try {
             byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
             Files.write(screenshotPath, screenshot);
+            cleanupLegacyJuiceScreenshots(screenshotPath);
             System.out.println("[SCREENSHOT] Saved: " + screenshotPath.toAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save screenshot: " + screenshotPath, e);
@@ -75,6 +81,7 @@ public class ScreenshotManager {
 
             byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
             Files.write(screenshotPath, screenshot);
+            cleanupLegacyJuiceScreenshots(screenshotPath);
 
             System.out.println("[SQLi SCREENSHOT] Full webpage saved: " + screenshotPath.toAbsolutePath());
 
@@ -84,6 +91,7 @@ public class ScreenshotManager {
             try {
                 Path fallback = nextScreenshotPath();
                 Files.write(fallback, ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES));
+                cleanupLegacyJuiceScreenshots(fallback);
                 System.out.println("[SQLi SCREENSHOT] Browser fallback saved: " + fallback.toAbsolutePath());
             } catch (Exception fallbackError) {
                 System.out.println("[SQLi SCREENSHOT] Unable to save screenshot: " + fallbackError.getMessage());
@@ -140,6 +148,7 @@ public class ScreenshotManager {
                 throw new IOException("PNG image writer unavailable.");
             }
 
+            cleanupLegacyJuiceScreenshots(screenshotPath);
             System.out.println("[XSS SCREENSHOT] Saved: " + screenshotPath.toAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save XSS screenshot.", e);
@@ -174,6 +183,8 @@ public class ScreenshotManager {
             } else {
                 filename = testName + ".png";
             }
+        } else if (application.equalsIgnoreCase("juiceshop")) {
+            filename = testName + ".png";
         } else {
             filename = testName + "-"
                     + LocalDateTime.now().format(TIMESTAMP) + "-"
@@ -187,6 +198,26 @@ public class ScreenshotManager {
         }
 
         return directory.resolve(filename);
+    }
+
+    private static void cleanupLegacyJuiceScreenshots(Path screenshotPath) {
+        Path juiceDirectory = SCREENSHOT_DIR.resolve("juiceshop").toAbsolutePath().normalize();
+        if (!screenshotPath.toAbsolutePath().normalize().startsWith(juiceDirectory)
+                || !JUICE_LEGACY_CLEANED.compareAndSet(false, true)) return;
+
+        try (Stream<Path> files = Files.walk(juiceDirectory)) {
+            files.filter(Files::isRegularFile)
+                    .filter(file -> OLD_JUICE_NAME.matcher(file.getFileName().toString()).matches())
+                    .forEach(file -> {
+                        try { Files.delete(file); }
+                        catch (IOException e) {
+                            System.err.println("[SCREENSHOT] Could not remove old screenshot "
+                                    + file + ": " + e.getMessage());
+                        }
+                    });
+        } catch (IOException e) {
+            System.err.println("[SCREENSHOT] Could not clean old Juice Shop screenshots: " + e.getMessage());
+        }
     }
 
     private static String parameterHash(Object[] parameters) {
