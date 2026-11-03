@@ -78,7 +78,7 @@ public class DvwaXSSReflection extends BaseDvwaTest {
 
             alert.accept();
             xssExecuted = true;
-            ScreenshotManager.captureAlert(driver, alertText);
+            ScreenshotManager.captureAlert(driver, payload);
 
         } catch (org.openqa.selenium.TimeoutException e) {
             System.out.println("Payload execution blocked: " + e.getLocalizedMessage());

@@ -1,4 +1,3 @@
-
 :root {
     color-scheme: light;
     font-family: Arial, Helvetica, sans-serif;
@@ -267,4 +266,105 @@ th { background: #eef2f8; }
         min-width: 100%;
         flex-basis: 100%;
     }
+}
+
+/* Full-width TestNG result cards, separate from the findings table. */
+.test-result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.test-result {
+    background: #fff;
+    border: 1px solid #dfe5ee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.test-result[open] { border-color: #acbdd7; }
+
+.test-result-summary {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) 100px 85px;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.test-result-summary::-webkit-details-marker { display: none; }
+.test-result-summary:hover { background: #f8faff; }
+
+.test-title {
+    font-weight: 600;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.test-variant { color: #526077; font-weight: 400; }
+.test-duration { font-size: 13px; color: #526077; text-align: right; }
+.test-toggle { color: #235a9d; font-size: 13px; text-align: right; }
+.test-toggle::before { content: "▸ "; }
+.test-result[open] .test-toggle::before { content: "▾ "; }
+
+.test-status {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.test-result-body {
+    background: #fbfcff;
+    border-top: 1px solid #e4eaf2;
+    padding: 20px;
+}
+
+.test-result-body h3 { margin: 16px 0 10px; font-size: 15px; }
+
+.test-evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.test-screenshot {
+    min-width: 0;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid #e1e6ef;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.test-screenshot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 520px;
+    object-fit: contain;
+    background: #f1f4f9;
+    border-radius: 5px;
+}
+
+.test-screenshot figcaption {
+    padding-top: 10px;
+    color: #526077;
+    font-size: 12px;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .test-result-summary {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .test-status { grid-column: 1; grid-row: 1; }
+    .test-duration { grid-column: 2; grid-row: 1; }
+    .test-title { grid-column: 1; grid-row: 2; }
+    .test-toggle { grid-column: 2; grid-row: 2; }
+    .test-result-body { padding: 14px; }
 }

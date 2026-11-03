@@ -1,4 +1,3 @@
-
 package utilities.reporting;
 
 import org.openqa.selenium.json.Json;
@@ -15,6 +14,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.Locale;
+import java.util.stream.Stream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -22,16 +27,12 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 public class SecurityAssessmentReporter implements IReporter {
 
-    private static final Path REPORT_DIR = Path.of("target", "security-reports");
-    private static final Path CONFIG = Path.of("src", "test", "java", "utilities", "reporting", "report-targets.properties");
-    private static final Path ASSETS = Path.of("src", "test", "java", "utilities", "reporting", "assets");
-
     private record Target(String id, String title, String packagePrefix, String siteUrl, String zapFile) {}
-    private record TestCase(String method, String status, long durationMs, long startMs, String error) {}
+    private record TestCase(String method, String className, String variant, String status,
+                            long durationMs, long startMs, String error, List<String> screenshots) {}
     private record Finding(String name, int risk, String confidence, String url, String method,
                            String evidence, String description, String solution, String cwe) {}
     private record Scan(String status, String generated, List<Finding> findings) {}
@@ -40,20 +41,22 @@ public class SecurityAssessmentReporter implements IReporter {
     @Override
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
         try {
-            List<Target> targets = loadTargets();
-            Files.createDirectories(REPORT_DIR);
-            copyAsset("security-assessment.css");
-            copyAsset("security-assessment.js");
+            ReportingConfiguration config = ReportingConfiguration.load();
+            List<Target> targets = loadTargets(config);
+            Files.createDirectories(config.reportDirectory());
+            List<Path> assets = copyAssets(config);
 
             List<Summary> summaries = new ArrayList<>();
             for (Target target : targets) {
-                List<TestCase> tests = collectTests(suites, target.packagePrefix());
+                List<TestCase> tests = collectTests(suites, target.packagePrefix(), config);
                 if (tests.isEmpty()) continue;
 
-                tests.sort(Comparator.comparing(TestCase::method));
-                Scan scan = loadScan(target, tests);
-                Path output = REPORT_DIR.resolve("SecurityAssessment-" + target.id() + ".html");
-                Files.writeString(output, buildReport(target, tests, scan), StandardCharsets.UTF_8);
+                tests.sort(Comparator.comparingLong(TestCase::startMs)
+                        .thenComparing(TestCase::method).thenComparing(TestCase::variant));
+                Scan scan = loadScan(target, tests, config);
+                Path output = config.assessmentFile(target.id());
+                Files.writeString(output, buildReport(target, tests, scan, config, assets),
+                        StandardCharsets.UTF_8);
 
                 long passed = tests.stream().filter(t -> t.status().equals("PASSED")).count();
                 long failed = tests.stream().filter(t -> t.status().equals("FAILED")).count();
@@ -67,8 +70,8 @@ public class SecurityAssessmentReporter implements IReporter {
                 return;
             }
 
-            Path index = REPORT_DIR.resolve("SecurityAssessment.html");
-            Files.writeString(index, buildIndex(summaries), StandardCharsets.UTF_8);
+            Path index = config.reportDirectory().resolve(config.indexFile());
+            Files.writeString(index, buildIndex(summaries, config, assets), StandardCharsets.UTF_8);
             System.out.println("[SECURITY REPORT] Assessment index saved: " + index.toAbsolutePath());
         } catch (Exception e) {
             System.err.println("[SECURITY REPORT] HTML generation failed: " + e.getMessage());
@@ -76,45 +79,33 @@ public class SecurityAssessmentReporter implements IReporter {
         }
     }
 
-    private static List<Target> loadTargets() throws IOException {
-        if (!Files.isRegularFile(CONFIG))
-            throw new IOException("Missing reporting configuration: " + CONFIG.toAbsolutePath());
-
-        Properties properties = new Properties();
-        try (var reader = Files.newBufferedReader(CONFIG, StandardCharsets.UTF_8)) {
-            properties.load(reader);
-        }
-
+    private static List<Target> loadTargets(ReportingConfiguration config) throws IOException {
         List<Target> targets = new ArrayList<>();
-        for (String raw : required(properties, "targets").split(",")) {
+
+        for (String raw : config.required("targets").split(",")) {
             String id = raw.trim();
             if (!id.matches("[a-zA-Z0-9_-]+"))
                 throw new IOException("Invalid reporting target ID: " + id);
 
             String key = "target." + id + ".";
-            targets.add(new Target(id, required(properties, key + "title"),
-                    required(properties, key + "package"), required(properties, key + "site"),
-                    required(properties, key + "zapFile")));
+            targets.add(new Target(id, config.required(key + "title"),
+                    config.required(key + "package"), config.required(key + "site"),
+                    config.required(key + "zapFile")));
         }
 
         return targets;
     }
 
-    private static String required(Properties properties, String key) throws IOException {
-        String value = properties.getProperty(key, "").trim();
-        if (value.isEmpty()) throw new IOException("Missing reporting property: " + key);
-        return value;
-    }
-
-    private static List<TestCase> collectTests(List<ISuite> suites, String packagePrefix) {
+    private static List<TestCase> collectTests(List<ISuite> suites, String packagePrefix,
+                                               ReportingConfiguration config) {
         List<TestCase> tests = new ArrayList<>();
 
         for (ISuite suite : suites) {
             for (ISuiteResult suiteResult : suite.getResults().values()) {
                 ITestContext context = suiteResult.getTestContext();
-                collect(tests, context.getPassedTests().getAllResults(), "PASSED", packagePrefix);
-                collect(tests, context.getFailedTests().getAllResults(), "FAILED", packagePrefix);
-                collect(tests, context.getSkippedTests().getAllResults(), "SKIPPED", packagePrefix);
+                collect(tests, context.getPassedTests().getAllResults(), "PASSED", packagePrefix, config);
+                collect(tests, context.getFailedTests().getAllResults(), "FAILED", packagePrefix, config);
+                collect(tests, context.getSkippedTests().getAllResults(), "SKIPPED", packagePrefix, config);
             }
         }
 
@@ -122,20 +113,114 @@ public class SecurityAssessmentReporter implements IReporter {
     }
 
     private static void collect(List<TestCase> tests, Collection<ITestResult> results,
-                                String status, String packagePrefix) {
+                                String status, String packagePrefix, ReportingConfiguration config) {
         for (ITestResult result : results) {
-            if (!result.getTestClass().getName().startsWith(packagePrefix)) continue;
+            String className = result.getTestClass().getName();
+            if (!className.startsWith(packagePrefix)) continue;
 
             String error = result.getThrowable() == null ? "" : result.getThrowable().toString();
             long duration = Math.max(0, result.getEndMillis() - result.getStartMillis());
+            Object[] parameters = result.getParameters();
+            String variant = "";
 
-            tests.add(new TestCase(result.getMethod().getMethodName(), status, duration,
-                    result.getStartMillis(), error));
+            if (parameters != null && parameters.length > 0) {
+                String candidate = String.valueOf(parameters[0]);
+                if (candidate.matches("[A-Za-z0-9_-]{1,32}")) variant = candidate;
+            }
+
+            tests.add(new TestCase(result.getMethod().getMethodName(), className, variant, status,
+                    duration, result.getStartMillis(), error, screenshotLinks(result, config)));
         }
     }
 
-    private static Scan loadScan(Target target, List<TestCase> tests) {
-        Path source = REPORT_DIR.resolve(target.zapFile());
+    private static List<String> screenshotLinks(ITestResult result, ReportingConfiguration config) {
+        String fullClassName = result.getTestClass().getName();
+        String[] parts = fullClassName.split("\\.");
+        if (parts.length < 2) return List.of();
+
+        String application = parts[0].equalsIgnoreCase("tests") && parts.length > 2
+                ? parts[1] : parts[parts.length - 2];
+
+        Path folder = config.screenshotDirectory()
+                .resolve(sanitize(application.toLowerCase(Locale.ROOT)))
+                .resolve(sanitize(result.getTestClass().getRealClass().getSimpleName()));
+        if (!Files.isDirectory(folder)) return List.of();
+
+        String method = sanitize(result.getMethod().getMethodName());
+        Object[] parameters = result.getParameters();
+        if (parameters == null) parameters = new Object[0];
+        String filename = parameters.length == 0 ? method + ".png"
+                : method + "-" + sanitize(String.valueOf(parameters[0])) +
+                "-" + parameterHash(parameters) + ".png";
+
+        List<Path> matches = new ArrayList<>();
+        Path exact = folder.resolve(filename);
+
+        if (Files.isRegularFile(exact) && capturedDuring(exact, result)) matches.add(exact);
+
+        // Unknown future applications can use timestamped filenames, but only for
+        // non-parameterized tests; never guess which payload produced an image.
+        if (matches.isEmpty() && parameters.length == 0) {
+            try (Stream<Path> files = Files.list(folder)) {
+                matches.addAll(files.filter(Files::isRegularFile)
+                        .filter(p -> p.getFileName().toString().startsWith(method + "-"))
+                        .filter(p -> p.getFileName().toString().endsWith(".png"))
+                        .filter(p -> capturedDuring(p, result))
+                        .sorted().toList());
+            } catch (IOException e) {
+                System.err.println("[SECURITY REPORT] Screenshot lookup failed: " + e.getMessage());
+            }
+        }
+
+        List<String> links = new ArrayList<>();
+        for (Path match : matches) {
+            try {
+                String relative = config.reportDirectory().toAbsolutePath().normalize()
+                        .relativize(match.toAbsolutePath().normalize()).toString().replace('\\', '/');
+                links.add(new URI(null, null, relative, null, null).toASCIIString());
+            } catch (Exception e) {
+                System.err.println("[SECURITY REPORT] Screenshot link failed: " + e.getMessage());
+            }
+        }
+
+        return links;
+    }
+
+    private static boolean capturedDuring(Path image, ITestResult result) {
+        long start = result.getStartMillis();
+        long end = result.getEndMillis();
+        if (start <= 0 || end <= 0 || end < start) return false;
+
+        try {
+            long modified = Files.getLastModifiedTime(image).toMillis();
+            return modified >= start - 2000 && modified <= end + 2000;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static String parameterHash(Object[] parameters) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(Arrays.deepToString(parameters).getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(Arrays.copyOf(digest, 6));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is unavailable.", e);
+        }
+    }
+
+    private static String sanitize(String text) {
+        return text.replaceAll("[^A-Za-z0-9._-]", "_");
+    }
+
+    private static Scan loadScan(Target target, List<TestCase> tests, ReportingConfiguration config) {
+        Path source;
+        try {
+            source = config.zapFile(target.zapFile());
+        } catch (IOException e) {
+            return new Scan("Invalid ZAP report configuration: " + e.getMessage(), "Unavailable", List.of());
+        }
+
         if (!Files.isRegularFile(source))
             return new Scan("ZAP JSON unavailable: " + target.zapFile(), "Unavailable", List.of());
 
@@ -272,13 +357,15 @@ public class SecurityAssessmentReporter implements IReporter {
             out.append(label).append(": ").append(value.trim()).append("\n");
     }
 
-    private static String buildReport(Target target, List<TestCase> tests, Scan scan) {
+    private static String buildReport(Target target, List<TestCase> tests, Scan scan,
+                                      ReportingConfiguration config, List<Path> assets) {
         long passed = tests.stream().filter(t -> t.status().equals("PASSED")).count();
         long failed = tests.stream().filter(t -> t.status().equals("FAILED")).count();
         long skipped = tests.stream().filter(t -> t.status().equals("SKIPPED")).count();
+        long screenshots = tests.stream().mapToLong(t -> t.screenshots().size()).sum();
 
         StringBuilder html = new StringBuilder(35000);
-        html.append(pageStart(target.title() + " Security Assessment", true));
+        html.append(pageStart(target.title() + " Security Assessment", true, assets, config.assetFolderName()));
 
         html.append("<header><h1>").append(escape(target.title()))
                 .append(" Security Assessment</h1>")
@@ -291,8 +378,10 @@ public class SecurityAssessmentReporter implements IReporter {
         card(html, passed, "Passed");
         card(html, failed, "Failed");
         card(html, skipped, "Skipped");
+        card(html, screenshots, "Evidence images");
 
-        html.append("</div><p><a href=\"SecurityAssessment.html\">All assessments</a></p></header>");
+        html.append("</div><p><a href=\"").append(escape(config.indexFile()))
+                .append("\">All assessments</a></p></header>");
 
         html.append("<section><h2>Security Findings</h2><p class=\"note\">")
                 .append(escape(scan.status()))
@@ -331,49 +420,76 @@ public class SecurityAssessmentReporter implements IReporter {
 
         html.append("""
                 <section>
-                    <h2>Automated Test Results</h2>
-                    <p class="note">TestNG success does not independently verify
-                    exploitability or challenge completion.</p>
-                    <div class="table-scroll">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Test Method</th>
-                                <th>Status</th>
-                                <th>Duration</th>
-                                <th>Error</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <h2>Automated Test Results &amp; Screenshots</h2>
+                    <p class="note">Expand a test to view screenshot evidence captured during
+                    that execution. A passed test or screenshot does not independently prove
+                    vulnerability exploitability or challenge completion.</p>
+                    <div class="test-result-list">
                 """);
 
-        for (TestCase test : tests) {
-            html.append("<tr><td>").append(escape(test.method()))
-                    .append("</td><td class=\"").append(test.status().toLowerCase())
-                    .append("\">").append(test.status())
-                    .append("</td><td>").append(test.durationMs()).append(" ms</td>")
-                    .append("<td class=\"test-error\">").append(escape(test.error()))
-                    .append("</td></tr>");
-        }
+        for (TestCase test : tests)
+            appendTestResult(html, test);
 
-        html.append("</tbody></table></div></section>")
+        html.append("</div></section>")
                 .append("<p class=\"note\">Generated automatically. External ZAP sites are excluded.</p>")
                 .append("</body></html>");
 
         return html.toString();
     }
 
-    private static String buildIndex(List<Summary> summaries) {
+    private static void appendTestResult(StringBuilder html, TestCase test) {
+        html.append("<details class=\"test-result\"><summary class=\"test-result-summary\">")
+                .append("<span class=\"test-status ").append(test.status().toLowerCase())
+                .append("\">").append(test.status()).append("</span>")
+                .append("<span class=\"test-title\">").append(escape(test.method()));
+
+        if (!test.variant().isBlank())
+            html.append(" <span class=\"test-variant\">(")
+                    .append(escape(test.variant())).append(")</span>");
+
+        html.append("</span><span class=\"test-duration\">")
+                .append(test.durationMs()).append(" ms</span>")
+                .append("<span class=\"test-toggle\">Evidence</span>")
+                .append("</summary><div class=\"test-result-body\">")
+                .append("<p class=\"note\"><strong>Test class:</strong> ")
+                .append(escape(test.className())).append("</p>");
+
+        if (!test.error().isBlank()) {
+            html.append("<h3>Test Error</h3><pre class=\"test-error\">")
+                    .append(escape(test.error())).append("</pre>");
+        }
+
+        if (test.screenshots().isEmpty()) {
+            html.append("<p class=\"note\">No screenshot captured during this test execution.</p>");
+        } else {
+            html.append("<div class=\"test-evidence-grid\">");
+            for (String screenshot : test.screenshots()) {
+                html.append("<figure class=\"test-screenshot\"><a href=\"")
+                        .append(escape(screenshot))
+                        .append("\" target=\"_blank\" rel=\"noopener noreferrer\">")
+                        .append("<img src=\"").append(escape(screenshot))
+                        .append("\" loading=\"lazy\" alt=\"Screenshot evidence for ")
+                        .append(escape(test.method())).append("\"></a>")
+                        .append("<figcaption>View full-size screenshot</figcaption></figure>");
+            }
+            html.append("</div>");
+        }
+
+        html.append("</div></details>");
+    }
+
+    private static String buildIndex(List<Summary> summaries, ReportingConfiguration config,
+                                     List<Path> assets) throws IOException {
         StringBuilder html = new StringBuilder(4000);
-        html.append(pageStart("Security Assessment Index", false));
+        html.append(pageStart("Security Assessment Index", false, assets, config.assetFolderName()));
 
         html.append("<header><h1>Security Assessments</h1>")
                 .append("<p>Automated TestNG and ZAP results by application.</p></header>");
 
         for (Summary summary : summaries) {
-            html.append("<section><h2><a href=\"SecurityAssessment-")
-                    .append(escape(summary.target().id())).append(".html\">")
-                    .append(escape(summary.target().title())).append("</a></h2>")
+            String assessmentName = config.assessmentFile(summary.target().id()).getFileName().toString();
+            html.append("<section><h2><a href=\"").append(escape(assessmentName))
+                    .append("\">").append(escape(summary.target().title())).append("</a></h2>")
                     .append("<p class=\"note\">")
                     .append(escape(summary.target().siteUrl())).append("</p>")
                     .append("<div class=\"cards\">");
@@ -391,13 +507,24 @@ public class SecurityAssessmentReporter implements IReporter {
         return html.toString();
     }
 
-    private static String pageStart(String title, boolean interactive) {
-        return "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\">" +
-                "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
-                "<title>" + escape(title) + "</title>" +
-                "<link rel=\"stylesheet\" href=\"assets/security-assessment.css\">" +
-                (interactive ? "<script src=\"assets/security-assessment.js\" defer></script>" : "") +
-                "</head><body>";
+    private static String pageStart(String title, boolean interactive, List<Path> assets,
+                                    String assetFolder) {
+        StringBuilder head = new StringBuilder();
+        head.append("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\">")
+                .append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">")
+                .append("<title>").append(escape(title)).append("</title>");
+
+        for (Path asset : assets) {
+            String filename = asset.getFileName().toString();
+            String location = escape(assetFolder) + "/" + escape(filename);
+
+            if (filename.endsWith(".css"))
+                head.append("<link rel=\"stylesheet\" href=\"").append(location).append("\">");
+            else if (interactive && filename.endsWith(".js"))
+                head.append("<script src=\"").append(location).append("\" defer></script>");
+        }
+
+        return head.append("</head><body>").toString();
     }
 
     private static void appendFinding(StringBuilder html, Finding finding) {
@@ -493,14 +620,15 @@ public class SecurityAssessmentReporter implements IReporter {
                 .replace("'", "&#39;");
     }
 
-    private static void copyAsset(String fileName) throws IOException {
-        Path source = ASSETS.resolve(fileName);
-        Path destination = REPORT_DIR.resolve("assets").resolve(fileName);
+    private static List<Path> copyAssets(ReportingConfiguration config) throws IOException {
+        List<Path> assets = config.assets();
+        Path destination = config.reportDirectory().resolve(config.assetFolderName());
+        Files.createDirectories(destination);
 
-        if (!Files.isRegularFile(source))
-            throw new IOException("Reporting asset not found: " + source.toAbsolutePath());
+        for (Path source : assets)
+            Files.copy(source, destination.resolve(source.getFileName()),
+                    StandardCopyOption.REPLACE_EXISTING);
 
-        Files.createDirectories(destination.getParent());
-        Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+        return assets;
     }
 }

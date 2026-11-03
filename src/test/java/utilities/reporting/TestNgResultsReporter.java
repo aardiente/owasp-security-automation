@@ -17,8 +17,6 @@ import java.util.List;
 
 public class TestNgResultsReporter implements IReporter {
 
-    private static final Path REPORT = Path.of("target", "security-reports", "testng-results.csv");
-
     @Override
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
         List<String> rows = new ArrayList<>();
@@ -34,9 +32,12 @@ public class TestNgResultsReporter implements IReporter {
         }
 
         try {
-            Files.createDirectories(REPORT.getParent());
-            Files.write(REPORT, rows, StandardCharsets.UTF_8);
-            System.out.println("[SECURITY REPORT] TestNG results saved: " + REPORT.toAbsolutePath());
+            ReportingConfiguration config = ReportingConfiguration.load();
+            Path report = config.reportDirectory().resolve(config.testResultsFile());
+
+            Files.createDirectories(report.getParent());
+            Files.write(report, rows, StandardCharsets.UTF_8);
+            System.out.println("[SECURITY REPORT] TestNG results saved: " + report.toAbsolutePath());
         } catch (IOException e) {
             System.err.println("[SECURITY REPORT] Failed to write TestNG results: " + e.getMessage());
         }
