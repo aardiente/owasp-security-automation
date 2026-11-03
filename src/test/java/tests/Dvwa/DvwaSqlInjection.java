@@ -5,6 +5,7 @@ import automation.AppConfig;
 import automation.ZapManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
@@ -14,6 +15,7 @@ import pom.Dvwa.LoginPage;
 import pom.Dvwa.SecurityPage;
 import pom.Dvwa.SqlInjectionPage;
 import utilities.ExcelFileReader;
+import utilities.ScreenshotManager;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -76,7 +78,24 @@ public class DvwaSqlInjection extends BaseDvwaTest {
         securityPage.setSecurityLevel(SecurityPage.SecurityLevel.LOW);
 
         driver.get(baseUrl + SqlInjectionPage.endpoint);
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("id")));
+
+        try {
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("id")));
+        } catch (TimeoutException e) {
+            String url = driver.getCurrentUrl();
+            String title = driver.getTitle();
+            String body = driver.findElement(By.tagName("body")).getText();
+
+            System.err.println("[DVWA SQLi] Expected SQL injection input was not found.");
+            System.err.println("[DVWA SQLi] URL: " + url);
+            System.err.println("[DVWA SQLi] Title: " + title);
+            System.err.println("[DVWA SQLi] Page contents:\n" + body);
+
+            throw new IllegalStateException(
+                    "DVWA SQL Injection page did not contain input[name='id']. URL: "
+                            + url + " | Title: " + title
+                            + " | Page contents: " + body.substring(0, Math.min(body.length(), 1000)), e);
+        }
     }
 
     private String normalizePayload(String payload) {
@@ -158,6 +177,8 @@ public class DvwaSqlInjection extends BaseDvwaTest {
         Assert.assertFalse(control.sqlError(), "Normal control request returned a SQL error.");
 
         ProbeResult injected = submitProbe(driver, payload);
+
+        ScreenshotManager.captureSqlResults(driver);
 
         // Keep the final response visible during presentation mode.
         AppConfig.pauseForResults();

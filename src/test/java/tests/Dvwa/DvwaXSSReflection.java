@@ -11,6 +11,7 @@ import org.testng.annotations.Test;
 import pom.Dvwa.LoginPage;
 import pom.Dvwa.SecurityPage;
 import utilities.ExcelFileReader;
+import utilities.ScreenshotManager;
 
 import java.time.Duration;
 
@@ -72,14 +73,18 @@ public class DvwaXSSReflection extends BaseDvwaTest {
             wait.until(ExpectedConditions.alertIsPresent());
 
             Alert alert = driver.switchTo().alert();
-            System.out.println("Visual Verification Confirmed: " + alert.getText());
+            String alertText = alert.getText();
+            System.out.println("Visual Verification Confirmed: " + alertText);
 
             alert.accept();
             xssExecuted = true;
+            ScreenshotManager.captureAlert(driver, alertText);
 
         } catch (org.openqa.selenium.TimeoutException e) {
             System.out.println("Payload execution blocked: " + e.getLocalizedMessage());
         }
+
+        if (!xssExecuted) ScreenshotManager.capture(driver);
 
         Assert.assertFalse(xssExecuted,
                 "Targeted XSS exploit successfully fired under setting [" + levelStr.toUpperCase() + "]");
