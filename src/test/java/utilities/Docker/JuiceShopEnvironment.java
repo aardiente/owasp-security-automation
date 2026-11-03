@@ -8,7 +8,7 @@ public class JuiceShopEnvironment extends DockerContainer
 {
     public JuiceShopEnvironment()
     {
-        super("bkimminich/juice-shop:latest", 3000);
+        super("bkimminich/juice-shop:v20.3.0", 3000);
     }
 
     public void startServer()
