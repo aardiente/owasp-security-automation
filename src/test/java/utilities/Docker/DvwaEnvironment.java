@@ -8,7 +8,7 @@ import java.time.Duration;
 public class DvwaEnvironment extends DockerContainer {
 
     public DvwaEnvironment() {
-        super("vulnerables/web-dvwa:latest", 80);
+        super("vulnerables/web-dvwa:1.9", 80);
     }
 
     @Override
