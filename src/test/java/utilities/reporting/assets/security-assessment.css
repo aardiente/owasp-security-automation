@@ -1,0 +1,370 @@
+:root {
+    color-scheme: light;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f7fb;
+    color: #172033;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    max-width: 1250px;
+    margin: 0 auto;
+    padding: 32px;
+}
+
+header, section {
+    background: #fff;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e7ef;
+    border-radius: 12px;
+}
+
+h1, h2 { margin-top: 0; }
+h1 { font-size: 28px; }
+h2 { font-size: 21px; }
+
+.note {
+    color: #58677c;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.card {
+    background: #f0f3f8;
+    padding: 17px 20px;
+    border-radius: 9px;
+}
+
+.card strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 27px;
+}
+
+.card span {
+    color: #526077;
+    font-size: 12px;
+}
+
+.finding-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.finding-controls input,
+.finding-controls select,
+.finding-controls button {
+    border: 1px solid #d7deea;
+    border-radius: 7px;
+    padding: 10px 12px;
+    background: #fff;
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+}
+
+.finding-controls input {
+    flex: 1;
+    min-width: 220px;
+}
+
+.finding-controls button { cursor: pointer; }
+.finding-controls button:hover { background: #eef2f8; }
+
+.finding-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.finding {
+    border: 1px solid #dfe5ee;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.finding[open] {
+    border-color: #acbdd7;
+    box-shadow: 0 3px 10px rgb(20 40 70 / 6%);
+}
+
+.finding-summary {
+    display: grid;
+    grid-template-columns: 105px minmax(0, 1fr) 115px 115px;
+    gap: 16px;
+    align-items: center;
+    padding: 17px 20px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.finding-summary::-webkit-details-marker { display: none; }
+.finding-summary:hover { background: #f8faff; }
+
+.finding-title {
+    min-width: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.finding-confidence {
+    color: #526077;
+    font-size: 13px;
+}
+
+.finding-toggle {
+    color: #235a9d;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.finding-toggle::before { content: "▸ "; }
+.finding[open] .finding-toggle::before { content: "▾ "; }
+
+.severity {
+    display: inline-block;
+    width: fit-content;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.risk-high { color: #a92721; background: #feeceb; }
+.risk-medium { color: #9c5900; background: #fff1d9; }
+.risk-low { color: #876700; background: #fff9d8; }
+.risk-info { color: #285c99; background: #eaf3ff; }
+
+.finding-body {
+    padding: 24px;
+    border-top: 1px solid #e4eaf2;
+    background: #fbfcff;
+}
+
+.evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.evidence-field {
+    min-width: 0;
+    padding: 14px;
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 8px;
+}
+
+.field-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #526077;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.field-value {
+    display: block;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.evidence-section { margin-top: 22px; }
+
+.evidence-section h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+.evidence-section p {
+    margin: 0;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+pre {
+    margin: 0;
+    padding: 15px;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: #eef2f7;
+    border: 1px solid #e1e6ef;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.empty-state {
+    padding: 20px;
+    text-align: center;
+    color: #526077;
+}
+
+.table-scroll { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid #e5e9ef;
+    overflow-wrap: anywhere;
+}
+
+th { background: #eef2f8; }
+.test-error { white-space: pre-wrap; }
+
+.passed { color: #168047; font-weight: 700; }
+.failed { color: #c62828; font-weight: 700; }
+.skipped { color: #986100; font-weight: 700; }
+
+@media (max-width: 760px) {
+    body { padding: 12px; }
+    header, section { padding: 18px; }
+
+    .finding-summary {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        padding: 15px;
+    }
+
+    .finding-summary .severity { grid-column: 1; grid-row: 1; }
+    .finding-confidence { grid-column: 2; grid-row: 1; }
+    .finding-title { grid-column: 1; grid-row: 2; }
+    .finding-toggle { grid-column: 2; grid-row: 2; }
+
+    .finding-body { padding: 15px; }
+    .evidence-grid { grid-template-columns: 1fr; }
+
+    .finding-controls input {
+        min-width: 100%;
+        flex-basis: 100%;
+    }
+}
+
+/* Full-width TestNG result cards, separate from the findings table. */
+.test-result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.test-result {
+    background: #fff;
+    border: 1px solid #dfe5ee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.test-result[open] { border-color: #acbdd7; }
+
+.test-result-summary {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) 100px 85px;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.test-result-summary::-webkit-details-marker { display: none; }
+.test-result-summary:hover { background: #f8faff; }
+
+.test-title {
+    font-weight: 600;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.test-variant { color: #526077; font-weight: 400; }
+.test-duration { font-size: 13px; color: #526077; text-align: right; }
+.test-toggle { color: #235a9d; font-size: 13px; text-align: right; }
+.test-toggle::before { content: "▸ "; }
+.test-result[open] .test-toggle::before { content: "▾ "; }
+
+.test-status {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.test-result-body {
+    background: #fbfcff;
+    border-top: 1px solid #e4eaf2;
+    padding: 20px;
+}
+
+.test-result-body h3 { margin: 16px 0 10px; font-size: 15px; }
+
+.test-evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.test-screenshot {
+    min-width: 0;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid #e1e6ef;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.test-screenshot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 520px;
+    object-fit: contain;
+    background: #f1f4f9;
+    border-radius: 5px;
+}
+
+.test-screenshot figcaption {
+    padding-top: 10px;
+    color: #526077;
+    font-size: 12px;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .test-result-summary {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .test-status { grid-column: 1; grid-row: 1; }
+    .test-duration { grid-column: 2; grid-row: 1; }
+    .test-title { grid-column: 1; grid-row: 2; }
+    .test-toggle { grid-column: 2; grid-row: 2; }
+    .test-result-body { padding: 14px; }
+}

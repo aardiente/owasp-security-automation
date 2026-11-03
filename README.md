@@ -3,7 +3,7 @@
 
 A Java-based security testing framework for automating vulnerability assessments, security challenges, and browser-based testing against intentionally vulnerable web applications.
 
-Built with **Java, Selenium WebDriver, TestNG, Maven, Docker, OWASP ZAP, and Ollama**.
+Built with **Java, Selenium WebDriver, TestNG, Maven, Docker/Testcontainers, and OWASP ZAP**, with experimental Ollama integration.
 
 **Project Status:** Active Development
 
@@ -62,7 +62,11 @@ Current testing capabilities include:
 - **Cross-Browser Support:** Provides Selenium driver creation for Chrome, Firefox, Edge, and Safari, subject to browser-specific limitations.
 - **Docker Integration:** Starts intentionally vulnerable applications in isolated containers.
 - **OWASP ZAP Integration:** Routes Selenium traffic through a security proxy.
-- **Separate ZAP Reports:** Generates independent HTML reports for DVWA and Juice Shop.
+- **Separate ZAP Reports:** Generates independent HTML and JSON reports for DVWA and Juice Shop.
+- **Automated Security Assessments:** Generates an assessment index, per-application HTML dashboards, and TestNG CSV results.
+- **ZAP Finding Details:** Shows severity, confidence, affected URLs, CWE, recommendations, and available request observations.
+- **Screenshot Evidence Links:** Associates TestNG executions with screenshots already captured by `ScreenshotManager`; no additional screenshot folder is created.
+- **Configurable Reporting:** Keeps application targets and reporting paths in `utilities.reporting/report-targets.properties`.
 - **Automated Screenshots:** Captures browser evidence during testing.
 - **SlowMo Debugging:** Optionally highlights and delays Selenium interactions.
 - **Result Display:** Uses `browser.showResultsMs` to keep JavaScript alerts and selected results visible during SlowMo demonstrations.
@@ -78,11 +82,11 @@ Install the following before running the framework:
 - Java Development Kit (JDK)
 - IntelliJ IDEA or another Java IDE
 - Maven or an IDE with Maven integration
-- Docker Desktop with the Docker engine running
+- A running Docker Engine (Docker Desktop on supported systems, or Docker Engine on Linux)
 - Google Chrome for ZAP-proxied tests
 - Browser drivers managed through Selenium Manager or the local environment
 
-Make sure Docker Desktop is running before executing container-dependent tests.
+Make sure the Docker daemon is running and accessible to your user before executing container-dependent tests. On Linux, verify the IDE has the same Docker access as a working terminal session.
 
 ---
 
@@ -257,6 +261,8 @@ The framework uses a shared Docker network to support communication between appl
 
 Container startup and shutdown are managed by the corresponding environment classes and TestNG lifecycle methods.
 
+`ZapManager.initZap()` also waits until the ZAP API responds to `core.version()` before registering the proxy as ready. This prevents the browser from being launched immediately after ZAP announces that it is listening but before its API is usable. If readiness never succeeds, initialization fails explicitly rather than silently proceeding to the UI tests.
+
 ---
 
 ## Running Tests
@@ -266,7 +272,7 @@ Tests can be executed individually through IntelliJ IDEA or using TestNG suite c
 ### IntelliJ IDEA
 
 1. Open the project in IntelliJ.
-2. Start Docker Desktop.
+2. Start Docker and verify your user account can access the daemon.
 3. Allow Maven dependencies to load.
 4. Confirm the desired settings in `config.properties`.
 5. Open the test class or TestNG suite XML.
@@ -321,8 +327,9 @@ The intended combined suite sequence is:
 7. Capture the final Score Board screenshot.
 8. Generate the Juice Shop ZAP report.
 9. Shut down the remaining containers.
+10. The registered TestNG reporters export execution results and generate the per-application security assessments and index.
 
-Application execution is separated to avoid mixing DVWA and Juice Shop traffic histories in the same ZAP report.
+Application execution is separated to avoid mixing DVWA and Juice Shop traffic histories in the same ZAP report. Reports are generated from suites that actually contain matching test results; a single-application run is not treated as a combined run.
 
 ### Interpreting TestNG Failures
 
@@ -338,38 +345,152 @@ DVWA Reflected XSS is exercised at LOW, MEDIUM, and HIGH security levels; SQL in
 
 ## OWASP ZAP Integration
 
-OWASP ZAP is used to intercept and analyze traffic generated during Selenium test execution.
+OWASP ZAP intercepts Selenium browser traffic and performs passive analysis on requests and responses observed during the tests.
 
 ### How It Works
 
-1. The framework starts the ZAP Docker environment.
-2. Selenium creates a Chrome browser configured to use the ZAP proxy.
-3. Browser traffic passes through ZAP.
-4. ZAP records HTTP requests and responses.
-5. ZAP performs passive analysis on observed traffic.
-6. At suite completion, the framework waits for pending passive scanning to finish.
-7. An HTML report is generated.
+1. Testcontainers starts the application and the ZAP container on a shared Docker network.
+2. `ZapManager.initZap()` confirms that the ZAP API responds before continuing.
+3. Selenium creates a Chrome browser configured to use the ZAP proxy.
+4. The application tests generate requests through that proxy.
+5. ZAP records traffic and performs passive analysis.
+6. During suite teardown, the framework waits for the passive-scan queue to empty.
+7. `ZapManager.generateReport()` exports application-specific ZAP HTML and JSON reports.
+8. The TestNG reporters use the available JSON and test results to generate the security assessment dashboards.
 
-### Separate Application Reports
+### Native ZAP Reports
 
-| Application | Output File |
+| Application | HTML report | JSON report |
+|---|---|---|
+| DVWA | `target/zap-dvwa.html` | `target/security-reports/zap-dvwa.json` |
+| OWASP Juice Shop | `target/zap-juiceshop.html` | `target/security-reports/zap-juiceshop.json` |
+
+The native ZAP HTML reports remain available independently of the new assessment dashboard.
+
+### ZAP Reporting Limitations
+
+- The default workflow intercepts test traffic and performs passive analysis; it is not a comprehensive active scan.
+- Findings depend on the requests exercised during the run and on which traffic passes through ZAP.
+- The presence of a ZAP alert does not independently confirm exploitability.
+- A successfully completed Juice Shop challenge does not necessarily produce a corresponding ZAP alert.
+- The reporter only displays findings for the application's configured ZAP site, excluding other hosts seen in the capture.
+- Report generation requires the corresponding test/scan lifecycle to finish; an unavailable or stale JSON file is reported rather than treated as a successful scan.
+
+---
+
+## Automated Security Assessment Reports
+
+The reporting module combines application-specific ZAP observations with TestNG execution results, then produces browser-viewable HTML reports. It supports both DVWA and OWASP Juice Shop without duplicating the reporter for each application.
+
+### Reporting Components
+
+| File | Responsibility |
 |---|---|
-| DVWA | `target/zap-dvwa.html` |
-| OWASP Juice Shop | `target/zap-juiceshop.html` |
+| `src/test/java/utilities/reporting/ReportingConfiguration.java` | Loads reporting configuration and resolves report, asset, and evidence locations. |
+| `src/test/java/utilities/reporting/SecurityAssessmentReporter.java` | Builds the per-application assessments and shared index. |
+| `src/test/java/utilities/reporting/TestNgResultsReporter.java` | Exports TestNG execution results as CSV. |
+| `src/test/java/utilities/reporting/report-targets.properties` | Declares application targets, package prefixes, scan inputs, and output filenames. |
+| `src/test/java/utilities/reporting/assets/security-assessment.css` | Styles dashboards, finding details, and expandable test evidence. |
+| `src/test/java/utilities/reporting/assets/security-assessment.js` | Controls finding search, severity filtering, and expand/collapse interactions. |
 
-Reports can be opened directly in a web browser.
+The reporters are registered through the existing TestNG service file:
 
-### Reporting Limitations
+`src/test/resources/META-INF/services/org.testng.ITestNGListener`
 
-The current ZAP integration focuses on browser traffic interception, passive scanning, and HTML report generation.
+The Java code generates the content; CSS and JavaScript remain separate files alongside the reporting classes, under the reporting package's `assets` directory. The reporter copies those assets to the generated report output so the HTML files can load them.
 
-- Automated active scanning is not currently part of the default reporting workflow.
-- Traffic that bypasses the configured ZAP proxy may not appear in reports.
-- Findings depend on the requests generated during the test run.
-- Successfully completing a Juice Shop challenge does not guarantee that ZAP will report a related vulnerability.
-- Reports are generated only when the relevant scanning and reporting lifecycle completes.
+### Generated Assessment Files
 
-Additional scanning and reporting functionality is planned.
+With the current reporting configuration and both suites executed, output includes:
+
+```text
+target/
+├── zap-dvwa.html
+├── zap-juiceshop.html
+├── screenshots/                         # Owned by ScreenshotManager
+│   ├── dvwa/
+│   └── juiceshop/
+└── security-reports/
+    ├── SecurityAssessment.html          # Index for executed applications
+    ├── SecurityAssessment-dvwa.html
+    ├── SecurityAssessment-juiceshop.html
+    ├── testng-results.csv
+    ├── zap-dvwa.json
+    ├── zap-juiceshop.json
+    └── assets/
+        ├── security-assessment.css
+        └── security-assessment.js
+```
+
+The index lists only configured applications whose tests were included in the current TestNG run. The corresponding application pages provide test counts, alert-severity summaries, and expandable details. Opening a generated HTML report does not require a running web server, provided its referenced assets and screenshots remain accessible at their relative locations.
+
+### Configuring Reporting
+
+**Configuration file:** `src/test/java/utilities/reporting/report-targets.properties`
+
+```properties
+report.outputDirectory=target/security-reports
+report.screenshotDirectory=target/screenshots
+report.zapDirectory=target/security-reports
+report.assetDirectory=assets
+report.indexFile=SecurityAssessment.html
+report.assessmentPattern=SecurityAssessment-{id}.html
+report.testResultsFile=testng-results.csv
+
+targets=juiceshop,dvwa
+
+target.juiceshop.title=OWASP Juice Shop
+target.juiceshop.package=tests.JuiceShop.
+target.juiceshop.site=http://juice-shop:3000
+target.juiceshop.zapFile=zap-juiceshop.json
+
+target.dvwa.title=DVWA
+target.dvwa.package=tests.Dvwa.
+target.dvwa.site=http://web-dvwa:80
+target.dvwa.zapFile=zap-dvwa.json
+```
+
+| Setting | Purpose |
+|---|---|
+| `report.outputDirectory` | Directory where the assessments, index, and TestNG CSV are written. |
+| `report.screenshotDirectory` | Read-only location of screenshots **already saved by `ScreenshotManager`**. This setting does not change screenshot capture or create a second screenshot store. |
+| `report.zapDirectory` | Directory from which the assessment reporter reads ZAP JSON reports. |
+| `report.assetDirectory` | Directory containing the CSS and JavaScript files relative to the reporting configuration. |
+| `report.indexFile` | Filename of the generated assessment index. |
+| `report.assessmentPattern` | Per-application filename template; `{id}` is replaced by the configured target ID. |
+| `report.testResultsFile` | Filename of the TestNG CSV export. |
+| `targets` | Comma-separated IDs of configured applications. |
+| `target.<id>.title` | Application display name. |
+| `target.<id>.package` | TestNG test class package prefix used to associate tests with the application. |
+| `target.<id>.site` | ZAP JSON site name/URL used to filter application findings. |
+| `target.<id>.zapFile` | ZAP JSON filename for the application. |
+
+To add another application, add its ID to `targets` and provide the corresponding `target.<id>.*` entries. Its tests and ZAP JSON report must also exist; declaring a target does not automatically create or start a new application test suite.
+
+The reporting configuration loader supports `-Dsecurity.reporting.config=/path/to/config.properties` when the configuration file is elsewhere, and `-Dsecurity.reporting.sourceRoot=...` when discovering the file under a different test-source root. These are **reporter-only** options.
+
+**Path coordination:** `report.zapDirectory` must point to where `ZapManager` actually exports JSON, and `report.screenshotDirectory` must point to where `ScreenshotManager` actually saves PNG files. Changing either reporter property by itself does not reconfigure those producers. The reporter reads the existing artifacts; it does not relocate or re-create them.
+
+### Findings and Evidence
+
+Each assessment shows ZAP findings grouped by their associated application, with a severity summary and interactive search/filter controls. Expanding a finding reveals:
+
+- Risk severity, confidence, and finding name.
+- Affected URL, HTTP method, and CWE identifier when present.
+- ZAP's description and recommended remediation.
+- Up to five individual request observations: URL, parameter/header, matched evidence, attack input, and ZAP's additional context when present.
+
+An alert may not contain a literal response-evidence excerpt. In that case, the report presents available request/context information and a validation note, rather than inventing evidence. Counts represent ZAP alert groups, not the number of independently confirmed vulnerabilities.
+
+### TestNG Results and Screenshot Links
+
+`TestNgResultsReporter` exports suite, test, class, method, status, duration, and error text to the CSV file. `SecurityAssessmentReporter` presents individual tests as expandable entries with their status, duration, error (if any), and screenshots when a matching image is available.
+
+**`ScreenshotManager` remains the sole owner of screenshot capture, storage, and naming.** The assessment only looks up and links existing PNG files; it does not capture screenshots, write a duplicate image directory, or change screenshot behavior. The current reporter determines image associations using test metadata, the screenshot naming conventions, and modification times. It excludes files outside the test's execution time to reduce the risk of linking outdated evidence.
+
+A screenshot may be absent if none was captured during that test, its filename cannot be associated safely, or its modification time is outside the test window. Missing screenshot links do not alter TestNG pass/fail status.
+
+**Interpretation:** A TestNG `PASSED` result, a ZAP detection, and a verified security challenge completion are distinct facts. The dashboard shows test execution and scan observations; it does not independently certify exploitability or challenge completion solely from a passed test or screenshot. In DVWA, some expected security findings are deliberately represented by failing assertions, as explained above.
 
 ---
 
@@ -388,27 +509,23 @@ The screenshot manager dynamically creates a directory for each application and 
 ### Screenshot Directory Structure
 
 ```text
-target/
-├── screenshots/
-│   ├── dvwa/
-│   │   ├── DvwaSqlInjection/
-│   │   │   ├── sqlInjection_Low-low-a82f34c5b012.png
-│   │   │   ├── sqlInjection_Low-low-b71e49a0c235.png
-│   │   │   └── sqlInjection_Low-low-c23d5087e941.png
-│   │   └── DvwaXSSReflection/
-│   │       ├── XSS_Reflected-low-b91f23a746c0.png
-│   │       ├── XSS_Reflected-medium-f834a903b572.png
-│   │       └── XSS_Reflected-high-714ca2bb5601.png
-│   └── juiceshop/
-│       └── JuiceShopChallengesTest/
-│           ├── testSqlInjectionLoginBypass-20261028-120000-1.png
-│           ├── testDomXssChallenge-20261028-120005-2.png
-│           └── testScoreBoardChallenge-20261028-120010-3.png
-├── zap-dvwa.html
-└── zap-juiceshop.html
+target/screenshots/
+├── dvwa/
+│   ├── DvwaSqlInjection/
+│   │   └── sqlInjection_Low-low-a82f34c5b012.png
+│   └── DvwaXSSReflection/
+│       ├── XSS_Reflected-low-b91f23a746c0.png
+│       └── XSS_Reflected-medium-f834a903b572.png
+└── juiceshop/
+    └── JuiceShopChallengesTest/
+        ├── testSqlInjectionLoginBypass.png
+        ├── testDomXssChallenge.png
+        └── testScoreBoardChallenge.png
 ```
 
-*Filenames are illustrative. Actual filenames depend on executed tests, DataProvider parameters, and timestamps.*
+*DVWA parameter hashes are illustrative. The class/method names reflect the existing test structure, and only executed tests produce screenshots.*
+
+The security assessment links to files here; it does **not** create an additional screenshot directory.
 
 ### DVWA Screenshot Evidence
 
@@ -462,7 +579,7 @@ Screenshot coverage includes:
 - Completed challenge verification
 - Final Score Board progress
 
-Juice Shop screenshot filenames include timestamps and sequence numbers to preserve captures from individual test executions.
+Juice Shop screenshot filenames use the TestNG method name (for example, `testScoreBoardChallenge.png`). Capturing the same test method in a later run overwrites its previous PNG. The manager also cleans up legacy timestamped Juice Shop screenshot files from its screenshot directory.
 
 ### Juice Shop Score Board
 
@@ -543,6 +660,20 @@ Verify that:
 - The suite completed its report-generation lifecycle.
 - The `target` directory is writable.
 
+### ZAP Proxy Readiness or Empty Browser Response
+
+If the browser shows `ERR_EMPTY_RESPONSE` or application elements never appear after container startup, ensure the current `ZapManager.initZap()` readiness check is present and succeeding. It must verify `client.core.version()` before Chrome is initialized. A container log line saying that ZAP is listening is not, by itself, sufficient evidence that the proxy API is ready. This readiness check addressed a startup timing issue observed for both DVWA and Juice Shop.
+
+Do not change Selenium selectors or add arbitrary waits to page objects to compensate for an unreachable setup or login page.
+
+### Security Assessment Missing or Incomplete
+
+- Confirm the TestNG service registration contains both reporting listeners and that `report-targets.properties` contains the target's test package prefix.
+- Confirm `report.zapDirectory` points to the ZAP JSON export location and the target's `zapFile` value matches the generated filename.
+- If the HTML renders without styling or controls, confirm the assets exist under the reporting package and were copied into the report output `assets` folder.
+- If findings show no sites, confirm the application generated traffic through ZAP and the scan export contains the configured target URL.
+- If screenshots are missing, check the existing `ScreenshotManager` output and confirm the PNG was captured during the same TestNG invocation. Do not create another screenshot folder.
+
 ---
 
 ## Development Roadmap
@@ -554,7 +685,13 @@ Verify that:
 - [x] Add configurable Selenium SlowMo behavior
 - [x] Add configurable result/alert presentation duration
 - [x] Verify the active DVWA security level using its security cookie
-- [x] Add separate DVWA and Juice Shop ZAP report generation
+- [x] Add separate DVWA and Juice Shop ZAP HTML and JSON report generation
+- [x] Add shared TestNG CSV reporting and per-application HTML assessment dashboards
+- [x] Add target-based ZAP finding filtering and expanded request observations
+- [x] Add expandable test results with links to existing screenshot evidence
+- [x] Separate assessment CSS and JavaScript from Java reporter source
+- [x] Add ZAP API readiness verification before initializing proxied browsers
+- [ ] Improve reporter integration with ScreenshotManager's storage API to avoid duplicating path/naming assumptions
 - [ ] Expand ZAP active scanning and security reporting
 - [ ] Add additional API security tests
 - [ ] Complete Ollama chatbot integration

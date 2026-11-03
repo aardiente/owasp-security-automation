@@ -21,14 +21,36 @@ public class ZapManager {
     private ZapManager() {}
 
     public static void initZap() {
-        if (zapEnvironment.get() == null) {
-            OWASPZapEnvironment env = new OWASPZapEnvironment();
-            env.startEnvironment();
-            zapEnvironment.set(env);
+        if (zapEnvironment.get() != null) return;
 
-            ClientApi client = new ClientApi(env.getHost(), env.getMappedPort(), null);
-            zapClient.set(client);
+        OWASPZapEnvironment env = new OWASPZapEnvironment();
+        env.startEnvironment();
+
+        ClientApi client = new ClientApi(env.getHost(), env.getMappedPort(), null);
+        Exception lastError = null;
+
+        // This was added to resolve issues created by the security reports being added.
+        for (int attempt = 0; attempt < 30; attempt++) {
+            try {
+                client.core.version();
+                zapEnvironment.set(env);
+                zapClient.set(client);
+                return;
+            } catch (Exception e) {
+                lastError = e;
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    env.stopEnvironment();
+                    throw new IllegalStateException("Interrupted while waiting for ZAP.", interrupted);
+                }
+            }
         }
+
+        env.stopEnvironment();
+        throw new IllegalStateException("ZAP API did not become ready.", lastError);
     }
 
     public static void initZapDriver() {
@@ -97,13 +119,29 @@ public class ZapManager {
                 recordsRemaining = Integer.parseInt(response.getValue());
             } while (recordsRemaining != 0);
 
-            byte[] report = client.core.htmlreport();
-            Path reportPath = Paths.get("target", fileName);
+            byte[] htmlReport = client.core.htmlreport();
+            Path htmlPath = Paths.get("target", fileName);
 
-            Files.createDirectories(reportPath.getParent());
-            Files.write(reportPath, report);
+            Files.createDirectories(htmlPath.getParent());
+            Files.write(htmlPath, htmlReport);
 
-            System.out.println("ZAP report generated: " + reportPath.toAbsolutePath());
+            System.out.println("ZAP report generated: " + htmlPath.toAbsolutePath());
+
+            String jsonFileName = fileName.endsWith(".html")
+                    ? fileName.substring(0, fileName.length() - 5) + ".json"
+                    : fileName + ".json";
+
+            Path jsonPath = Paths.get("target", "security-reports", jsonFileName);
+
+            try {
+                byte[] jsonReport = client.core.jsonreport();
+                Files.createDirectories(jsonPath.getParent());
+                Files.write(jsonPath, jsonReport);
+
+                System.out.println("[SECURITY REPORT] ZAP JSON saved: " + jsonPath.toAbsolutePath());
+            } catch (Exception e) {
+                System.err.println("[SECURITY REPORT] ZAP JSON export failed: " + e.getMessage());
+            }
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
