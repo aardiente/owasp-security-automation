@@ -1,3 +1,4 @@
+
 package utilities.reporting;
 
 import java.io.IOException;
@@ -90,6 +91,8 @@ final class ReportingConfiguration {
         if (value.isEmpty()) throw new IOException("Missing reporting property: " + key);
         return value;
     }
+
+    String optional(String key, String fallback) { return settings.getProperty(key, fallback).trim(); }
 
     Path reportDirectory() { return reportDirectory; }
     Path screenshotDirectory() { return screenshotDirectory; }

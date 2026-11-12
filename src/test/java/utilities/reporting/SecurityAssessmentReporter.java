@@ -1,3 +1,4 @@
+
 package utilities.reporting;
 
 import org.openqa.selenium.json.Json;
@@ -27,6 +28,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.EnumMap;
 
 public class SecurityAssessmentReporter implements IReporter {
 
@@ -34,9 +36,11 @@ public class SecurityAssessmentReporter implements IReporter {
     private record TestCase(String method, String className, String variant, String status,
                             long durationMs, long startMs, String error, List<String> screenshots) {}
     private record Finding(String name, int risk, String confidence, String url, String method,
-                           String evidence, String description, String solution, String cwe) {}
-    private record Scan(String status, String generated, List<Finding> findings) {}
-    private record Summary(Target target, long passed, long failed, long skipped, String scanStatus) {}
+                           String evidence, String description, String solution, String cwe, String reason) {}
+    private record Scan(String status, String generated, List<Finding> findings,
+                        List<Finding> review, List<Finding> suppressed, int excludedInstances) {}
+    private record Summary(Target target, long passed, long failed, long skipped, String scanStatus,
+                           int included, int review, int suppressed, int excludedInstances) {}
 
     @Override
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
@@ -61,7 +65,9 @@ public class SecurityAssessmentReporter implements IReporter {
                 long passed = tests.stream().filter(t -> t.status().equals("PASSED")).count();
                 long failed = tests.stream().filter(t -> t.status().equals("FAILED")).count();
                 long skipped = tests.stream().filter(t -> t.status().equals("SKIPPED")).count();
-                summaries.add(new Summary(target, passed, failed, skipped, scan.status()));
+                summaries.add(new Summary(target, passed, failed, skipped, scan.status(),
+                        scan.findings().size(), scan.review().size(), scan.suppressed().size(),
+                        scan.excludedInstances()));
                 System.out.println("[SECURITY REPORT] HTML saved: " + output.toAbsolutePath());
             }
 
@@ -213,16 +219,26 @@ public class SecurityAssessmentReporter implements IReporter {
         return text.replaceAll("[^A-Za-z0-9._-]", "_");
     }
 
+    private static Scan emptyScan(String status, String generated) {
+        return new Scan(status, generated, List.of(), List.of(), List.of(), 0);
+    }
+
     private static Scan loadScan(Target target, List<TestCase> tests, ReportingConfiguration config) {
         Path source;
         try {
             source = config.zapFile(target.zapFile());
         } catch (IOException e) {
-            return new Scan("Invalid ZAP report configuration: " + e.getMessage(), "Unavailable", List.of());
+            return emptyScan("Invalid ZAP report configuration: " + e.getMessage(), "Unavailable");
         }
-
         if (!Files.isRegularFile(source))
-            return new Scan("ZAP JSON unavailable: " + target.zapFile(), "Unavailable", List.of());
+            return emptyScan("ZAP JSON unavailable: " + target.zapFile(), "Unavailable");
+
+        FindingFilter filter;
+        try {
+            filter = new FindingFilter(config, target.id(), target.siteUrl());
+        } catch (IOException e) {
+            return emptyScan("Finding filter configuration invalid: " + e.getMessage(), "Unavailable");
+        }
 
         try {
             Map<?, ?> root = new Json().toType(Files.readString(source), Json.MAP_TYPE);
@@ -231,89 +247,84 @@ public class SecurityAssessmentReporter implements IReporter {
 
             long earliestTest = tests.stream().mapToLong(TestCase::startMs)
                     .filter(timestamp -> timestamp > 0).min().orElse(0);
-
             if (!created.isBlank() && earliestTest > 0 &&
                     Instant.parse(created).isBefore(Instant.ofEpochMilli(earliestTest).minus(Duration.ofMinutes(2))))
-                return new Scan("ZAP JSON predates this run; old findings excluded", generated, List.of());
+                return emptyScan("ZAP JSON predates this run; old findings excluded", generated);
 
-            List<Finding> findings = new ArrayList<>();
+            List<Finding> included = new ArrayList<>();
+            List<Finding> review = new ArrayList<>();
+            List<Finding> suppressed = new ArrayList<>();
+            int excludedInstances = 0;
             boolean foundTarget = false;
             Object sites = root.get("site");
 
             if (sites instanceof List<?> siteList) {
                 for (Object siteObject : siteList) {
                     if (!(siteObject instanceof Map<?, ?> site)) continue;
-                    if (!sameSite(value(site.get("@name")), target.siteUrl())) continue;
-
-                    foundTarget = true;
+                    String siteUrl = value(site.get("@name"));
+                    if (filter.matchesOrigin(siteUrl)) foundTarget = true;
                     Object rawAlerts = site.get("alerts");
                     if (!(rawAlerts instanceof List<?> alerts)) continue;
 
                     for (Object alertObject : alerts) {
                         if (!(alertObject instanceof Map<?, ?> alert)) continue;
+                        String pluginId = value(alert.get("pluginid"));
+                        Map<FindingFilter.Decision, List<Map<?, ?>>> grouped =
+                                new EnumMap<>(FindingFilter.Decision.class);
+                        Map<FindingFilter.Decision, String> reasons =
+                                new EnumMap<>(FindingFilter.Decision.class);
+                        Object rawInstances = alert.get("instances");
+                        if (!(rawInstances instanceof List<?> instances)) continue;
 
-                        Map<?, ?> first = firstInstance(alert);
-                        findings.add(new Finding(
-                                value(alert.get("name")),
-                                Integer.parseInt(value(alert.get("riskcode"))),
-                                confidenceLabel(value(alert.get("confidence"))),
-                                value(first.get("uri")),
-                                value(first.get("method")),
-                                buildEvidence(alert),
-                                plain(value(alert.get("desc"))),
-                                plain(value(alert.get("solution"))),
-                                value(alert.get("cweid"))
-                        ));
+                        for (Object rawInstance : instances) {
+                            if (!(rawInstance instanceof Map<?, ?> instance)) continue;
+                            FindingFilter.Classification c = filter.classify(value(instance.get("uri")), pluginId);
+                            if (c.decision() == FindingFilter.Decision.OUT_OF_SCOPE) {
+                                excludedInstances++;
+                                continue;
+                            }
+                            grouped.computeIfAbsent(c.decision(), ignored -> new ArrayList<>()).add(instance);
+                            reasons.putIfAbsent(c.decision(), c.reason());
+                        }
+
+                        for (var group : grouped.entrySet()) {
+                            Finding finding = createFinding(alert, group.getValue(), reasons.get(group.getKey()));
+                            switch (group.getKey()) {
+                                case INCLUDE -> included.add(finding);
+                                case REVIEW -> review.add(finding);
+                                case SUPPRESS -> suppressed.add(finding);
+                                default -> { }
+                            }
+                        }
                     }
                 }
             }
-
             if (!foundTarget)
                 return new Scan("Target site absent from ZAP JSON: " + target.siteUrl(),
-                        generated, List.of());
+                        generated, List.of(), List.of(), List.of(), excludedInstances);
 
-            findings.sort(Comparator.comparingInt(Finding::risk).reversed()
-                    .thenComparing(Finding::name));
-
-            return new Scan("ZAP findings loaded", generated, findings);
+            Comparator<Finding> order = Comparator.comparingInt(Finding::risk).reversed()
+                    .thenComparing(Finding::name);
+            included.sort(order);
+            review.sort(order);
+            suppressed.sort(order);
+            return new Scan("ZAP findings loaded", generated, included, review, suppressed, excludedInstances);
         } catch (Exception e) {
-            return new Scan("ZAP JSON parsing failed: " + e.getMessage(), "Unavailable", List.of());
+            return emptyScan("ZAP JSON parsing failed: " + e.getMessage(), "Unavailable");
         }
     }
 
-    private static boolean sameSite(String first, String second) {
-        try {
-            URI a = URI.create(first);
-            URI b = URI.create(second);
-
-            return a.getScheme().equalsIgnoreCase(b.getScheme()) &&
-                    a.getHost().equalsIgnoreCase(b.getHost()) &&
-                    effectivePort(a) == effectivePort(b);
-        } catch (Exception e) {
-            return first.replaceAll("/+$", "")
-                    .equalsIgnoreCase(second.replaceAll("/+$", ""));
-        }
+    private static Finding createFinding(Map<?, ?> alert, List<Map<?, ?>> instances, String reason) {
+        Map<?, ?> first = instances.get(0);
+        return new Finding(value(alert.get("name")), Integer.parseInt(value(alert.get("riskcode"))),
+                confidenceLabel(value(alert.get("confidence"))), value(first.get("uri")),
+                value(first.get("method")), buildEvidence(instances),
+                plain(value(alert.get("desc"))), plain(value(alert.get("solution"))),
+                value(alert.get("cweid")), reason == null ? "" : reason);
     }
 
-    private static int effectivePort(URI uri) {
-        if (uri.getPort() != -1) return uri.getPort();
-        return "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
-    }
-
-    private static Map<?, ?> firstInstance(Map<?, ?> alert) {
-        Object raw = alert.get("instances");
-
-        if (raw instanceof List<?> list && !list.isEmpty() &&
-                list.get(0) instanceof Map<?, ?> map)
-            return map;
-
-        return Map.of();
-    }
-
-    private static String buildEvidence(Map<?, ?> alert) {
-        Object raw = alert.get("instances");
-
-        if (!(raw instanceof List<?> instances) || instances.isEmpty())
+    private static String buildEvidence(List<Map<?, ?>> instances) {
+        if (instances.isEmpty())
             return "ZAP recorded this alert without individual request observations.";
 
         StringBuilder details = new StringBuilder();
@@ -321,7 +332,7 @@ public class SecurityAssessmentReporter implements IReporter {
         int limit = Math.min(instances.size(), 5);
 
         for (int i = 0; i < limit; i++) {
-            if (!(instances.get(i) instanceof Map<?, ?> instance)) continue;
+            Map<?, ?> instance = instances.get(i);
 
             if (details.length() > 0) details.append("\n\n");
             details.append("Observation ").append(i + 1).append("\n");
@@ -393,7 +404,13 @@ public class SecurityAssessmentReporter implements IReporter {
             card(html, count(scan.findings(), 2), "Medium");
             card(html, count(scan.findings(), 1), "Low");
             card(html, count(scan.findings(), 0), "Informational");
-            html.append("</div>");
+            html.append("</div><div class=\"cards\">");
+            card(html, scan.review().size(), "Needs validation");
+            card(html, scan.suppressed().size(), "Suppressed by rule");
+            card(html, scan.excludedInstances(), "Out-of-scope instances");
+            html.append("</div><p class=\"note\">Severity counts cover in-scope, unsuppressed alert groups only. " +
+                    "Filtering is request-level; the original ZAP JSON is retained. " +
+                    "Needs validation and suppressed findings are not certified false positives.</p>");
         }
 
         html.append("""
@@ -416,7 +433,23 @@ public class SecurityAssessmentReporter implements IReporter {
             appendFinding(html, finding);
 
         html.append("</div><p id=\"finding-empty\" class=\"empty-state\" hidden>")
-                .append("No matching findings.</p></section>");
+                .append("No matching findings.</p>");
+
+        html.append("<details class=\"filter-audit\"><summary><strong>Needs validation (" +
+                        scan.review().size() + ")</strong> — lower-signal findings</summary>")
+                .append("<p class=\"note\">These observations match configured review rules. " +
+                        "They remain available for manual validation, not marked false positives.</p>")
+                .append("<div class=\"finding-list\">");
+        for (Finding finding : scan.review()) appendFinding(html, finding);
+        html.append("</div></details>");
+
+        html.append("<details class=\"filter-audit\"><summary><strong>Suppressed by rule (" +
+                        scan.suppressed().size() + ")</strong></summary>")
+                .append("<p class=\"note\">These findings were hidden from the main severity totals " +
+                        "by explicit configuration, but remain available for audit here.</p>")
+                .append("<div class=\"finding-list\">");
+        for (Finding finding : scan.suppressed()) appendFinding(html, finding);
+        html.append("</div></details></section>");
 
         html.append("""
                 <section>
@@ -497,6 +530,10 @@ public class SecurityAssessmentReporter implements IReporter {
             card(html, summary.passed(), "Passed");
             card(html, summary.failed(), "Failed");
             card(html, summary.skipped(), "Skipped");
+            card(html, summary.included(), "In-scope findings");
+            card(html, summary.review(), "Needs validation");
+            card(html, summary.suppressed(), "Suppressed");
+            card(html, summary.excludedInstances(), "Out-of-scope instances");
 
             html.append("</div><p class=\"note\">")
                     .append(escape(summary.scanStatus()))
@@ -548,6 +585,7 @@ public class SecurityAssessmentReporter implements IReporter {
         field(html, "Confidence", finding.confidence());
 
         html.append("</div>");
+        if (!finding.reason().isBlank()) section(html, "Filter decision", finding.reason());
         section(html, "Description", finding.description());
 
         html.append("<div class=\"evidence-section\"><h3>ZAP Observations</h3><pre>")
