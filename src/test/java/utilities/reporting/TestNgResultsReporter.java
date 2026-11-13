@@ -1,3 +1,4 @@
+
 package utilities.reporting;
 
 import org.testng.IReporter;
@@ -6,6 +7,7 @@ import org.testng.ISuiteResult;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
 import org.testng.xml.XmlSuite;
+import utilities.ScreenshotManager;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,7 +22,7 @@ public class TestNgResultsReporter implements IReporter {
     @Override
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
         List<String> rows = new ArrayList<>();
-        rows.add("Suite,Test,Class,Method,Status,DurationMs,Error");
+        rows.add("Suite,Test,Class,Method,Status,DurationMs,Error,Screenshot");
 
         for (ISuite suite : suites) {
             for (ISuiteResult suiteResult : suite.getResults().values()) {
@@ -51,9 +53,12 @@ public class TestNgResultsReporter implements IReporter {
             long duration = Math.max(0, result.getEndMillis() - result.getStartMillis());
             String error = result.getThrowable() == null ? "" : result.getThrowable().toString();
 
+            Object captured = result.getAttribute(ScreenshotManager.EVIDENCE_ATTRIBUTE);
+            String screenshot = captured instanceof String filename ? filename : "";
+
             rows.add(String.join(",",
                     csv(suite), csv(test), csv(className), csv(method),
-                    csv(status), String.valueOf(duration), csv(error)));
+                    csv(status), String.valueOf(duration), csv(error), csv(screenshot)));
         }
     }
 

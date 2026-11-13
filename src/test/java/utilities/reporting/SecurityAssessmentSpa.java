@@ -1,3 +1,4 @@
+
 package utilities.reporting;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -185,13 +186,16 @@ public final class SecurityAssessmentSpa {
         if (rows.size() < 2) return new TestData(List.of(), List.of());
         List<String> headers = rows.get(0);
         List<Map<String, Object>> tests = new ArrayList<>();
+
         for (int r = 1; r < rows.size(); r++) {
             List<String> cells = rows.get(r);
             Map<String, String> row = new LinkedHashMap<>();
             for (int c = 0; c < headers.size(); c++)
                 row.put(headers.get(c), c < cells.size() ? cells.get(c) : "");
+
             String className = row.getOrDefault("Class", "");
             if (!className.startsWith(target.packagePrefix())) continue;
+
             String method = row.getOrDefault("Method", "");
             Map<String, Object> test = new LinkedHashMap<>();
             test.put("suite", row.getOrDefault("Suite", ""));
@@ -202,16 +206,24 @@ public final class SecurityAssessmentSpa {
             test.put("error", row.getOrDefault("Error", ""));
             test.put("screenshots", List.of());
             test.put("ambiguousEvidence", false);
+
+            if (headers.contains("Screenshot")) {
+                String screenshot = row.getOrDefault("Screenshot", "");
+                String link = screenshotLink(target, className, method, screenshot);
+                if (link != null) test.put("screenshots", List.of(link));
+            }
+
             tests.add(test);
         }
+
         tests.sort(Comparator.comparing(t -> str(t.get("method"))));
-        // The TestNG CSV omits invocation parameters. Only attach screenshots to an
-        // individual execution if that class/method appears exactly once.
+
         Map<String, List<Map<String, Object>>> grouped = new LinkedHashMap<>();
         for (Map<String, Object> test : tests) {
             String key = test.get("className") + "#" + test.get("method");
             grouped.computeIfAbsent(key, ignored -> new ArrayList<>()).add(test);
         }
+
         List<Map<String, Object>> evidence = new ArrayList<>();
         for (List<Map<String, Object>> executions : grouped.values()) {
             Map<String, Object> first = executions.get(0);
@@ -219,11 +231,33 @@ public final class SecurityAssessmentSpa {
             String method = str(first.get("method"));
             List<String> links = screenshotLinks(target, className, method);
             evidence.add(Map.of("className", className, "method", method, "screenshots", links));
-            if (executions.size() == 1) first.put("screenshots", links);
-            else for (Map<String, Object> test : executions)
-                test.put("ambiguousEvidence", !links.isEmpty());
+
+            // Older CSV exports lack per-execution screenshot references.
+            // Keep their method-level gallery without guessing which payload produced each PNG.
+            if (!headers.contains("Screenshot")) {
+                if (executions.size() == 1) first.put("screenshots", links);
+                else for (Map<String, Object> test : executions)
+                    test.put("ambiguousEvidence", !links.isEmpty());
+            }
         }
+
         return new TestData(tests, evidence);
+    }
+
+    private String screenshotLink(Target target, String className, String method, String filename) throws IOException {
+        if (filename == null || !filename.matches("[A-Za-z0-9._-]+\\.png")) return null;
+        if (!className.startsWith(target.packagePrefix())) return null;
+        if (!method.matches("[A-Za-z0-9_-]+")) return null;
+        String classShort = className.substring(className.lastIndexOf('.') + 1);
+        if (!classShort.matches("[A-Za-z0-9_-]+")) return null;
+        if (!filename.equals(method + ".png") && !filename.startsWith(method + "-")) return null;
+
+        Path base = config.screenshotDirectory().resolve(target.screenshotFolder()).resolve(classShort);
+        Path image = base.resolve(filename).normalize();
+        if (!Files.isRegularFile(image) || !image.toRealPath().startsWith(base.toRealPath())) return null;
+
+        return "/api/screenshots/" + encode(target.id()) + "/" +
+                encode(classShort) + "/" + encode(filename);
     }
 
     private List<String> screenshotLinks(Target target, String className, String method) throws IOException {
@@ -231,8 +265,10 @@ public final class SecurityAssessmentSpa {
         if (!method.matches("[A-Za-z0-9_-]+")) return List.of();
         String classShort = className.substring(className.lastIndexOf('.') + 1);
         if (!classShort.matches("[A-Za-z0-9_-]+")) return List.of();
+
         Path folder = config.screenshotDirectory().resolve(target.screenshotFolder()).resolve(classShort);
         if (!Files.isDirectory(folder)) return List.of();
+
         List<Path> matched;
         try (Stream<Path> files = Files.list(folder)) {
             matched = files.filter(Files::isRegularFile)
@@ -243,6 +279,7 @@ public final class SecurityAssessmentSpa {
                     .sorted((a, b) -> Long.compare(modified(b), modified(a)))
                     .limit(24).toList();
         }
+
         List<String> links = new ArrayList<>();
         for (Path p : matched) {
             links.add("/api/screenshots/" + encode(target.id()) + "/" +
@@ -254,16 +291,21 @@ public final class SecurityAssessmentSpa {
     private void serveScreenshot(HttpExchange exchange, String remaining) throws IOException {
         int slash = remaining.indexOf('/');
         if (slash < 0) { sendText(exchange, 404, "Not found"); return; }
+
         Target target = findTarget(remaining.substring(0, slash));
         if (target == null) { sendText(exchange, 404, "Unknown target"); return; }
+
         String subpath = URLDecoder.decode(remaining.substring(slash + 1).replace("+", "%2B"), StandardCharsets.UTF_8);
         Path base = config.screenshotDirectory().resolve(target.screenshotFolder()).toAbsolutePath().normalize();
         Path file = base.resolve(subpath).normalize();
+
         if (!Files.isDirectory(base) || !Files.isRegularFile(file) ||
                 !file.toRealPath().startsWith(base.toRealPath()) ||
                 !file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".png")) {
-            sendText(exchange, 404, "Screenshot not found"); return;
+            sendText(exchange, 404, "Screenshot not found");
+            return;
         }
+
         sendBytes(exchange, 200, "image/png", Files.readAllBytes(file));
     }
 
@@ -271,13 +313,16 @@ public final class SecurityAssessmentSpa {
         String path = rawPath.equals("/") ? config.required("report.spa.indexFile")
                 : URLDecoder.decode(rawPath.substring(1).replace("+", "%2B"), StandardCharsets.UTF_8);
         Path file = webDirectory.resolve(path).normalize();
+
         if (!Files.isRegularFile(file) || !file.toRealPath().startsWith(webDirectory.toRealPath())) {
-            sendText(exchange, 404, "Asset not found"); return;
+            sendText(exchange, 404, "Asset not found");
+            return;
         }
+
         String lower = file.getFileName().toString().toLowerCase(Locale.ROOT);
         String type = lower.endsWith(".html") ? "text/html; charset=utf-8" :
                 lower.endsWith(".css") ? "text/css; charset=utf-8" :
-                lower.endsWith(".js") ? "text/javascript; charset=utf-8" : "text/plain; charset=utf-8";
+                        lower.endsWith(".js") ? "text/javascript; charset=utf-8" : "text/plain; charset=utf-8";
         sendBytes(exchange, 200, type, Files.readAllBytes(file));
     }
 
@@ -297,7 +342,8 @@ public final class SecurityAssessmentSpa {
     }
 
     private void sendJson(HttpExchange exchange, int status, Object value) throws IOException {
-        sendBytes(exchange, status, "application/json; charset=utf-8", json.toJson(value).getBytes(StandardCharsets.UTF_8));
+        sendBytes(exchange, status, "application/json; charset=utf-8",
+                json.toJson(value).getBytes(StandardCharsets.UTF_8));
     }
 
     private static void sendText(HttpExchange exchange, int status, String message) throws IOException {
@@ -310,7 +356,9 @@ public final class SecurityAssessmentSpa {
         try (var output = exchange.getResponseBody()) { output.write(data); }
     }
 
-    private static String str(Object value) { return value == null ? "" : String.valueOf(value); }
+    private static String str(Object value) {
+        return value == null ? "" : String.valueOf(value);
+    }
 
     private static String cleanMarkup(String value) {
         return value.replaceAll("(?is)<(script|style)[^>]*>.*?</\\1>", " ")
@@ -320,18 +368,32 @@ public final class SecurityAssessmentSpa {
     }
 
     private static String severity(String risk) {
-        return switch (risk) { case "3" -> "High"; case "2" -> "Medium";
-            case "1" -> "Low"; default -> "Informational"; };
+        return switch (risk) {
+            case "3" -> "High";
+            case "2" -> "Medium";
+            case "1" -> "Low";
+            default -> "Informational";
+        };
     }
 
     private static int severityOrder(String value) {
-        return switch (value) { case "High" -> 0; case "Medium" -> 1;
-            case "Low" -> 2; default -> 3; };
+        return switch (value) {
+            case "High" -> 0;
+            case "Medium" -> 1;
+            case "Low" -> 2;
+            default -> 3;
+        };
     }
 
     private static String confidence(String value) {
-        return switch (value) { case "0" -> "False positive"; case "1" -> "Low";
-            case "2" -> "Medium"; case "3" -> "High"; case "4" -> "Confirmed"; default -> "Unknown"; };
+        return switch (value) {
+            case "0" -> "False positive";
+            case "1" -> "Low";
+            case "2" -> "Medium";
+            case "3" -> "High";
+            case "4" -> "Confirmed";
+            default -> "Unknown";
+        };
     }
 
     private static long modified(Path path) {
@@ -354,22 +416,34 @@ public final class SecurityAssessmentSpa {
         List<String> row = new ArrayList<>();
         StringBuilder field = new StringBuilder();
         boolean quoted = false;
+
         for (int i = 0; i < content.length(); i++) {
             char c = content.charAt(i);
             if (c == '"') {
                 if (quoted && i + 1 < content.length() && content.charAt(i + 1) == '"') {
                     field.append('"'); i++;
-                } else quoted = !quoted;
+                } else {
+                    quoted = !quoted;
+                }
             } else if (c == ',' && !quoted) {
-                row.add(field.toString()); field.setLength(0);
+                row.add(field.toString());
+                field.setLength(0);
             } else if ((c == '\n' || c == '\r') && !quoted) {
                 if (c == '\r' && i + 1 < content.length() && content.charAt(i + 1) == '\n') i++;
-                row.add(field.toString()); field.setLength(0);
+                row.add(field.toString());
+                field.setLength(0);
                 if (!(row.size() == 1 && row.get(0).isEmpty())) rows.add(row);
                 row = new ArrayList<>();
-            } else field.append(c);
+            } else {
+                field.append(c);
+            }
         }
-        if (!row.isEmpty() || field.length() > 0) { row.add(field.toString()); rows.add(row); }
+
+        if (!row.isEmpty() || field.length() > 0) {
+            row.add(field.toString());
+            rows.add(row);
+        }
+
         return rows;
     }
 }

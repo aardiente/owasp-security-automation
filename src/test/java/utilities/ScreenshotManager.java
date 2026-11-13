@@ -36,6 +36,8 @@ import java.util.stream.Stream;
 
 public class ScreenshotManager {
 
+    public static final String EVIDENCE_ATTRIBUTE = "screenshot.evidenceFile";
+
     private static final Path SCREENSHOT_DIR = Path.of("target", "screenshots");
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS");
     private static final AtomicLong SEQUENCE = new AtomicLong();
@@ -51,6 +53,7 @@ public class ScreenshotManager {
             byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
             Files.write(screenshotPath, screenshot);
             cleanupLegacyJuiceScreenshots(screenshotPath);
+            recordEvidence(screenshotPath);
             System.out.println("[SCREENSHOT] Saved: " + screenshotPath.toAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save screenshot: " + screenshotPath, e);
@@ -82,6 +85,7 @@ public class ScreenshotManager {
             byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
             Files.write(screenshotPath, screenshot);
             cleanupLegacyJuiceScreenshots(screenshotPath);
+            recordEvidence(screenshotPath);
 
             System.out.println("[SQLi SCREENSHOT] Full webpage saved: " + screenshotPath.toAbsolutePath());
 
@@ -92,6 +96,7 @@ public class ScreenshotManager {
                 Path fallback = nextScreenshotPath();
                 Files.write(fallback, ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES));
                 cleanupLegacyJuiceScreenshots(fallback);
+                recordEvidence(fallback);
                 System.out.println("[SQLi SCREENSHOT] Browser fallback saved: " + fallback.toAbsolutePath());
             } catch (Exception fallbackError) {
                 System.out.println("[SQLi SCREENSHOT] Unable to save screenshot: " + fallbackError.getMessage());
@@ -130,7 +135,9 @@ public class ScreenshotManager {
                 graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
                 graphics.drawString("DVWA Reflected XSS - Alert Detected", 20, 35);
 
-                graphics.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
+                graphics.setFont(Font.getFont(Font.SANS_SERIF, null) == null
+                        ? new Font(Font.MONOSPACED, Font.PLAIN, 16)
+                        : new Font(Font.MONOSPACED, Font.PLAIN, 16));
                 String message = "Alert: " + alertText.replace("\n", "\\n").replace("\r", "\\r");
 
                 while (message.length() > 1
@@ -149,12 +156,18 @@ public class ScreenshotManager {
             }
 
             cleanupLegacyJuiceScreenshots(screenshotPath);
+            recordEvidence(screenshotPath);
             System.out.println("[XSS SCREENSHOT] Saved: " + screenshotPath.toAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save XSS screenshot.", e);
         }
 
         showResult(driver, screenshotPath);
+    }
+
+    private static void recordEvidence(Path screenshotPath) {
+        ITestResult result = Reporter.getCurrentTestResult();
+        if (result != null) result.setAttribute(EVIDENCE_ATTRIBUTE, screenshotPath.getFileName().toString());
     }
 
     private static Path nextScreenshotPath() {
