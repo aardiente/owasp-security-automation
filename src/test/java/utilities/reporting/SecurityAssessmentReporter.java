@@ -1,3 +1,4 @@
+
 package utilities.reporting;
 
 import org.openqa.selenium.json.Json;
@@ -16,17 +17,18 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.HexFormat;
-import java.util.Locale;
-import java.util.stream.Stream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class SecurityAssessmentReporter implements IReporter {
 
@@ -34,9 +36,11 @@ public class SecurityAssessmentReporter implements IReporter {
     private record TestCase(String method, String className, String variant, String status,
                             long durationMs, long startMs, String error, List<String> screenshots) {}
     private record Finding(String name, int risk, String confidence, String url, String method,
-                           String evidence, String description, String solution, String cwe) {}
-    private record Scan(String status, String generated, List<Finding> findings) {}
-    private record Summary(Target target, long passed, long failed, long skipped, String scanStatus) {}
+                           String evidence, String description, String solution, String cwe, String reason) {}
+    private record Scan(String status, String generated, List<Finding> findings,
+                        List<Finding> review, List<Finding> suppressed, int excludedInstances) {}
+    private record Summary(Target target, long passed, long failed, long skipped, String scanStatus,
+                           int included, int review, int suppressed, int excludedInstances) {}
 
     @Override
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
@@ -47,21 +51,28 @@ public class SecurityAssessmentReporter implements IReporter {
             List<Path> assets = copyAssets(config);
 
             List<Summary> summaries = new ArrayList<>();
+
             for (Target target : targets) {
                 List<TestCase> tests = collectTests(suites, target.packagePrefix(), config);
                 if (tests.isEmpty()) continue;
 
                 tests.sort(Comparator.comparingLong(TestCase::startMs)
                         .thenComparing(TestCase::method).thenComparing(TestCase::variant));
+
                 Scan scan = loadScan(target, tests, config);
                 Path output = config.assessmentFile(target.id());
+
                 Files.writeString(output, buildReport(target, tests, scan, config, assets),
                         StandardCharsets.UTF_8);
 
                 long passed = tests.stream().filter(t -> t.status().equals("PASSED")).count();
                 long failed = tests.stream().filter(t -> t.status().equals("FAILED")).count();
                 long skipped = tests.stream().filter(t -> t.status().equals("SKIPPED")).count();
-                summaries.add(new Summary(target, passed, failed, skipped, scan.status()));
+
+                summaries.add(new Summary(target, passed, failed, skipped, scan.status(),
+                        scan.findings().size(), scan.review().size(), scan.suppressed().size(),
+                        scan.excludedInstances()));
+
                 System.out.println("[SECURITY REPORT] HTML saved: " + output.toAbsolutePath());
             }
 
@@ -72,6 +83,7 @@ public class SecurityAssessmentReporter implements IReporter {
 
             Path index = config.reportDirectory().resolve(config.indexFile());
             Files.writeString(index, buildIndex(summaries, config, assets), StandardCharsets.UTF_8);
+
             System.out.println("[SECURITY REPORT] Assessment index saved: " + index.toAbsolutePath());
         } catch (Exception e) {
             System.err.println("[SECURITY REPORT] HTML generation failed: " + e.getMessage());
@@ -84,10 +96,12 @@ public class SecurityAssessmentReporter implements IReporter {
 
         for (String raw : config.required("targets").split(",")) {
             String id = raw.trim();
+
             if (!id.matches("[a-zA-Z0-9_-]+"))
                 throw new IOException("Invalid reporting target ID: " + id);
 
             String key = "target." + id + ".";
+
             targets.add(new Target(id, config.required(key + "title"),
                     config.required(key + "package"), config.required(key + "site"),
                     config.required(key + "zapFile")));
@@ -103,6 +117,7 @@ public class SecurityAssessmentReporter implements IReporter {
         for (ISuite suite : suites) {
             for (ISuiteResult suiteResult : suite.getResults().values()) {
                 ITestContext context = suiteResult.getTestContext();
+
                 collect(tests, context.getPassedTests().getAllResults(), "PASSED", packagePrefix, config);
                 collect(tests, context.getFailedTests().getAllResults(), "FAILED", packagePrefix, config);
                 collect(tests, context.getSkippedTests().getAllResults(), "SKIPPED", packagePrefix, config);
@@ -144,11 +159,13 @@ public class SecurityAssessmentReporter implements IReporter {
         Path folder = config.screenshotDirectory()
                 .resolve(sanitize(application.toLowerCase(Locale.ROOT)))
                 .resolve(sanitize(result.getTestClass().getRealClass().getSimpleName()));
+
         if (!Files.isDirectory(folder)) return List.of();
 
         String method = sanitize(result.getMethod().getMethodName());
         Object[] parameters = result.getParameters();
         if (parameters == null) parameters = new Object[0];
+
         String filename = parameters.length == 0 ? method + ".png"
                 : method + "-" + sanitize(String.valueOf(parameters[0])) +
                 "-" + parameterHash(parameters) + ".png";
@@ -156,10 +173,9 @@ public class SecurityAssessmentReporter implements IReporter {
         List<Path> matches = new ArrayList<>();
         Path exact = folder.resolve(filename);
 
-        if (Files.isRegularFile(exact) && capturedDuring(exact, result)) matches.add(exact);
+        if (Files.isRegularFile(exact) && capturedDuring(exact, result))
+            matches.add(exact);
 
-        // Unknown future applications can use timestamped filenames, but only for
-        // non-parameterized tests; never guess which payload produced an image.
         if (matches.isEmpty() && parameters.length == 0) {
             try (Stream<Path> files = Files.list(folder)) {
                 matches.addAll(files.filter(Files::isRegularFile)
@@ -173,10 +189,12 @@ public class SecurityAssessmentReporter implements IReporter {
         }
 
         List<String> links = new ArrayList<>();
+
         for (Path match : matches) {
             try {
                 String relative = config.reportDirectory().toAbsolutePath().normalize()
                         .relativize(match.toAbsolutePath().normalize()).toString().replace('\\', '/');
+
                 links.add(new URI(null, null, relative, null, null).toASCIIString());
             } catch (Exception e) {
                 System.err.println("[SECURITY REPORT] Screenshot link failed: " + e.getMessage());
@@ -203,6 +221,7 @@ public class SecurityAssessmentReporter implements IReporter {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest(Arrays.deepToString(parameters).getBytes(StandardCharsets.UTF_8));
+
             return HexFormat.of().formatHex(Arrays.copyOf(digest, 6));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is unavailable.", e);
@@ -213,16 +232,29 @@ public class SecurityAssessmentReporter implements IReporter {
         return text.replaceAll("[^A-Za-z0-9._-]", "_");
     }
 
+    private static Scan emptyScan(String status, String generated) {
+        return new Scan(status, generated, List.of(), List.of(), List.of(), 0);
+    }
+
     private static Scan loadScan(Target target, List<TestCase> tests, ReportingConfiguration config) {
         Path source;
+
         try {
             source = config.zapFile(target.zapFile());
         } catch (IOException e) {
-            return new Scan("Invalid ZAP report configuration: " + e.getMessage(), "Unavailable", List.of());
+            return emptyScan("Invalid ZAP report configuration: " + e.getMessage(), "Unavailable");
         }
 
         if (!Files.isRegularFile(source))
-            return new Scan("ZAP JSON unavailable: " + target.zapFile(), "Unavailable", List.of());
+            return emptyScan("ZAP JSON unavailable: " + target.zapFile(), "Unavailable");
+
+        FindingFilter filter;
+
+        try {
+            filter = new FindingFilter(config, target.id(), target.siteUrl());
+        } catch (IOException e) {
+            return emptyScan("Finding filter configuration invalid: " + e.getMessage(), "Unavailable");
+        }
 
         try {
             Map<?, ?> root = new Json().toType(Files.readString(source), Json.MAP_TYPE);
@@ -234,86 +266,111 @@ public class SecurityAssessmentReporter implements IReporter {
 
             if (!created.isBlank() && earliestTest > 0 &&
                     Instant.parse(created).isBefore(Instant.ofEpochMilli(earliestTest).minus(Duration.ofMinutes(2))))
-                return new Scan("ZAP JSON predates this run; old findings excluded", generated, List.of());
+                return emptyScan("ZAP JSON predates this run; old findings excluded", generated);
 
-            List<Finding> findings = new ArrayList<>();
+            List<Finding> included = new ArrayList<>();
+            List<Finding> review = new ArrayList<>();
+            List<Finding> suppressed = new ArrayList<>();
+            int excludedInstances = 0;
             boolean foundTarget = false;
+
             Object sites = root.get("site");
 
             if (sites instanceof List<?> siteList) {
                 for (Object siteObject : siteList) {
                     if (!(siteObject instanceof Map<?, ?> site)) continue;
-                    if (!sameSite(value(site.get("@name")), target.siteUrl())) continue;
 
-                    foundTarget = true;
+                    String siteUrl = value(site.get("@name"));
+                    if (filter.matchesOrigin(siteUrl)) foundTarget = true;
+
                     Object rawAlerts = site.get("alerts");
                     if (!(rawAlerts instanceof List<?> alerts)) continue;
 
                     for (Object alertObject : alerts) {
                         if (!(alertObject instanceof Map<?, ?> alert)) continue;
 
-                        Map<?, ?> first = firstInstance(alert);
-                        findings.add(new Finding(
-                                value(alert.get("name")),
-                                Integer.parseInt(value(alert.get("riskcode"))),
-                                confidenceLabel(value(alert.get("confidence"))),
-                                value(first.get("uri")),
-                                value(first.get("method")),
-                                buildEvidence(alert),
-                                plain(value(alert.get("desc"))),
-                                plain(value(alert.get("solution"))),
-                                value(alert.get("cweid"))
-                        ));
+                        String pluginId = value(alert.get("pluginid"));
+                        String findingName = value(alert.get("name"));
+
+                        if (findingName.isBlank())
+                            findingName = value(alert.get("alert"));
+
+                        Map<FindingFilter.Decision, List<Map<?, ?>>> grouped =
+                                new EnumMap<>(FindingFilter.Decision.class);
+
+                        Map<FindingFilter.Decision, String> reasons =
+                                new EnumMap<>(FindingFilter.Decision.class);
+
+                        Object rawInstances = alert.get("instances");
+                        if (!(rawInstances instanceof List<?> instances)) continue;
+
+                        for (Object rawInstance : instances) {
+                            if (!(rawInstance instanceof Map<?, ?> instance)) continue;
+
+                            FindingFilter.Classification classification =
+                                    filter.classify(value(instance.get("uri")), pluginId, findingName);
+
+                            if (classification.decision() == FindingFilter.Decision.OUT_OF_SCOPE) {
+                                excludedInstances++;
+                                continue;
+                            }
+
+                            grouped.computeIfAbsent(classification.decision(),
+                                    ignored -> new ArrayList<>()).add(instance);
+
+                            reasons.putIfAbsent(classification.decision(), classification.reason());
+                        }
+
+                        for (var group : grouped.entrySet()) {
+                            Finding finding = createFinding(alert, group.getValue(),
+                                    reasons.get(group.getKey()));
+
+                            switch (group.getKey()) {
+                                case INCLUDE -> included.add(finding);
+                                case REVIEW -> review.add(finding);
+                                case SUPPRESS -> suppressed.add(finding);
+                                default -> { }
+                            }
+                        }
                     }
                 }
             }
 
             if (!foundTarget)
                 return new Scan("Target site absent from ZAP JSON: " + target.siteUrl(),
-                        generated, List.of());
+                        generated, List.of(), List.of(), List.of(), excludedInstances);
 
-            findings.sort(Comparator.comparingInt(Finding::risk).reversed()
-                    .thenComparing(Finding::name));
+            Comparator<Finding> order = Comparator.comparingInt(Finding::risk).reversed()
+                    .thenComparing(Finding::name);
 
-            return new Scan("ZAP findings loaded", generated, findings);
+            included.sort(order);
+            review.sort(order);
+            suppressed.sort(order);
+
+            return new Scan("ZAP findings loaded", generated, included, review,
+                    suppressed, excludedInstances);
         } catch (Exception e) {
-            return new Scan("ZAP JSON parsing failed: " + e.getMessage(), "Unavailable", List.of());
+            return emptyScan("ZAP JSON parsing failed: " + e.getMessage(), "Unavailable");
         }
     }
 
-    private static boolean sameSite(String first, String second) {
-        try {
-            URI a = URI.create(first);
-            URI b = URI.create(second);
+    private static Finding createFinding(Map<?, ?> alert, List<Map<?, ?>> instances, String reason) {
+        Map<?, ?> first = instances.get(0);
 
-            return a.getScheme().equalsIgnoreCase(b.getScheme()) &&
-                    a.getHost().equalsIgnoreCase(b.getHost()) &&
-                    effectivePort(a) == effectivePort(b);
-        } catch (Exception e) {
-            return first.replaceAll("/+$", "")
-                    .equalsIgnoreCase(second.replaceAll("/+$", ""));
-        }
+        return new Finding(value(alert.get("name")),
+                Integer.parseInt(value(alert.get("riskcode"))),
+                confidenceLabel(value(alert.get("confidence"))),
+                value(first.get("uri")),
+                value(first.get("method")),
+                buildEvidence(instances),
+                plain(value(alert.get("desc"))),
+                plain(value(alert.get("solution"))),
+                value(alert.get("cweid")),
+                reason == null ? "" : reason);
     }
 
-    private static int effectivePort(URI uri) {
-        if (uri.getPort() != -1) return uri.getPort();
-        return "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
-    }
-
-    private static Map<?, ?> firstInstance(Map<?, ?> alert) {
-        Object raw = alert.get("instances");
-
-        if (raw instanceof List<?> list && !list.isEmpty() &&
-                list.get(0) instanceof Map<?, ?> map)
-            return map;
-
-        return Map.of();
-    }
-
-    private static String buildEvidence(Map<?, ?> alert) {
-        Object raw = alert.get("instances");
-
-        if (!(raw instanceof List<?> instances) || instances.isEmpty())
+    private static String buildEvidence(List<Map<?, ?>> instances) {
+        if (instances.isEmpty())
             return "ZAP recorded this alert without individual request observations.";
 
         StringBuilder details = new StringBuilder();
@@ -321,7 +378,7 @@ public class SecurityAssessmentReporter implements IReporter {
         int limit = Math.min(instances.size(), 5);
 
         for (int i = 0; i < limit; i++) {
-            if (!(instances.get(i) instanceof Map<?, ?> instance)) continue;
+            Map<?, ?> instance = instances.get(i);
 
             if (details.length() > 0) details.append("\n\n");
             details.append("Observation ").append(i + 1).append("\n");
@@ -332,6 +389,7 @@ public class SecurityAssessmentReporter implements IReporter {
             appendLine(details, "Parameter/Header", value(instance.get("param")));
 
             String matched = value(instance.get("evidence"));
+
             if (!matched.isBlank()) {
                 appendLine(details, "Matched Evidence", matched);
                 literalEvidence = true;
@@ -365,7 +423,8 @@ public class SecurityAssessmentReporter implements IReporter {
         long screenshots = tests.stream().mapToLong(t -> t.screenshots().size()).sum();
 
         StringBuilder html = new StringBuilder(35000);
-        html.append(pageStart(target.title() + " Security Assessment", true, assets, config.assetFolderName()));
+        html.append(pageStart(target.title() + " Security Assessment", true,
+                assets, config.assetFolderName()));
 
         html.append("<header><h1>").append(escape(target.title()))
                 .append(" Security Assessment</h1>")
@@ -389,11 +448,23 @@ public class SecurityAssessmentReporter implements IReporter {
 
         if (scan.status().equals("ZAP findings loaded")) {
             html.append("<div class=\"cards\">");
+
             card(html, count(scan.findings(), 3), "High");
             card(html, count(scan.findings(), 2), "Medium");
             card(html, count(scan.findings(), 1), "Low");
             card(html, count(scan.findings(), 0), "Informational");
-            html.append("</div>");
+
+            html.append("</div><div class=\"cards\">");
+
+            card(html, scan.review().size(), "Needs validation");
+            card(html, scan.suppressed().size(), "Suppressed by rule");
+            card(html, scan.excludedInstances(), "Out-of-scope instances");
+
+            html.append("</div><p class=\"note\">")
+                    .append("Severity counts cover in-scope, unsuppressed alert groups only. ")
+                    .append("Filtering is request-level; the original ZAP JSON is retained. ")
+                    .append("Needs validation and suppressed findings are not certified false positives.")
+                    .append("</p>");
         }
 
         html.append("""
@@ -416,7 +487,31 @@ public class SecurityAssessmentReporter implements IReporter {
             appendFinding(html, finding);
 
         html.append("</div><p id=\"finding-empty\" class=\"empty-state\" hidden>")
-                .append("No matching findings.</p></section>");
+                .append("No matching findings.</p>");
+
+        html.append("<details class=\"filter-audit\"><summary><strong>Needs validation (")
+                .append(scan.review().size())
+                .append(")</strong> — lower-signal findings</summary>")
+                .append("<p class=\"note\">These observations match configured review rules. ")
+                .append("They remain available for manual validation, not marked false positives.</p>")
+                .append("<div class=\"finding-list\">");
+
+        for (Finding finding : scan.review())
+            appendFinding(html, finding);
+
+        html.append("</div></details>");
+
+        html.append("<details class=\"filter-audit\"><summary><strong>Suppressed by rule (")
+                .append(scan.suppressed().size())
+                .append(")</strong></summary>")
+                .append("<p class=\"note\">These findings were hidden from the main severity totals ")
+                .append("by explicit configuration, but remain available for audit here.</p>")
+                .append("<div class=\"finding-list\">");
+
+        for (Finding finding : scan.suppressed())
+            appendFinding(html, finding);
+
+        html.append("</div></details></section>");
 
         html.append("""
                 <section>
@@ -463,6 +558,7 @@ public class SecurityAssessmentReporter implements IReporter {
             html.append("<p class=\"note\">No screenshot captured during this test execution.</p>");
         } else {
             html.append("<div class=\"test-evidence-grid\">");
+
             for (String screenshot : test.screenshots()) {
                 html.append("<figure class=\"test-screenshot\"><a href=\"")
                         .append(escape(screenshot))
@@ -472,6 +568,7 @@ public class SecurityAssessmentReporter implements IReporter {
                         .append(escape(test.method())).append("\"></a>")
                         .append("<figcaption>View full-size screenshot</figcaption></figure>");
             }
+
             html.append("</div>");
         }
 
@@ -481,13 +578,16 @@ public class SecurityAssessmentReporter implements IReporter {
     private static String buildIndex(List<Summary> summaries, ReportingConfiguration config,
                                      List<Path> assets) throws IOException {
         StringBuilder html = new StringBuilder(4000);
-        html.append(pageStart("Security Assessment Index", false, assets, config.assetFolderName()));
+        html.append(pageStart("Security Assessment Index", false,
+                assets, config.assetFolderName()));
 
         html.append("<header><h1>Security Assessments</h1>")
                 .append("<p>Automated TestNG and ZAP results by application.</p></header>");
 
         for (Summary summary : summaries) {
-            String assessmentName = config.assessmentFile(summary.target().id()).getFileName().toString();
+            String assessmentName = config.assessmentFile(summary.target().id())
+                    .getFileName().toString();
+
             html.append("<section><h2><a href=\"").append(escape(assessmentName))
                     .append("\">").append(escape(summary.target().title())).append("</a></h2>")
                     .append("<p class=\"note\">")
@@ -497,6 +597,10 @@ public class SecurityAssessmentReporter implements IReporter {
             card(html, summary.passed(), "Passed");
             card(html, summary.failed(), "Failed");
             card(html, summary.skipped(), "Skipped");
+            card(html, summary.included(), "In-scope findings");
+            card(html, summary.review(), "Needs validation");
+            card(html, summary.suppressed(), "Suppressed");
+            card(html, summary.excludedInstances(), "Out-of-scope instances");
 
             html.append("</div><p class=\"note\">")
                     .append(escape(summary.scanStatus()))
@@ -510,6 +614,7 @@ public class SecurityAssessmentReporter implements IReporter {
     private static String pageStart(String title, boolean interactive, List<Path> assets,
                                     String assetFolder) {
         StringBuilder head = new StringBuilder();
+
         head.append("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\">")
                 .append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">")
                 .append("<title>").append(escape(title)).append("</title>");
@@ -548,6 +653,10 @@ public class SecurityAssessmentReporter implements IReporter {
         field(html, "Confidence", finding.confidence());
 
         html.append("</div>");
+
+        if (!finding.reason().isBlank())
+            section(html, "Filter decision", finding.reason());
+
         section(html, "Description", finding.description());
 
         html.append("<div class=\"evidence-section\"><h3>ZAP Observations</h3><pre>")
@@ -623,6 +732,7 @@ public class SecurityAssessmentReporter implements IReporter {
     private static List<Path> copyAssets(ReportingConfiguration config) throws IOException {
         List<Path> assets = config.assets();
         Path destination = config.reportDirectory().resolve(config.assetFolderName());
+
         Files.createDirectories(destination);
 
         for (Path source : assets)
