@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Security Assessment | Automation</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">◈</span><div><strong>SECURITY<span> / </span>LAB</strong><small>Assessment platform</small></div></div>
+      <div class="sidebar-label">WORKSPACE</div>
+      <div class="workspace-select"><label for="target-select">Target application</label><select id="target-select"><option>Loading targets…</option></select></div>
+      <div class="sidebar-label sidebar-section">REPORTING</div>
+      <nav aria-label="Assessment navigation">
+        <button class="nav-item active" data-view="overview" type="button"><span>▦</span> Overview</button>
+        <button class="nav-item" data-view="findings" type="button"><span>◇</span> Security findings <span id="nav-findings-count" class="nav-count">—</span></button>
+        <button class="nav-item" data-view="tests" type="button"><span>☑</span> Automated tests</button>
+        <button class="nav-item" data-view="evidence" type="button"><span>▧</span> Evidence library</button>
+      </nav>
+      <div class="sidebar-bottom"><div class="live-dot"></div><div><strong>Local assessment</strong><small>Read-only · JSON-backed</small></div></div>
+    </aside>
+    <main class="main">
+      <div class="topbar"><span>WORKSPACE <span class="chevron">/</span> <span id="breadcrumb">Overview</span></span><div class="topbar-right"><span id="scan-status" class="scan-status">Connecting…</span><button id="refresh" type="button" class="outline-button">↻ Refresh data</button></div></div>
+      <div id="error" role="alert" class="error" hidden></div>
+      <div id="loading" class="loading">Loading assessment data…</div>
+      <div id="content" hidden>
+        <div class="page-header"><div><div class="eyebrow"><span class="eyebrow-dot"></span> AUTOMATED SECURITY ASSESSMENT</div><h1 id="page-title">Assessment overview</h1><p id="page-subtitle" class="subtitle">Results generated from OWASP ZAP and TestNG.</p></div><div class="page-meta"><span class="meta-label">TARGET ORIGIN</span><span id="target-origin" class="mono"></span><span class="meta-label gap-top">LAST SCAN</span><span id="scan-time">—</span></div></div>
+        <section id="overview-view" class="view">
+          <div class="metric-grid" id="metric-grid"></div>
+          <div class="panel-grid">
+            <section class="panel"><div class="panel-head"><div><h2>Severity breakdown</h2><p>Active, in-scope ZAP observations</p></div><span class="panel-kicker">FINDINGS</span></div><div id="severity-chart" class="severity-chart"></div></section>
+            <section class="panel"><div class="panel-head"><div><h2>Triage summary</h2><p>Classification is not exploit confirmation</p></div><span class="panel-kicker">REVIEW STATUS</span></div><div id="triage-list" class="triage-list"></div></section>
+          </div>
+          <section class="panel"><div class="panel-head"><div><h2>Priority findings</h2><p>Highest-severity active findings</p></div><button class="text-button jump-view" data-view="findings" type="button">View all findings →</button></div><div id="priority-findings" class="priority-list"></div></section>
+        </section>
+        <section id="findings-view" class="view" hidden>
+          <div class="section-heading"><div><h2>Security findings</h2><p>Filter and inspect individual ZAP observations. Original JSON is never modified.</p></div><span id="finding-count" class="count-pill"></span></div>
+          <div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="finding-search" type="search" placeholder="Search findings, endpoints, evidence…" aria-label="Search findings"></label><select id="finding-status" aria-label="Finding status"><option value="INCLUDE">Active</option><option value="REVIEW">Needs validation</option><option value="SUPPRESS">Suppressed</option><option value="ALL">All in scope</option></select><select id="finding-severity" aria-label="Finding severity"><option value="ALL">All severities</option><option>High</option><option>Medium</option><option>Low</option><option>Informational</option></select><button id="expand-findings" class="outline-button" type="button">Expand all</button><button id="collapse-findings" class="outline-button" type="button">Collapse all</button></div>
+          <div id="findings-list" class="results-list"></div><div id="findings-empty" class="empty" hidden>No findings match the selected filters.</div>
+        </section>
+        <section id="tests-view" class="view" hidden><div class="section-heading"><div><h2>Automated tests</h2><p>TestNG execution records with associated screenshot filenames where available.</p></div><span id="test-count" class="count-pill"></span></div><div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="test-search" type="search" placeholder="Search test names and classes…" aria-label="Search tests"></label><select id="test-status" aria-label="Test status"><option value="ALL">All statuses</option><option>PASSED</option><option>FAILED</option><option>SKIPPED</option></select></div><div id="tests-list" class="results-list"></div></section>
+        <section id="evidence-view" class="view" hidden><div class="section-heading"><div><h2>Evidence library</h2><p>Existing ScreenshotManager images; no new screenshot files are created.</p></div><span id="evidence-count" class="count-pill"></span></div><div class="notice">Screenshot links are associated by test class and method filename. TestNG CSV does not record screenshot timestamps or test parameters, so these images are not independently verified as belonging to the latest run.</div><div id="evidence-list" class="evidence-gallery"></div><div id="evidence-empty" class="empty" hidden>No matching screenshots were found.</div></section>
+        <footer>Read-only local dashboard <span>•</span> No automatic vulnerability validation <span>•</span> Evidence may contain sensitive testing data</footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

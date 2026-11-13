@@ -3,7 +3,7 @@
 
 A Java-based security testing framework for automating vulnerability assessments, security challenges, and browser-based testing against intentionally vulnerable web applications.
 
-Built with **Java, Selenium WebDriver, TestNG, Maven, Docker/Testcontainers, and OWASP ZAP**, with experimental Ollama integration.
+Built with **Java, Selenium WebDriver, TestNG, Maven, Docker/Testcontainers, and OWASP ZAP**, with a read-only, Java-hosted **single-page security assessment dashboard (SPA)** and experimental Ollama integration.
 
 **Project Status:** Active Development
 
@@ -51,6 +51,8 @@ Current testing capabilities include:
 | OWASP ZAP | Web traffic interception and security analysis |
 | Apache POI | Excel-based test data |
 | Ollama | Experimental local AI integration |
+| Java `HttpServer` (`jdk.httpserver`) | Local, read-only API and SPA server |
+| HTML, CSS, JavaScript | Single-page assessment dashboard without Node.js or a frontend build step |
 
 ---
 
@@ -64,6 +66,9 @@ Current testing capabilities include:
 - **OWASP ZAP Integration:** Routes Selenium traffic through a security proxy.
 - **Separate ZAP Reports:** Generates independent HTML and JSON reports for DVWA and Juice Shop.
 - **Automated Security Assessments:** Generates an assessment index, per-application HTML dashboards, and TestNG CSV results.
+- **Security Assessment SPA:** Serves an interactive, read-only dashboard at `http://127.0.0.1:8765/` by default, using existing JSON, CSV, and screenshot artifacts.
+- **Finding Triage:** Applies request-level target-origin/path scope and configurable review/suppression rules by readable ZAP alert name (or legacy plugin ID).
+- **Interactive SPA Views:** Offers assessment overview, searchable findings, automated test results, and a screenshot evidence library.
 - **ZAP Finding Details:** Shows severity, confidence, affected URLs, CWE, recommendations, and available request observations.
 - **Screenshot Evidence Links:** Associates TestNG executions with screenshots already captured by `ScreenshotManager`; no additional screenshot folder is created.
 - **Configurable Reporting:** Keeps application targets and reporting paths in `utilities.reporting/report-targets.properties`.
@@ -87,6 +92,8 @@ Install the following before running the framework:
 - Browser drivers managed through Selenium Manager or the local environment
 
 Make sure the Docker daemon is running and accessible to your user before executing container-dependent tests. On Linux, verify the IDE has the same Docker access as a working terminal session.
+
+**Viewing existing results in the SPA does not require Docker, a running ZAP container, or an active Selenium session.** The standalone SPA server runs with the project's Java dependencies and uses Java 17+ (the project targets Java 17). No Node.js, npm, React, Spring Boot, or database is required.
 
 ---
 
@@ -328,6 +335,7 @@ The intended combined suite sequence is:
 8. Generate the Juice Shop ZAP report.
 9. Shut down the remaining containers.
 10. The registered TestNG reporters export execution results and generate the per-application security assessments and index.
+11. When the separately launched SPA is open, click **Refresh data** to read the newly written JSON, CSV, and screenshot files. The test suite does not automatically launch the SPA server.
 
 Application execution is separated to avoid mixing DVWA and Juice Shop traffic histories in the same ZAP report. Reports are generated from suites that actually contain matching test results; a single-application run is not treated as a combined run.
 
@@ -357,6 +365,7 @@ OWASP ZAP intercepts Selenium browser traffic and performs passive analysis on r
 6. During suite teardown, the framework waits for the passive-scan queue to empty.
 7. `ZapManager.generateReport()` exports application-specific ZAP HTML and JSON reports.
 8. The TestNG reporters use the available JSON and test results to generate the security assessment dashboards.
+9. The independently launched SPA can read the same artifacts through its local Java API; no additional scanning or report conversion is required.
 
 ### Native ZAP Reports
 
@@ -380,13 +389,18 @@ The native ZAP HTML reports remain available independently of the new assessment
 
 ## Automated Security Assessment Reports
 
-The reporting module combines application-specific ZAP observations with TestNG execution results, then produces browser-viewable HTML reports. It supports both DVWA and OWASP Juice Shop without duplicating the reporter for each application.
+The reporting module combines application-specific ZAP observations with TestNG execution results. The existing `SecurityAssessmentReporter` still produces browser-viewable HTML reports, while `SecurityAssessmentSpa` provides a separate read-only single-page dashboard over the same saved JSON, CSV, and screenshots. Both support DVWA and OWASP Juice Shop without a separate application-specific reporter.
 
 ### Reporting Components
 
 | File | Responsibility |
 |---|---|
 | `src/test/java/utilities/reporting/ReportingConfiguration.java` | Loads reporting configuration and resolves report, asset, and evidence locations. |
+| `src/test/java/utilities/reporting/FindingFilter.java` | Applies origin/path scope, review rules, and suppression rules to individual ZAP request observations. |
+| `src/test/java/utilities/reporting/SecurityAssessmentSpa.java` | Runs the local read-only API and serves the SPA frontend independently of test execution. |
+| `src/test/java/utilities/reporting/spa/assets/index.html` | Single HTML entry point for the SPA. |
+| `src/test/java/utilities/reporting/spa/assets/app.js` | Loads assessment JSON from the API and implements the interactive views. |
+| `src/test/java/utilities/reporting/spa/assets/app.css` | Styles the responsive SPA interface. |
 | `src/test/java/utilities/reporting/SecurityAssessmentReporter.java` | Builds the per-application assessments and shared index. |
 | `src/test/java/utilities/reporting/TestNgResultsReporter.java` | Exports TestNG execution results as CSV. |
 | `src/test/java/utilities/reporting/report-targets.properties` | Declares application targets, package prefixes, scan inputs, and output filenames. |
@@ -397,7 +411,7 @@ The reporters are registered through the existing TestNG service file:
 
 `src/test/resources/META-INF/services/org.testng.ITestNGListener`
 
-The Java code generates the content; CSS and JavaScript remain separate files alongside the reporting classes, under the reporting package's `assets` directory. The reporter copies those assets to the generated report output so the HTML files can load them.
+The Java HTML reporter generates the legacy report content; its CSS and JavaScript remain separate under the reporting package's `assets` directory and are copied into generated output. The SPA has its **own** `spa/assets` directory and serves these files through the local HTTP server. The SPA does not copy them into `target/security-reports` or generate per-application HTML.
 
 ### Generated Assessment Files
 
@@ -422,13 +436,14 @@ target/
         └── security-assessment.js
 ```
 
-The index lists only configured applications whose tests were included in the current TestNG run. The corresponding application pages provide test counts, alert-severity summaries, and expandable details. Opening a generated HTML report does not require a running web server, provided its referenced assets and screenshots remain accessible at their relative locations.
+The index lists only configured applications whose tests were included in the current TestNG run. The corresponding application pages provide test counts, alert-severity summaries, and expandable details. Opening a generated HTML report does not require a running web server, provided its referenced assets and screenshots remain accessible at their relative locations. **The new SPA is separate:** it requires its Java HTTP server to be running, reads the same existing artifacts on demand, and does not replace these HTML outputs yet.
 
 ### Configuring Reporting
 
 **Configuration file:** `src/test/java/utilities/reporting/report-targets.properties`
 
 ```properties
+# Existing report and evidence locations; paths are resolved relative to the project root.
 report.outputDirectory=target/security-reports
 report.screenshotDirectory=target/screenshots
 report.zapDirectory=target/security-reports
@@ -437,17 +452,31 @@ report.indexFile=SecurityAssessment.html
 report.assessmentPattern=SecurityAssessment-{id}.html
 report.testResultsFile=testng-results.csv
 
+# Read-only single-page dashboard: configuration replaces file/port constants in Java.
+report.spa.host=127.0.0.1
+report.spa.port=8765
+report.spa.assetDirectory=src/test/java/utilities/reporting/spa/assets
+report.spa.indexFile=index.html
+
 targets=juiceshop,dvwa
 
 target.juiceshop.title=OWASP Juice Shop
 target.juiceshop.package=tests.JuiceShop.
 target.juiceshop.site=http://juice-shop:3000
 target.juiceshop.zapFile=zap-juiceshop.json
+target.juiceshop.screenshotFolder=juiceshop
+target.juiceshop.scopePaths=/
+target.juiceshop.reviewRules=Cross-Domain Misconfiguration@*.js;Cross-Domain Misconfiguration@*.css
+target.juiceshop.suppressRules=
 
 target.dvwa.title=DVWA
 target.dvwa.package=tests.Dvwa.
 target.dvwa.site=http://web-dvwa:80
 target.dvwa.zapFile=zap-dvwa.json
+target.dvwa.screenshotFolder=dvwa
+target.dvwa.scopePaths=/
+target.dvwa.reviewRules=
+target.dvwa.suppressRules=
 ```
 
 | Setting | Purpose |
@@ -459,11 +488,19 @@ target.dvwa.zapFile=zap-dvwa.json
 | `report.indexFile` | Filename of the generated assessment index. |
 | `report.assessmentPattern` | Per-application filename template; `{id}` is replaced by the configured target ID. |
 | `report.testResultsFile` | Filename of the TestNG CSV export. |
+| `report.spa.host` | Local loopback hostname/IP address for the SPA; default `127.0.0.1`. |
+| `report.spa.port` | Local SPA HTTP port; default `8765`. |
+| `report.spa.assetDirectory` | Project-root-relative directory containing the SPA HTML/CSS/JavaScript assets. |
+| `report.spa.indexFile` | SPA entry page served at `/`; currently `index.html`. |
 | `targets` | Comma-separated IDs of configured applications. |
 | `target.<id>.title` | Application display name. |
 | `target.<id>.package` | TestNG test class package prefix used to associate tests with the application. |
 | `target.<id>.site` | ZAP JSON site name/URL used to filter application findings. |
 | `target.<id>.zapFile` | ZAP JSON filename for the application. |
+| `target.<id>.screenshotFolder` | Existing `ScreenshotManager` application subdirectory read by the SPA. |
+| `target.<id>.scopePaths` | Comma-separated URL path prefixes considered in scope; `/` allows the entire configured origin. |
+| `target.<id>.reviewRules` | Semicolon-separated alert-name/path rules that classify observations as needing validation. |
+| `target.<id>.suppressRules` | Semicolon-separated alert-name/path rules that remove observations from the active list while retaining them for audit. |
 
 To add another application, add its ID to `targets` and provide the corresponding `target.<id>.*` entries. Its tests and ZAP JSON report must also exist; declaring a target does not automatically create or start a new application test suite.
 
@@ -473,7 +510,16 @@ The reporting configuration loader supports `-Dsecurity.reporting.config=/path/t
 
 ### Findings and Evidence
 
-Each assessment shows ZAP findings grouped by their associated application, with a severity summary and interactive search/filter controls. Expanding a finding reveals:
+The reports apply `FindingFilter` at the **request-instance level**: a finding instance must match the configured target origin and allowed path scope. In-scope observations may be **Active**, **Needs validation**, or **Suppressed** based on the configured rules. Out-of-scope observations are excluded from the active assessment and counted separately. The original ZAP JSON is not altered.
+
+Rules may use readable alert names; matching is case-insensitive. Adding `@` followed by a path pattern restricts the match to that URL path (ignoring its query string). Legacy numeric plugin IDs are also accepted. Suppression rules take precedence over review rules. For example:
+
+```properties
+target.juiceshop.reviewRules=Cross-Domain Misconfiguration@*.js;Cross-Domain Misconfiguration@*.css
+target.juiceshop.suppressRules=Application Error Disclosure@/rest/products/search
+```
+
+Suppress only reviewed, accepted findings; suppression does not establish that a detected issue is a false positive. The application-specific dashboard shows a severity summary and interactive search/filter controls. Expanding a finding reveals:
 
 - Risk severity, confidence, and finding name.
 - Affected URL, HTTP method, and CWE identifier when present.
@@ -491,6 +537,111 @@ An alert may not contain a literal response-evidence excerpt. In that case, the 
 A screenshot may be absent if none was captured during that test, its filename cannot be associated safely, or its modification time is outside the test window. Missing screenshot links do not alter TestNG pass/fail status.
 
 **Interpretation:** A TestNG `PASSED` result, a ZAP detection, and a verified security challenge completion are distinct facts. The dashboard shows test execution and scan observations; it does not independently certify exploitability or challenge completion solely from a passed test or screenshot. In DVWA, some expected security findings are deliberately represented by failing assertions, as explained above.
+
+---
+
+## Security Assessment SPA (Single-Page Web Application)
+
+The SPA provides an alternative to the generated HTML assessment pages. It is a **read-only local dashboard**, not a separate scan engine: it displays the existing `zap-<target>.json`, `testng-results.csv`, and `ScreenshotManager` PNG files. The SPA is intentionally independent of the Selenium/TestNG lifecycle, so you can review previously generated results without starting Docker, ZAP, or the test suites.
+
+### Files and Directory Layout
+
+```text
+src/test/java/utilities/reporting/
+├── SecurityAssessmentSpa.java
+├── FindingFilter.java
+├── ReportingConfiguration.java
+├── report-targets.properties
+├── assets/                         # Existing static HTML report assets
+└── spa/
+    └── assets/
+        ├── index.html              # SPA entry point
+        ├── app.js                  # UI and API interactions
+        └── app.css                 # Responsive styling
+```
+
+The SPA uses the project's Selenium JSON dependency and the JDK's built-in `HttpServer`. There is no separate frontend build, dependency manager, container, or database.
+
+### Starting the SPA in IntelliJ IDEA
+
+1. Open the Maven project in IntelliJ and allow dependencies to resolve.
+2. Ensure `SecurityAssessmentSpa.java`, the `spa/assets` directory, and the SPA properties exist at the locations shown above.
+3. Open `src/test/java/utilities/reporting/SecurityAssessmentSpa.java`.
+4. Run its `main()` method using IntelliJ's Java application run action. Use the project root as the working directory, because report paths are resolved from that location.
+5. Open **http://127.0.0.1:8765/** in your browser (unless you changed the configured port).
+6. Choose **OWASP Juice Shop** or **DVWA** using the application selector. Navigate between **Overview**, **Security findings**, **Automated tests**, and **Evidence library**.
+7. After a test suite finishes exporting fresh files, click **Refresh data** in the SPA to reload them.
+8. Stop the `SecurityAssessmentSpa` Java process in IntelliJ when you are finished.
+
+The Java console prints the actual URL when the server starts. **The SPA does not launch automatically during `mvn test`.** You can open it without rerunning the tests, provided the report files you want to inspect already exist.
+
+### SPA Configuration
+
+The SPA reads the same configuration file as the existing HTML reporter:
+
+`src/test/java/utilities/reporting/report-targets.properties`
+
+```properties
+report.spa.host=127.0.0.1
+report.spa.port=8765
+report.spa.assetDirectory=src/test/java/utilities/reporting/spa/assets
+report.spa.indexFile=index.html
+
+target.juiceshop.screenshotFolder=juiceshop
+target.dvwa.screenshotFolder=dvwa
+```
+
+- `report.spa.host` is required to resolve to a **loopback address**; binding to a public or LAN interface is rejected. This is important because scan observations and screenshots may contain sensitive testing information.
+- `report.spa.port` selects the local HTTP port. Change it if the default port is already in use, then restart the Java process.
+- `report.spa.assetDirectory` and `report.spa.indexFile` tell the server where to find the frontend assets. Their paths are configured rather than embedded in the Java source.
+- `target.<id>.screenshotFolder` identifies the application subfolder **already created by `ScreenshotManager`**. The SPA reads files there; it does not create a second screenshot directory.
+- `targets` and each target's `site`, `package`, `zapFile`, `scopePaths`, `reviewRules`, and `suppressRules` also control which data the SPA loads.
+
+If you have customized filtering rules, **merge the SPA settings into your existing properties file** rather than overwriting your suppression and review decisions.
+
+### SPA Views
+
+| View | What it displays |
+|---|---|
+| **Overview** | Assessment and test totals, severity breakdown, triage summary, and priority active findings. |
+| **Security findings** | Searchable per-request ZAP observations, with severity and status filters, affected URLs, confidence, CWE, request evidence, and remediation. |
+| **Automated tests** | TestNG CSV records, execution statuses, durations, and associated screenshot references where identifiable. |
+| **Evidence library** | Existing PNG evidence organized for browsing without copying or recapturing images. |
+
+The findings status selector supports **Active**, **Needs validation**, **Suppressed**, and **All in scope**. Human-readable alert-name rules are applied on the server, so the UI and generated reports can use the same finding classification logic. Filtering affects what is shown, not the original ZAP export.
+
+### Read-Only HTTP API
+
+The server uses the following GET endpoints:
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /` | Serves the SPA entry page and frontend assets. |
+| `GET /api/targets` | Lists applications configured in `report-targets.properties`. |
+| `GET /api/assessments/{id}` | Returns the selected application's normalized ZAP findings, TestNG records, evidence links, scan metadata, and scope counts. |
+| `GET /api/screenshots/{id}/...` | Serves allowed existing screenshot files for that application. |
+
+The API is read-only. There are no endpoints for running scans, modifying source reports, uploading images, or writing suppression rules. Requests for files outside the configured screenshot directories are blocked.
+
+### Data Freshness and Evidence Limitations
+
+- The SPA does not collect data itself. If the JSON or CSV files are missing, its assessment or test information may be empty until the corresponding test suite produces those files.
+- The SPA does **not** establish that ZAP JSON, TestNG CSV, and PNG files came from the same run; the current artifacts have no shared run identifier.
+- `testng-results.csv` does not record all DataProvider parameters or screenshot timestamps. Therefore, the SPA does not attribute a single screenshot to an individual parameterized test invocation when that association cannot be established. Images can still be reviewed in the Evidence library.
+- Existing PNG files may be older than the current test run. A screenshot is supporting evidence, not proof of current vulnerability exploitability.
+- Scanner detections and suppression rules are **not automatic validation**. There is no LLM-based request validation or automatic false-positive decision-making in this initial version.
+- Suppression/review rules must still be edited in the reporting properties file; saving these decisions directly from the browser is not yet implemented.
+- The SPA must remain running for the browser dashboard to work; the generated static HTML reports remain available independently as a fallback.
+
+### Recommended Review Workflow
+
+1. Execute the applicable TestNG suite and let ZAP and TestNG write their reports.
+2. Launch the SPA independently (or use an already running SPA).
+3. Select the application and open **Security findings**.
+4. Review active findings and inspect the recorded request evidence before treating a scanner alert as actionable.
+5. Use **Needs validation** for findings that require further investigation. Use **Suppressed** to audit explicit exclusions.
+6. When appropriate, update the human-readable `reviewRules` or `suppressRules` in `report-targets.properties` and refresh the dashboard. Keep the original ZAP JSON for traceability.
+7. Inspect **Automated tests** and **Evidence library** for relevant execution results and screenshots.
 
 ---
 
@@ -666,6 +817,17 @@ If the browser shows `ERR_EMPTY_RESPONSE` or application elements never appear a
 
 Do not change Selenium selectors or add arbitrary waits to page objects to compensate for an unreachable setup or login page.
 
+### Security Assessment SPA Does Not Start or Shows No Data
+
+- Verify you ran `SecurityAssessmentSpa.main()` as a **Java application** in IntelliJ, not as a TestNG test.
+- Confirm the JVM working directory is the project root and the SPA files exist under `src/test/java/utilities/reporting/spa/assets/`.
+- If `Address already in use` appears, stop the earlier SPA process or change `report.spa.port` in `report-targets.properties` and restart.
+- If the dashboard cannot connect, confirm the console prints the URL and open that exact `http://127.0.0.1:<port>/` address.
+- If the SPA reports missing findings, confirm that `report.zapDirectory` and `target.<id>.zapFile` point to the generated JSON exports. Use **Refresh data** after completing the scan.
+- If tests are missing, check `report.outputDirectory`, `report.testResultsFile`, and `target.<id>.package` against the CSV and test class names.
+- If screenshots are missing, confirm `report.screenshotDirectory` and `target.<id>.screenshotFolder` match `ScreenshotManager`'s existing files. Do not create another screenshot location.
+- Changes to host, port, asset paths, or configured targets require restarting the SPA process. Changes to finding rules can be reflected by refreshing data.
+
 ### Security Assessment Missing or Incomplete
 
 - Confirm the TestNG service registration contains both reporting listeners and that `report-targets.properties` contains the target's test package prefix.
@@ -688,10 +850,16 @@ Do not change Selenium selectors or add arbitrary waits to page objects to compe
 - [x] Add separate DVWA and Juice Shop ZAP HTML and JSON report generation
 - [x] Add shared TestNG CSV reporting and per-application HTML assessment dashboards
 - [x] Add target-based ZAP finding filtering and expanded request observations
+- [x] Add human-readable alert-name review/suppression rules with optional URL path matching
+- [x] Add a read-only Java-hosted security assessment SPA with Overview, Findings, Tests, and Evidence views
+- [x] Add a localhost-only API over existing ZAP JSON, TestNG CSV, and ScreenshotManager images
 - [x] Add expandable test results with links to existing screenshot evidence
 - [x] Separate assessment CSS and JavaScript from Java reporter source
 - [x] Add ZAP API readiness verification before initializing proxied browsers
 - [ ] Improve reporter integration with ScreenshotManager's storage API to avoid duplicating path/naming assumptions
+- [ ] Add persistent suppression management through the SPA (with audit reasons)
+- [ ] Add run identifiers/manifests to associate ZAP, TestNG, and screenshot evidence reliably
+- [ ] Add evidence-based validation of scanner findings before automated suppression
 - [ ] Expand ZAP active scanning and security reporting
 - [ ] Add additional API security tests
 - [ ] Complete Ollama chatbot integration
