@@ -665,6 +665,400 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Manipulate Basket");
     }
 
+    // Additional read-only and access-control regression tests for Juice Shop v20.3.0.
+    // One named challenge completion test and nineteen API contract/access-control checks.
+
+    @Test(priority = 69)
+    public void testProductCatalogRead() throws Exception {
+        var response = api.get("/api/Products");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /api/Products");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testProductCatalogRead");
+    }
+
+    @Test(priority = 70)
+    public void testProductDetailRead() throws Exception {
+        var response = api.get("/api/Products/1");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /api/Products/1");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testProductDetailRead");
+    }
+
+    @Test(priority = 71)
+    public void testProductSearchNoMatches() throws Exception {
+        var response = api.get("/rest/products/search?q=zzzznotfound9876");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /rest/products/search?q=zzzznotfound9876");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testProductSearchNoMatches");
+    }
+
+    @Test(priority = 72)
+    public void testSecurityQuestionsCatalogRead() throws Exception {
+        var response = api.get("/api/SecurityQuestions");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /api/SecurityQuestions");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testSecurityQuestionsCatalogRead");
+    }
+
+    @Test(priority = 73)
+    public void testDeliveryMethodsRead() throws Exception {
+        var response = api.get("/api/Deliverys");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /api/Deliverys");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testDeliveryMethodsRead");
+    }
+
+    @Test(priority = 74)
+    public void testLanguagesCatalogRead() throws Exception {
+        var response = api.get("/rest/languages");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /rest/languages");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testLanguagesCatalogRead");
+    }
+
+    @Test(priority = 75)
+    public void testImageCaptchaRead() throws Exception {
+        var session = api.login();
+        var response = api.get("/rest/image-captcha", session.token());
+
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+
+        Assert.assertEquals(response.statusCode(), 200,
+                "Authenticated image CAPTCHA request failed. HTTP " + response.statusCode());
+        Assert.assertFalse(response.body().isBlank(), "Image CAPTCHA response was empty.");
+    }
+
+    @Test(priority = 76)
+    public void testPublicMemoriesRead() throws Exception {
+        var response = api.get("/rest/memories");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /rest/memories");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testPublicMemoriesRead");
+    }
+
+    @Test(priority = 77)
+    public void testApplicationVersionRead() throws Exception {
+        var response = api.get("/rest/admin/application-version");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /rest/admin/application-version");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testApplicationVersionRead");
+    }
+
+    @Test(priority = 78)
+    public void testApplicationConfigurationRead() throws Exception {
+        var response = api.get("/rest/admin/application-configuration");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /rest/admin/application-configuration");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testApplicationConfigurationRead");
+    }
+
+
+    @Test(priority = 80)
+    public void testHintCatalogRead() throws Exception {
+        var response = api.get("/api/Hints");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Expected public endpoint to respond successfully: /api/Hints");
+        Assert.assertFalse(response.body().isBlank(), "API response body was empty: testHintCatalogRead");
+    }
+
+    @Test(priority = 81)
+    public void testAnonymousComplaintAccessDenied() throws Exception {
+        var response = api.get("/api/Complaints");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/Complaints; HTTP " + response.statusCode());
+    }
+
+    @Test(priority = 82)
+    public void testAnonymousBasketItemsAccessDenied() throws Exception {
+        var response = api.get("/api/BasketItems");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/BasketItems; HTTP " + response.statusCode());
+    }
+
+    @Test(priority = 83)
+    public void testAnonymousPrivacyRequestsAccessDenied() throws Exception {
+        var response = api.get("/api/PrivacyRequests");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/PrivacyRequests; HTTP " + response.statusCode());
+    }
+
+    @Test(priority = 84)
+    public void testAnonymousUsersAccessDenied() throws Exception {
+        var response = api.get("/api/Users");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/Users; HTTP " + response.statusCode());
+    }
+
+    @Test(priority = 85)
+    public void testSecurityAnswersReadDenied() throws Exception {
+        var response = api.get("/api/SecurityAnswers");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/SecurityAnswers; HTTP " + response.statusCode());
+    }
+
+    @Test(priority = 86)
+    public void testChallengeCreationDenied() throws Exception {
+        var response = api.post("/api/Challenges", java.util.Map.of());
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/Challenges; HTTP " + response.statusCode());
+    }
+
+    @Test(priority = 87)
+    public void testSecurityAdvisoryChallenge() throws Exception {
+        var response = actions.submitFeedback("Security advisory checksum: " +
+                "7e7ce7c65db3bf0625fcea4573d25cff41f2f7e3474f2c74334b14fc65bb4fd26af802ad17a3a03bf0eee6827a00fb8f7905f338c31b5e6ea9cb31620242e843");
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        actions.waitForChallenge("Security Advisory");
+        assertChallengeSolved("Security Advisory");
+    }
+
+    @Test(priority = 88)
+    public void testInvalidPasswordRejected() throws Exception {
+        var response = api.post("/rest/user/login", java.util.Map.of(
+                "email", "admin@juice-sh.op", "password", "incorrect-" + System.nanoTime()));
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 401, "Invalid credentials unexpectedly authenticated.");
+    }
+
+    @Test(priority = 89)
+    public void testDeluxeFraudChallenge() throws Exception {
+        String email = "deluxe-test-" + System.nanoTime() + "@example.com";
+        String password = "Password123!";
+        var registration = api.post("/api/Users/", java.util.Map.of("email", email,
+                "password", password, "passwordRepeat", password));
+        Assert.assertTrue(registration.statusCode() == 200 || registration.statusCode() == 201,
+                "Could not create the standard customer used for the deluxe test.");
+
+        var session = api.login(email, password);
+        var response = api.post("/rest/deluxe-membership", java.util.Map.of("paymentMode", ""), session.token());
+
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Deluxe membership request was rejected.");
+        assertChallengeSolved("Deluxe Fraud");
+    }
+
+
+    @Test(priority = 90)
+    public void testChristmasSpecialChallenge() throws Exception {
+        var session = api.login();
+
+        var search = api.get("/rest/products/search?q=" + encodePathQuery("'))--"));
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), search);
+
+        Assert.assertEquals(search.statusCode(), 200, "Christmas Special SQL injection request failed.");
+
+        int productId = productIdByName(search.body(), "Christmas Super-Surprise-Box");
+        Assert.assertTrue(productId > 0, "Christmas special was not returned by the injected search.");
+
+        addProductToOwnBasket(session, 1, 1);
+        var response = addProductToOwnBasket(session, productId, 1);
+
+        Assert.assertTrue(response.statusCode() == 200 || response.statusCode() == 201,
+                "Christmas special was not added to the basket. HTTP " + response.statusCode());
+
+        var checkout = api.post("/rest/basket/" + session.basketId() + "/checkout",
+                java.util.Map.of(), session.token());
+
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), checkout);
+        Assert.assertTrue(checkout.statusCode() >= 200 && checkout.statusCode() < 300,
+                "Christmas special checkout failed. HTTP " + checkout.statusCode());
+
+        assertChallengeSolved("Christmas Special");
+    }
+
+
+
+    @Test(priority = 91)
+    public void testPaybackTimeChallenge() throws Exception {
+        var session = api.login();
+        var driver = ZapManager.getDriver();
+        var json = new org.openqa.selenium.json.Json();
+
+        var basketResponse = api.get("/rest/basket/" + session.basketId(), session.token());
+        Assert.assertEquals(basketResponse.statusCode(), 200, "Could not retrieve the authenticated user's basket.");
+
+        java.util.Map<?, ?> basketResult = json.toType(basketResponse.body(), java.util.Map.class);
+        Assert.assertTrue(basketResult.get("data") instanceof java.util.Map<?, ?>, "Basket response contains no data.");
+
+        java.util.Map<?, ?> basket = (java.util.Map<?, ?>) basketResult.get("data");
+        Object productsObject = basket.get("Products");
+        int basketItemId = -1;
+
+        if (productsObject instanceof java.util.List<?> products) {
+            for (Object product : products) {
+                if (!(product instanceof java.util.Map<?, ?> entry)) continue;
+                if (!(entry.get("BasketItem") instanceof java.util.Map<?, ?> item)) continue;
+                if (!(item.get("id") instanceof Number id)) continue;
+                basketItemId = id.intValue();
+                break;
+            }
+        }
+
+        if (basketItemId < 1) {
+            var catalogResponse = api.get("/api/Products");
+            Assert.assertEquals(catalogResponse.statusCode(), 200, "Could not retrieve the product catalog.");
+
+            java.util.Map<?, ?> catalog = json.toType(catalogResponse.body(), java.util.Map.class);
+            Assert.assertTrue(catalog.get("data") instanceof java.util.List<?>, "Product catalog is unavailable.");
+
+            int productId = -1;
+            for (Object product : (java.util.List<?>) catalog.get("data")) {
+                if (product instanceof java.util.Map<?, ?> entry && entry.get("id") instanceof Number id) {
+                    productId = id.intValue();
+                    break;
+                }
+            }
+
+            Assert.assertTrue(productId > 0, "No product was available to prepare the basket.");
+
+            var added = addProductToOwnBasket(session, productId, 1);
+            ScreenshotManager.captureResponse(driver, added);
+            Assert.assertTrue(added.statusCode() == 200 || added.statusCode() == 201,
+                    "Basket preparation failed. HTTP " + added.statusCode());
+
+            basketItemId = recordId(added.body());
+        }
+
+        var response = api.put("/api/BasketItems/" + basketItemId,
+                java.util.Map.of("quantity", -100), session.token());
+
+        ScreenshotManager.captureResponse(driver, response);
+        Assert.assertEquals(response.statusCode(), 200,
+                "Negative basket quantity update failed. HTTP " + response.statusCode());
+
+        var checkout = api.post("/rest/basket/" + session.basketId() + "/checkout",
+                java.util.Map.of(), session.token());
+
+        ScreenshotManager.captureResponse(driver, checkout);
+        Assert.assertTrue(checkout.statusCode() >= 200 && checkout.statusCode() < 300,
+                "Payback Time checkout failed. HTTP " + checkout.statusCode());
+
+        assertChallengeSolved("Payback Time");
+    }
+
+
+    @Test(priority = 92)
+    public void testExposedCredentialsChallenge() throws Exception {
+        var session = api.login("testing@juice-sh.op", "IamUsedForTesting");
+        var response = api.get("/rest/user/whoami", session.token());
+
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+        Assert.assertEquals(response.statusCode(), 200, "Seeded testing account authentication failed.");
+        assertChallengeSolved("Exposed Credentials");
+    }
+
+    @Test(priority = 93)
+    public void testForgedCouponChallenge() throws Exception {
+        var session = api.login();
+        var driver = ZapManager.getDriver();
+        var json = new org.openqa.selenium.json.Json();
+
+        var basketResponse = api.get("/rest/basket/" + session.basketId(), session.token());
+        Assert.assertEquals(basketResponse.statusCode(), 200, "Could not retrieve the authenticated basket.");
+
+        java.util.Map<?, ?> result = json.toType(basketResponse.body(), java.util.Map.class);
+        Assert.assertTrue(result.get("data") instanceof java.util.Map<?, ?>, "Basket response is missing data.");
+
+        java.util.Map<?, ?> basket = (java.util.Map<?, ?>) result.get("data");
+        Assert.assertTrue(basket.get("Products") instanceof java.util.List<?>, "Basket products are missing.");
+
+        java.util.List<?> products = (java.util.List<?>) basket.get("Products");
+
+        if (products.isEmpty()) {
+            var catalogResponse = api.get("/api/Products");
+            Assert.assertEquals(catalogResponse.statusCode(), 200, "Product catalog request failed.");
+
+            java.util.Map<?, ?> catalog = json.toType(catalogResponse.body(), java.util.Map.class);
+            Assert.assertTrue(catalog.get("data") instanceof java.util.List<?>, "Product catalog is empty or invalid.");
+
+            int productId = -1;
+            for (Object product : (java.util.List<?>) catalog.get("data")) {
+                if (product instanceof java.util.Map<?, ?> entry && entry.get("id") instanceof Number id) {
+                    productId = id.intValue();
+                    break;
+                }
+            }
+
+            Assert.assertTrue(productId > 0, "No valid product was found.");
+
+            var added = addProductToOwnBasket(session, productId, 1);
+            ScreenshotManager.captureResponse(driver, added);
+            Assert.assertTrue(added.statusCode() == 200 || added.statusCode() == 201,
+                    "Basket preparation failed. HTTP " + added.statusCode());
+        }
+
+        String couponPlaintext = java.time.LocalDate.now().format(
+                        java.time.format.DateTimeFormatter.ofPattern("MMMyy", java.util.Locale.ENGLISH))
+                .toUpperCase(java.util.Locale.ROOT) + "-99";
+
+        String couponCode = z85Encode(couponPlaintext);
+        var response = api.put("/rest/basket/" + session.basketId() + "/coupon/" + encodePathQuery(couponCode),
+                java.util.Map.of(), session.token());
+
+        ScreenshotManager.captureResponse(driver, response);
+        Assert.assertEquals(response.statusCode(), 200,
+                "Forged coupon was rejected. HTTP " + response.statusCode());
+
+        var checkout = api.post("/rest/basket/" + session.basketId() + "/checkout",
+                java.util.Map.of(), session.token());
+
+        ScreenshotManager.captureResponse(driver, checkout);
+        Assert.assertTrue(checkout.statusCode() >= 200 && checkout.statusCode() < 300,
+                "Forged coupon checkout failed. HTTP " + checkout.statusCode());
+
+        assertChallengeSolved("Forged Coupon");
+    }
+
+
+    private java.net.http.HttpResponse<String> addProductToOwnBasket(JuiceShopApi.JuiceSession session, int productId, int quantity) throws Exception {
+        return api.post("/api/BasketItems/", java.util.Map.of("BasketId", session.basketId(),
+                "ProductId", productId, "quantity", quantity), session.token());
+    }
+
+    @SuppressWarnings("unchecked")
+    private int productIdByName(String body, String expectedName) {
+        java.util.Map<String, Object> result = new org.openqa.selenium.json.Json().toType(body, java.util.Map.class);
+        Object data = result.get("data");
+        if (!(data instanceof java.util.List<?> products)) return -1;
+
+        for (Object item : products) {
+            if (!(item instanceof java.util.Map<?, ?> product)) continue;
+            if (!String.valueOf(product.get("name")).contains(expectedName)) continue;
+            if (product.get("id") instanceof Number id) return id.intValue();
+        }
+        return -1;
+    }
+
+    private int recordId(String body) {
+        java.util.Map<?, ?> result = new org.openqa.selenium.json.Json().toType(body, java.util.Map.class);
+        if (result.get("data") instanceof java.util.Map<?, ?> record && record.get("id") instanceof Number id)
+            return id.intValue();
+        throw new IllegalStateException("Basket item response did not contain an ID.");
+    }
+
+    private String encodePathQuery(String value) {
+        return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private String z85Encode(String text) {
+        String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#";
+        byte[] bytes = text.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (bytes.length % 4 != 0) throw new IllegalArgumentException("Z85 input length must be a multiple of 4.");
+
+        StringBuilder result = new StringBuilder(bytes.length * 5 / 4);
+        for (int i = 0; i < bytes.length; i += 4) {
+            long value = ((bytes[i] & 0xffL) << 24) | ((bytes[i + 1] & 0xffL) << 16)
+                    | ((bytes[i + 2] & 0xffL) << 8) | (bytes[i + 3] & 0xffL);
+            char[] encoded = new char[5];
+            for (int pos = 4; pos >= 0; pos--) {
+                encoded[pos] = alphabet.charAt((int) (value % 85));
+                value /= 85;
+            }
+            result.append(encoded);
+        }
+        return result.toString();
+    }
+
     @Test(priority = 999)
     public void testMassDispelChallenge() throws Exception {
         var driver = ZapManager.getDriver();
