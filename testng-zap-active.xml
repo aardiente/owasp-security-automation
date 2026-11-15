@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="Juice Shop ZAP Active Scan" parallel="false">
+    <parameter name="security.results.file" value="zap-juiceshop-active-testng.csv"/>
+
+    <test name="ZAP Active Security Assessment">
+        <classes>
+            <class name="tests.ZapScan.JuiceShopZapActiveScanTest"/>
+        </classes>
+    </test>
+</suite>

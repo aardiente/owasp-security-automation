@@ -27,21 +27,39 @@ public class TestNgResultsReporter implements IReporter {
         for (ISuite suite : suites) {
             for (ISuiteResult suiteResult : suite.getResults().values()) {
                 ITestContext context = suiteResult.getTestContext();
-                addResults(rows, suite.getName(), context.getName(), context.getPassedTests().getAllResults(), "PASSED");
-                addResults(rows, suite.getName(), context.getName(), context.getFailedTests().getAllResults(), "FAILED");
-                addResults(rows, suite.getName(), context.getName(), context.getSkippedTests().getAllResults(), "SKIPPED");
+                addResults(rows, suite.getName(), context.getName(),
+                        context.getPassedTests().getAllResults(), "PASSED");
+                addResults(rows, suite.getName(), context.getName(),
+                        context.getFailedTests().getAllResults(), "FAILED");
+                addResults(rows, suite.getName(), context.getName(),
+                        context.getSkippedTests().getAllResults(), "SKIPPED");
             }
         }
 
         try {
             ReportingConfiguration config = ReportingConfiguration.load();
-            Path report = config.reportDirectory().resolve(config.testResultsFile());
+            String filename = config.testResultsFile();
 
+            for (XmlSuite suite : xmlSuites) {
+                String override = suite.getParameter("security.results.file");
+                if (override == null || override.isBlank()) continue;
+
+                if (!override.matches("[A-Za-z0-9][A-Za-z0-9._-]*\\.csv"))
+                    throw new IOException("Invalid TestNG results filename: " + override);
+
+                filename = override;
+                break;
+            }
+
+            Path report = config.reportDirectory().resolve(filename);
             Files.createDirectories(report.getParent());
             Files.write(report, rows, StandardCharsets.UTF_8);
-            System.out.println("[SECURITY REPORT] TestNG results saved: " + report.toAbsolutePath());
+
+            System.out.println("[SECURITY REPORT] TestNG results saved: " +
+                    report.toAbsolutePath());
         } catch (IOException e) {
-            System.err.println("[SECURITY REPORT] Failed to write TestNG results: " + e.getMessage());
+            System.err.println("[SECURITY REPORT] Failed to write TestNG results: " +
+                    e.getMessage());
         }
     }
 
@@ -51,7 +69,8 @@ public class TestNgResultsReporter implements IReporter {
             String className = result.getTestClass().getName();
             String method = result.getMethod().getMethodName();
             long duration = Math.max(0, result.getEndMillis() - result.getStartMillis());
-            String error = result.getThrowable() == null ? "" : result.getThrowable().toString();
+            String error = result.getThrowable() == null ? "" :
+                    result.getThrowable().toString();
 
             Object captured = result.getAttribute(ScreenshotManager.EVIDENCE_ATTRIBUTE);
             String screenshot = captured instanceof String filename ? filename : "";

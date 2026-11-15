@@ -1,6 +1,7 @@
 
 package tests.JuiceShop;
 
+import automation.AppConfig;
 import automation.ZapManager;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.AfterSuite;
@@ -15,6 +16,10 @@ public abstract class JuiceShopBaseTest {
     protected static JuiceShopEnvironment container;
     protected static String baseUrl;
     protected String payloadSource = "";
+
+    protected String zapReportName() {
+        return AppConfig.zapPassiveReportName();
+    }
 
     @BeforeSuite
     public void startServer() {
@@ -32,7 +37,7 @@ public abstract class JuiceShopBaseTest {
         if (container == null) return;
 
         try {
-            ZapManager.generateReport("zap-juiceshop.html");
+            ZapManager.generateReport(zapReportName());
         } finally {
             try {
                 ZapManager.quitZap();

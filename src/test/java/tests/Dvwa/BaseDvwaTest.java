@@ -1,13 +1,16 @@
+
 package tests.Dvwa;
 
+import automation.AppConfig;
 import automation.ZapManager;
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.*;
-import pom.Dvwa.*;
+import pom.Dvwa.LoginPage;
 import utilities.Docker.DvwaEnvironment;
 import utilities.ExcelFileReader;
 
@@ -19,6 +22,10 @@ public abstract class BaseDvwaTest {
     protected static String baseUrl;
     protected String payloadSource = "";
     protected String[] securityLevels = {"low", "medium", "high"};
+
+    protected String zapReportName() {
+        return AppConfig.zapDvwaPassiveReportName();
+    }
 
     @BeforeSuite
     public void startServer() {
@@ -37,7 +44,7 @@ public abstract class BaseDvwaTest {
         if (container == null) return;
 
         try {
-            ZapManager.generateReport("zap-dvwa.html");
+            ZapManager.generateReport(zapReportName());
         } finally {
             try {
                 ZapManager.quitZap();
@@ -58,29 +65,37 @@ public abstract class BaseDvwaTest {
         ZapManager.quitZapDriver();
     }
 
-    // Called once for the fresh suite container, before any payload tests.
     private void initializeDatabase() {
         ZapManager.initZapDriver();
         WebDriver driver = ZapManager.getDriver();
-        WebDriverWait wait =
-                new WebDriverWait(driver, Duration.ofSeconds(30));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
         try {
             driver.get(baseUrl + "/setup.php");
 
-            WebElement createDatabase = wait.until(
-                    ExpectedConditions.elementToBeClickable(
-                            By.name("create_db")));
+            wait.until(webDriver -> {
+                try {
+                    WebElement button = webDriver.findElement(By.name("create_db"));
+                    if (!button.isDisplayed() || !button.isEnabled()) return false;
 
-            createDatabase.click();
-            wait.until(ExpectedConditions.stalenessOf(createDatabase));
+                    button.click();
+                    return true;
+                } catch (StaleElementReferenceException e) {
+                    return false;
+                } catch (WebDriverException e) {
+                    String message = e.getMessage();
+                    if (message != null &&
+                            message.contains("Node with given id does not belong to the document"))
+                        return false;
 
-            // Prove that the seeded users table is usable.
+                    throw e;
+                }
+            });
+
             driver.get(baseUrl + LoginPage.loginEndpoint);
             new LoginPage(driver).login("admin", "password");
 
-            System.out.println(
-                    "DVWA database initialized and authenticated successfully");
+            System.out.println("DVWA database initialized and authenticated successfully");
         } finally {
             ZapManager.quitZapDriver();
         }
@@ -88,11 +103,8 @@ public abstract class BaseDvwaTest {
 
     @DataProvider(name = "securityAndPayloads")
     public Object[][] getSecurityAndPayloads() {
-        Object[][] payloadsFromExcel =
-                ExcelFileReader.extractData(payloadSource, null);
-
-        Object[][] testData =
-                new Object[payloadsFromExcel.length * securityLevels.length][2];
+        Object[][] payloadsFromExcel = ExcelFileReader.extractData(payloadSource, null);
+        Object[][] testData = new Object[payloadsFromExcel.length * securityLevels.length][2];
 
         int index = 0;
 
