@@ -18,6 +18,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 
 public final class JuiceShopApi {
 
@@ -144,6 +147,32 @@ public final class JuiceShopApi {
 
         return new JuiceSession(token, basketId, userId);
     }
+
+    public HttpResponse<String> getChallenges() throws IOException, InterruptedException {
+        HttpResponse<String> response = get("/api/Challenges");
+
+        if (response.statusCode() != 200)
+            throw new IllegalStateException("Failed to retrieve Juice Shop challenges. HTTP " + response.statusCode());
+
+        return response;
+    }
+
+    public Path saveChallenges(Path outputFile) throws IOException, InterruptedException {
+        HttpResponse<String> response = get("/api/Challenges");
+
+        if (response.statusCode() != 200)
+            throw new IOException("Failed to retrieve challenges. HTTP " + response.statusCode());
+
+        Path destination = outputFile.toAbsolutePath().normalize();
+        if (destination.getParent() != null)
+            Files.createDirectories(destination.getParent());
+
+        Files.writeString(destination, response.body(), StandardCharsets.UTF_8);
+        System.out.println("[JUICE-SHOP] Challenge results saved: " + destination);
+
+        return destination;
+    }
+
 
     @SuppressWarnings("unchecked")
     private int extractUserId(String token) {

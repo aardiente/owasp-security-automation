@@ -1010,6 +1010,67 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
     }
 
 
+    @Test(priority = 94)
+    public void testExpiredCouponChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+
+        String email = "expired-coupon-" + System.nanoTime() + "@example.com";
+        String password = "Password123!";
+
+        var registration = api.post("/api/Users/", java.util.Map.of(
+                "email", email,
+                "password", password,
+                "passwordRepeat", password));
+
+        Assert.assertTrue(registration.statusCode() == 200 || registration.statusCode() == 201,
+                "Could not register the coupon test account. HTTP " + registration.statusCode());
+
+        var session = api.login(email, password);
+
+        var catalogResponse = api.get("/api/Products");
+        Assert.assertEquals(catalogResponse.statusCode(), 200, "Could not retrieve the product catalog.");
+
+        java.util.Map<?, ?> catalog = new org.openqa.selenium.json.Json()
+                .toType(catalogResponse.body(), java.util.Map.class);
+
+        Assert.assertTrue(catalog.get("data") instanceof java.util.List<?>,
+                "Product catalog did not contain a product list.");
+
+        int productId = -1;
+        for (Object product : (java.util.List<?>) catalog.get("data")) {
+            if (!(product instanceof java.util.Map<?, ?> entry)) continue;
+            if (!(entry.get("id") instanceof Number id)) continue;
+            if (entry.get("deletedAt") != null) continue;
+            if (entry.get("quantity") instanceof Number quantity && quantity.intValue() <= 0) continue;
+
+            productId = id.intValue();
+            break;
+        }
+
+        Assert.assertTrue(productId > 0, "No available product was found.");
+
+        var added = addProductToOwnBasket(session, productId, 1);
+        Assert.assertTrue(added.statusCode() == 200 || added.statusCode() == 201,
+                "Failed to prepare coupon basket. HTTP " + added.statusCode());
+
+        String coupon = "WMNSDY2019";
+        long campaignDate = 1551999600000L;
+
+        String couponData = java.util.Base64.getEncoder().encodeToString(
+                (coupon + "-" + campaignDate).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        var checkout = api.post("/rest/basket/" + session.basketId() + "/checkout",
+                java.util.Map.of("couponData", couponData), session.token());
+
+        ScreenshotManager.captureResponse(driver, checkout);
+
+        Assert.assertTrue(checkout.statusCode() >= 200 && checkout.statusCode() < 300,
+                "Expired coupon checkout failed. HTTP " + checkout.statusCode());
+
+        assertChallengeSolved("Expired Coupon");
+    }
+
+
     private java.net.http.HttpResponse<String> addProductToOwnBasket(JuiceShopApi.JuiceSession session, int productId, int quantity) throws Exception {
         return api.post("/api/BasketItems/", java.util.Map.of("BasketId", session.basketId(),
                 "ProductId", productId, "quantity", quantity), session.token());
@@ -1059,6 +1120,16 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         return result.toString();
     }
 
+    @Test(priority = 998)
+    public void testRetrieveAllChallenges() throws Exception {
+        var response = api.getChallenges();
+
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+
+        Assert.assertFalse(response.body().isBlank(), "Challenge API returned an empty response.");
+        System.out.println("[JUICE-SHOP CHALLENGES]\n" + response.body());
+    }
+
     @Test(priority = 999)
     public void testMassDispelChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -1084,6 +1155,11 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
 
         ScreenshotManager.capture(driver);
         assertChallengeSolved("Score Board");
+
+        var outputFile = java.nio.file.Path.of(System.getProperty("user.dir"))
+                .resolve(getClass().getSimpleName() + "-challenges.json");
+
+        api.saveChallenges(outputFile);
     }
 
     private void assertChallengeSolved(String challengeName) throws Exception {
