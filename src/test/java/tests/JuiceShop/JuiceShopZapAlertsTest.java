@@ -14,15 +14,26 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
 
+/**
+ * Generates scoped HTTP traffic to trigger passive ZAP observations without running the active scanner.
+ */
 public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
 
     private JuiceShopApi api;
 
+    /**
+     * Initializes the Juice Shop API helper used by ZAP traffic-generation tests.
+     */
     @BeforeMethod
     public void prepareZapTests() {
         api = new JuiceShopApi(baseUrl);
     }
 
+    /**
+     * Generates proxy-visible traffic for the public pages check.
+     *
+     * <p>Captures browser evidence for the request.</p>
+     */
     @Test(priority = 1)
     public void testPublicPagesForZap() {
         WebDriver driver = ZapManager.getDriver();
@@ -34,6 +45,14 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
         ScreenshotManager.capture(driver);
     }
 
+    /**
+     * Generates proxy-visible traffic for the public product api check.
+     *
+     * <p>Sends traffic to {@code /api/Products} so ZAP can observe the response.</p>
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 2)
     public void testPublicProductApiForZap() throws Exception {
         HttpResponse<String> response = api.get("/api/Products");
@@ -46,6 +65,14 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
                 "Product API returned an empty response.");
     }
 
+    /**
+     * Generates proxy-visible traffic for the product search check.
+     *
+     * <p>Sends traffic to {@code /rest/products/search?q=apple} so ZAP can observe the response.</p>
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 3)
     public void testProductSearchForZap() throws Exception {
         HttpResponse<String> response = api.get("/rest/products/search?q=apple");
@@ -58,6 +85,14 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
                 "Product search returned an empty response.");
     }
 
+    /**
+     * Generates proxy-visible traffic for the exposed metrics check.
+     *
+     * <p>Sends traffic to {@code /metrics} so ZAP can observe the response.</p>
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 4)
     public void testExposedMetricsForZap() throws Exception {
         HttpResponse<String> response = api.get("/metrics");
@@ -70,6 +105,14 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
                 "Expected Prometheus metrics were not returned.");
     }
 
+    /**
+     * Generates proxy-visible traffic for the public file listing check.
+     *
+     * <p>Sends traffic to {@code /ftp/} so ZAP can observe the response.</p>
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 5)
     public void testPublicFileListingForZap() throws Exception {
         HttpResponse<String> response = api.get("/ftp/");
@@ -82,6 +125,14 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
                 "FTP directory returned an empty response.");
     }
 
+    /**
+     * Generates proxy-visible traffic for the public document check.
+     *
+     * <p>Sends traffic to {@code /ftp/acquisitions.md} so ZAP can observe the response.</p>
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 6)
     public void testPublicDocumentForZap() throws Exception {
         HttpResponse<String> response = api.get("/ftp/acquisitions.md");
@@ -94,6 +145,14 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
                 "Document response was empty.");
     }
 
+    /**
+     * Generates proxy-visible traffic for the failed authentication check.
+     *
+     * <p>Sends traffic to {@code /rest/user/login} so ZAP can observe the response.</p>
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 7)
     public void testFailedAuthenticationForZap() throws Exception {
         HttpResponse<String> response = api.post("/rest/user/login", Map.of(
@@ -107,6 +166,14 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
                 "Invalid credentials were not rejected.");
     }
 
+    /**
+     * Generates proxy-visible traffic for the application error check.
+     *
+     * <p>Sends traffic to {@code /rest/products/search?q=%27%3B} so ZAP can observe the response.</p>
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 8)
     public void testApplicationErrorForZap() throws Exception {
         HttpResponse<String> response = api.get("/rest/products/search?q=%27%3B");
@@ -118,6 +185,14 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
                         + response.statusCode());
     }
 
+    /**
+     * Generates proxy-visible traffic for the application configuration check.
+     *
+     * <p>Sends traffic to {@code /rest/admin/application-configuration} so ZAP can observe the response.</p>
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 9)
     public void testApplicationConfigurationForZap() throws Exception {
         HttpResponse<String> response = api.get("/rest/admin/application-configuration");
@@ -130,6 +205,14 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
                 "Application configuration response was empty.");
     }
 
+    /**
+     * Generates proxy-visible traffic for the application version check.
+     *
+     * <p>Sends traffic to {@code /rest/admin/application-version} so ZAP can observe the response.</p>
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 10)
     public void testApplicationVersionForZap() throws Exception {
         HttpResponse<String> response = api.get("/rest/admin/application-version");
@@ -142,6 +225,13 @@ public class JuiceShopZapAlertsTest extends JuiceShopBaseTest {
                 "Application version response was empty.");
     }
 
+    /**
+     * Generates proxy-visible traffic for the verify zap alerts check.
+     *
+     * <p>Captures browser evidence for the request.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 100)
     public void testVerifyZapAlerts() throws Exception {
         var client = ZapManager.getZapClient();

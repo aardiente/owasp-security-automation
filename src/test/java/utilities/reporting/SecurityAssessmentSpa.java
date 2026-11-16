@@ -35,6 +35,13 @@ public final class SecurityAssessmentSpa {
     private record TestData(List<Map<String, Object>> tests,
                             List<Map<String, Object>> evidence) {}
 
+    /**
+     * Creates the security assessment spa component and initializes the dependencies required by its methods.
+     *
+     * <p>Loads the reporting settings and initializes the configured, read-only SPA targets and asset paths.</p>
+     *
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private SecurityAssessmentSpa() throws IOException {
         config = ReportingConfiguration.load();
         webDirectory = resolved(config.required("report.spa.assetDirectory"));
@@ -63,6 +70,14 @@ public final class SecurityAssessmentSpa {
         }
     }
 
+    /**
+     * Starts the read-only security assessment web server on the configured loopback interface.
+     *
+     * <p>Starts a loopback-only HTTP server; it does not start ZAP, Selenium, Docker, or new scans.</p>
+     *
+     * @param args the entry-point arguments (not currently used)
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     public static void main(String[] args) throws IOException {
         SecurityAssessmentSpa app = new SecurityAssessmentSpa();
 
@@ -89,6 +104,14 @@ public final class SecurityAssessmentSpa {
         System.out.println("[SECURITY SPA] Reads existing reports only; stop the process to shut down.");
     }
 
+    /**
+     * Routes read-only HTTP requests to targets, assessments, screenshots, or static SPA assets.
+     *
+     * <p>Routes read-only target, assessment, screenshot, and static-asset requests; rejects non-GET methods.</p>
+     *
+     * @param exchange the incoming HTTP exchange to inspect or respond to
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private void handle(HttpExchange exchange) throws IOException {
         try {
             setHeaders(exchange);
@@ -127,6 +150,11 @@ public final class SecurityAssessmentSpa {
         }
     }
 
+    /**
+     * Returns the configured applications exposed by the SPA selector.
+     *
+     * @return the configured application targets exposed in the SPA dropdown
+     */
     private List<Map<String, Object>> targetList() {
         List<Map<String, Object>> result = new ArrayList<>();
 
@@ -141,6 +169,15 @@ public final class SecurityAssessmentSpa {
         return result;
     }
 
+    /**
+     * Combines the passive and active ZAP results with tests and screenshots for one application.
+     *
+     * <p>Includes {@code scan} (passive), {@code activeFindings}, {@code activeScan}, test executions, and evidence for the same target.</p>
+     *
+     * @param target the configured application/report target
+     * @return the JSON-ready assessment containing both scan types, test results, and evidence links for one application
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private Map<String, Object> assessment(Target target) throws IOException {
         Map<String, Object> result = new LinkedHashMap<>();
 
@@ -166,6 +203,15 @@ public final class SecurityAssessmentSpa {
         return result;
     }
 
+    /**
+     * Reads saved active-scan status metadata without starting another scan.
+     *
+     * <p>Reads the scan status JSON separately from the findings file and represents missing files explicitly.</p>
+     *
+     * @param target the configured application/report target
+     * @return the active-scan status fields, or a missing/not-configured status
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private Map<String, Object> loadActiveScan(Target target) throws IOException {
         String fileName = config.optional(
                 "target." + target.id() + ".activeScanFile", "");
@@ -194,6 +240,16 @@ public final class SecurityAssessmentSpa {
         return result;
     }
 
+    /**
+     * Parses a selected ZAP findings file, filtering each alert instance against the application origin and review rules.
+     *
+     * <p>Filters alerts by the configured application origin and scope; the original report JSON is not modified.</p>
+     *
+     * @param target the configured application/report target
+     * @param fileName the ZAP findings JSON filename configured for the selected assessment mode
+     * @return the parsed and in-scope ZAP findings plus report metadata and excluded-instance count
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private Map<String, Object> loadScan(Target target, String fileName)
             throws IOException {
 
@@ -311,6 +367,15 @@ public final class SecurityAssessmentSpa {
         return result;
     }
 
+    /**
+     * Loads TestNG CSV rows and resolves matching screenshot evidence for the selected application.
+     *
+     * <p>Associates TestNG CSV entries and screenshot evidence without assuming ambiguous parameterized-test images belong to one run.</p>
+     *
+     * @param target the configured application/report target
+     * @return the matching TestNG tests and screenshot references for one application
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private TestData loadTests(Target target) throws IOException {
         Path csv = config.reportDirectory().resolve(
                 config.testResultsFile());
@@ -406,6 +471,16 @@ public final class SecurityAssessmentSpa {
         return new TestData(tests, evidence);
     }
 
+    /**
+     * Verifies and builds a safe screenshot URL for a specific test execution.
+     *
+     * @param target the configured application/report target
+     * @param className the fully-qualified name of the TestNG test class
+     * @param method the HTTP request method or reflected Java method being processed
+     * @param filename the filename associated with a file upload or screenshot
+     * @return the safe SPA screenshot URL, or {@code null} when no valid file matches
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private String screenshotLink(Target target, String className,
                                   String method, String filename)
             throws IOException {
@@ -444,6 +519,15 @@ public final class SecurityAssessmentSpa {
                 encode(classShort) + "/" + encode(filename);
     }
 
+    /**
+     * Locates screenshot files associated with a test method.
+     *
+     * @param target the configured application/report target
+     * @param className the fully-qualified name of the TestNG test class
+     * @param method the HTTP request method or reflected Java method being processed
+     * @return the newest matching screenshot URLs associated with a test method
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private List<String> screenshotLinks(Target target, String className,
                                          String method) throws IOException {
 
@@ -493,6 +577,15 @@ public final class SecurityAssessmentSpa {
         return links;
     }
 
+    /**
+     * Returns a screenshot only when its normalized real path is inside the configured evidence directory.
+     *
+     * <p>Normalizes screenshot paths and rejects files outside the configured evidence directory.</p>
+     *
+     * @param exchange the incoming HTTP exchange to inspect or respond to
+     * @param remaining the screenshot path segment after the API route prefix
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private void serveScreenshot(HttpExchange exchange, String remaining)
             throws IOException {
 
@@ -534,6 +627,15 @@ public final class SecurityAssessmentSpa {
                 Files.readAllBytes(file));
     }
 
+    /**
+     * Serves frontend HTML, CSS, and JS only from the configured SPA asset directory.
+     *
+     * <p>Serves only files rooted within the configured SPA frontend directory.</p>
+     *
+     * @param exchange the incoming HTTP exchange to inspect or respond to
+     * @param rawPath the request URI path used to locate a frontend asset
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private void serveStatic(HttpExchange exchange, String rawPath)
             throws IOException {
 
@@ -563,6 +665,12 @@ public final class SecurityAssessmentSpa {
         sendBytes(exchange, 200, type, Files.readAllBytes(file));
     }
 
+    /**
+     * Looks up the configured target application with the requested identifier.
+     *
+     * @param id the configured identifier to look up
+     * @return the matching configured application, or {@code null} if not found
+     */
     private Target findTarget(String id) {
         for (Target target : targets)
             if (target.id().equals(id)) return target;
@@ -570,6 +678,11 @@ public final class SecurityAssessmentSpa {
         return null;
     }
 
+    /**
+     * Sets HTTP response headers to reduce caching, framing, and cross-origin risks.
+     *
+     * @param exchange the incoming HTTP exchange to inspect or respond to
+     */
     private static void setHeaders(HttpExchange exchange) {
         exchange.getResponseHeaders().set("Cache-Control", "no-store");
         exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
@@ -584,6 +697,14 @@ public final class SecurityAssessmentSpa {
         );
     }
 
+    /**
+     * Serializes a value as JSON and sends an HTTP response.
+     *
+     * @param exchange the incoming HTTP exchange to inspect or respond to
+     * @param status the HTTP status code or test execution status being recorded
+     * @param value the input value to convert or display
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private void sendJson(HttpExchange exchange, int status, Object value)
             throws IOException {
 
@@ -592,6 +713,14 @@ public final class SecurityAssessmentSpa {
                 json.toJson(value).getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Sends a UTF-8 plain-text HTTP response.
+     *
+     * @param exchange the incoming HTTP exchange to inspect or respond to
+     * @param status the HTTP status code or test execution status being recorded
+     * @param message the plain-text body of the HTTP response
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private static void sendText(HttpExchange exchange, int status,
                                  String message) throws IOException {
 
@@ -599,6 +728,15 @@ public final class SecurityAssessmentSpa {
                 message.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Writes the response headers and bytes to the HTTP exchange.
+     *
+     * @param exchange the incoming HTTP exchange to inspect or respond to
+     * @param status the HTTP status code or test execution status being recorded
+     * @param type the response MIME type
+     * @param data the response data written to the HTTP exchange
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private static void sendBytes(HttpExchange exchange, int status,
                                   String type, byte[] data)
             throws IOException {
@@ -611,10 +749,22 @@ public final class SecurityAssessmentSpa {
         }
     }
 
+    /**
+     * Converts a nullable JSON value to a non-null string.
+     *
+     * @param value the input value to convert or display
+     * @return the string representation of a value, or an empty string for {@code null}
+     */
     private static String str(Object value) {
         return value == null ? "" : String.valueOf(value);
     }
 
+    /**
+     * Removes HTML markup from ZAP report text before exposing it in the SPA.
+     *
+     * @param value the input value to convert or display
+     * @return plain text with markup and excess whitespace removed
+     */
     private static String cleanMarkup(String value) {
         return value
                 .replaceAll("(?is)<(script|style)[^>]*>.*?</\\1>", " ")
@@ -627,6 +777,12 @@ public final class SecurityAssessmentSpa {
                 .trim();
     }
 
+    /**
+     * Maps a ZAP risk code to a readable severity label.
+     *
+     * @param risk the numeric ZAP alert risk level
+     * @return the severity label mapped from a ZAP risk code
+     */
     private static String severity(String risk) {
         return switch (risk) {
             case "3" -> "High";
@@ -636,6 +792,12 @@ public final class SecurityAssessmentSpa {
         };
     }
 
+    /**
+     * Returns a sort order for ZAP severity levels.
+     *
+     * @param value the input value to convert or display
+     * @return the numeric sort order used to rank ZAP severities
+     */
     private static int severityOrder(String value) {
         return switch (value) {
             case "High" -> 0;
@@ -645,6 +807,12 @@ public final class SecurityAssessmentSpa {
         };
     }
 
+    /**
+     * Maps a ZAP confidence code to a readable confidence label.
+     *
+     * @param value the input value to convert or display
+     * @return the display label mapped from a ZAP confidence code
+     */
     private static String confidence(String value) {
         return switch (value) {
             case "0" -> "False positive";
@@ -656,6 +824,12 @@ public final class SecurityAssessmentSpa {
         };
     }
 
+    /**
+     * Reads a file modification timestamp, returning a fallback on I/O failure.
+     *
+     * @param path the path or URL passed to the request or file operation
+     * @return the file modification timestamp in milliseconds, or zero on read failure
+     */
     private static long modified(Path path) {
         try {
             return Files.getLastModifiedTime(path).toMillis();
@@ -664,11 +838,23 @@ public final class SecurityAssessmentSpa {
         }
     }
 
+    /**
+     * Encodes a path component for an HTTP URL.
+     *
+     * @param value the input value to convert or display
+     * @return URL-encoded text suitable for a link path component
+     */
     private static String encode(String value) {
         return URLEncoder.encode(
                 value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
+    /**
+     * Resolves an asset pathname relative to the current working directory.
+     *
+     * @param name the finding, resource, or application name to resolve
+     * @return the normalized absolute path of a configured file or directory
+     */
     private static Path resolved(String name) {
         Path path = Path.of(name);
 
@@ -677,7 +863,14 @@ public final class SecurityAssessmentSpa {
                 : Path.of("").toAbsolutePath().resolve(path)).normalize();
     }
 
-    /** RFC 4180 CSV parser; handles quoted commas and escaped quotes. */
+    /**
+     * Parses RFC 4180-style CSV rows, including quoted delimiters and escaped quotes.
+     *
+     * <p>Supports quoted fields, escaped double quotes, CRLF line endings, and embedded separators.</p>
+     *
+     * @param content the source or input text to parse or transform
+     * @return the CSV records and fields, including quoted commas and escaped quote characters
+     */
     private static List<List<String>> parseCsv(String content) {
         List<List<String>> rows = new ArrayList<>();
         List<String> row = new ArrayList<>();

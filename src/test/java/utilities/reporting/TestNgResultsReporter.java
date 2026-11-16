@@ -17,8 +17,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Exports per-suite TestNG execution records to CSV without launching new security scans.
+ */
 public class TestNgResultsReporter implements IReporter {
 
+    /**
+     * Writes a CSV summary of executed TestNG methods to the configured report location.
+     *
+     * <p>Writes a CSV with execution status, duration, error summary, and screenshot filename; a suite-level parameter can select an alternate output name.</p>
+     *
+     * @param xmlSuites the TestNG XML suite definitions supplied to the reporter
+     * @param suites the TestNG suite results supplied to the reporter
+     * @param outputDirectory the default TestNG reporter output directory
+     */
     @Override
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
         List<String> rows = new ArrayList<>();
@@ -63,6 +75,15 @@ public class TestNgResultsReporter implements IReporter {
         }
     }
 
+    /**
+     * Appends normalized CSV rows for a group of TestNG results.
+     *
+     * @param rows the rows of previously parsed test or CSV data
+     * @param suite the TestNG suite label associated with the result
+     * @param test the TestNG test label or execution data being recorded
+     * @param results the TestNG execution results to include in the report
+     * @param status the HTTP status code or test execution status being recorded
+     */
     private void addResults(List<String> rows, String suite, String test,
                             Collection<ITestResult> results, String status) {
         for (ITestResult result : results) {
@@ -81,6 +102,12 @@ public class TestNgResultsReporter implements IReporter {
         }
     }
 
+    /**
+     * Quotes and escapes a single CSV value.
+     *
+     * @param value the input value to convert or display
+     * @return the CSV-escaped field, with quotes doubled and line breaks normalized
+     */
     private String csv(String value) {
         if (value == null) return "\"\"";
         return "\"" + value.replace("\"", "\"\"")

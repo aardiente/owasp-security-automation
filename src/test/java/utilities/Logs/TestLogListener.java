@@ -8,17 +8,30 @@ import org.testng.ITestResult;
 
 import java.util.Arrays;
 
+/**
+ * Utility component for the test log listener functionality in the security automation framework.
+ */
 public class TestLogListener implements ITestListener {
 
     // Uses the "tests" logger configured in log4j2.xml so everything writes to logs/tests.log
     private static final Logger log = LoggerFactory.getLogger("tests");
 
+    /**
+     * Handles the event for start.
+     *
+     * @param context the TestNG context for the current suite or test
+     */
     @Override
     public void onStart(ITestContext context)
     {
         log.info("=== Starting Test Suite: {} ===", context.getName());
     }
 
+    /**
+     * Handles the TestNG test start event and records the result in the test log.
+     *
+     * @param result the TestNG test result whose status or evidence is recorded
+     */
     @Override
     public void onTestStart(ITestResult result)
     {
@@ -37,6 +50,11 @@ public class TestLogListener implements ITestListener {
         }
     }
 
+    /**
+     * Handles the TestNG test success event and records the result in the test log.
+     *
+     * @param result the TestNG test result whose status or evidence is recorded
+     */
     @Override
     public void onTestSuccess(ITestResult result)
     {
@@ -46,6 +64,11 @@ public class TestLogListener implements ITestListener {
                 result.getEndMillis() - result.getStartMillis());
     }
 
+    /**
+     * Handles the TestNG test failure event and records the result in the test log.
+     *
+     * @param result the TestNG test result whose status or evidence is recorded
+     */
     @Override
     public void onTestFailure(ITestResult result)
     {
@@ -57,6 +80,11 @@ public class TestLogListener implements ITestListener {
                 result.getThrowable());
     }
 
+    /**
+     * Handles the TestNG test skipped event and records the result in the test log.
+     *
+     * @param result the TestNG test result whose status or evidence is recorded
+     */
     @Override
     public void onTestSkipped(ITestResult result)
     {
@@ -66,6 +94,11 @@ public class TestLogListener implements ITestListener {
                 result.getThrowable());
     }
 
+    /**
+     * Handles the event for finish.
+     *
+     * @param context the TestNG context for the current suite or test
+     */
     @Override
     public void onFinish(ITestContext context)
     {

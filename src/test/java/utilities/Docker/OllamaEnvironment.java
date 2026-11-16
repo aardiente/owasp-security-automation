@@ -5,16 +5,27 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import java.time.Duration;
 
+/**
+ * Starts the optional local Ollama test dependency.
+ */
 public class OllamaEnvironment extends DockerContainer
 {
     private static final String BASE_MODEL = "qwen2.5:1.5b";
     public static final String CHAT_MODEL = "juiceshop-qwen";
 
+    /**
+     * Creates the ollama environment component and initializes the dependencies required by its methods.
+     *
+     * <p>Creates the optional Docker environment for Ollama.</p>
+     */
     public OllamaEnvironment()
     {
         super("ollama/ollama:latest", 11434);
     }
 
+    /**
+     * Starts the optional local Ollama service container used by experimental tests.
+     */
     @Override
     public void startEnvironment()
     {

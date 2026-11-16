@@ -10,8 +10,14 @@ import pom.JuiceShop.LoginPage;
 
 import java.time.Duration;
 
+/**
+ * TestNG test class for the chatbot security test scenarios within the Docker security lab.
+ */
 public class ChatbotSecurityTest extends JuiceShopBaseTest
 {
+    /**
+     * Exercises the Juice Shop chatbot interaction and checks the reply using the test assertion.
+     */
     @Test
     public void BasicChatBotTest()
     {
@@ -37,6 +43,9 @@ public class ChatbotSecurityTest extends JuiceShopBaseTest
         Assert.assertFalse(response.isBlank(), "Chatbot response was empty.");
     }
 
+    /**
+     * Queries the experimental Ollama API and checks the returned response.
+     */
     @Test
     public void manualOllamaApiVerificationTest() {
         org.testcontainers.containers.GenericContainer<?> ollamaContainer =

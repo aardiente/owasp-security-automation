@@ -16,6 +16,9 @@ import utilities.ExcelFileReader;
 
 import java.time.Duration;
 
+/**
+ * Provides shared TestNG suite setup and teardown for the Docker-based DVWA tests, including database initialization and ZAP reporting.
+ */
 public abstract class BaseDvwaTest {
 
     protected static DvwaEnvironment container;
@@ -23,10 +26,18 @@ public abstract class BaseDvwaTest {
     protected String payloadSource = "";
     protected String[] securityLevels = {"low", "medium", "high"};
 
+    /**
+     * Selects the output filename for the DVWA suite's ZAP report; standalone subclasses may override it.
+     *
+     * @return the HTML report filename selected for DVWA suite teardown
+     */
     protected String zapReportName() {
         return AppConfig.zapDvwaPassiveReportName();
     }
 
+    /**
+     * TestNG suite setup: starts the DVWA container, initializes ZAP, and prepares the DVWA database.
+     */
     @BeforeSuite
     public void startServer() {
         if (container != null) return;
@@ -39,6 +50,9 @@ public abstract class BaseDvwaTest {
         initializeDatabase();
     }
 
+    /**
+     * TestNG suite teardown: exports the selected DVWA ZAP report and closes the ZAP and DVWA environments.
+     */
     @AfterSuite(alwaysRun = true)
     public void stopServer() {
         if (container == null) return;
@@ -55,16 +69,27 @@ public abstract class BaseDvwaTest {
         }
     }
 
+    /**
+     * TestNG method setup: creates a fresh ZAP-proxied browser for the upcoming DVWA test.
+     */
     @BeforeMethod
     public void initBrowser() {
         ZapManager.initZapDriver();
     }
 
+    /**
+     * TestNG method teardown: closes the current ZAP-proxied browser.
+     */
     @AfterMethod(alwaysRun = true)
     public void closeBrowser() {
         ZapManager.quitZapDriver();
     }
 
+    /**
+     * Opens DVWA setup, creates its database, and performs the initial administrator login.
+     *
+     * <p>Opens the DVWA setup page, presses the database initialization control, and authenticates to prepare the test suite.</p>
+     */
     private void initializeDatabase() {
         ZapManager.initZapDriver();
         WebDriver driver = ZapManager.getDriver();
@@ -101,6 +126,11 @@ public abstract class BaseDvwaTest {
         }
     }
 
+    /**
+     * Expands Excel payloads into parameterized DVWA security-level test inputs.
+     *
+     * @return the TestNG data-provider matrix; each row contains the parameters for one test invocation
+     */
     @DataProvider(name = "securityAndPayloads")
     public Object[][] getSecurityAndPayloads() {
         Object[][] payloadsFromExcel = ExcelFileReader.extractData(payloadSource, null);

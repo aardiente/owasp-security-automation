@@ -9,11 +9,21 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
+/**
+ * DVWA page object exposing Selenium interactions for the base module.
+ */
 public abstract class BasePage {
 
     protected WebDriver driver;
     protected WebDriverWait wait;
 
+    /**
+     * Creates the base page component and initializes the dependencies required by its methods.
+     *
+     * <p>Creates a base page instance and initializes its dependencies.</p>
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     */
     public BasePage(WebDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -35,26 +45,44 @@ public abstract class BasePage {
     private final By phpInfoMenu = By.linkText("PHP Info");
     private final By aboutMenu = By.linkText("About");
 
+    /**
+     * Logs out of DVWA using the navigation bar logout control.
+     */
     public void clickLogout() {
         wait.until(ExpectedConditions.elementToBeClickable(logoutLink)).click();
     }
 
+    /**
+     * Navigates to the brute force page using the application page object.
+     */
     public void navigateToBruteForce() {
         wait.until(ExpectedConditions.elementToBeClickable(bruteForceMenu)).click();
     }
 
+    /**
+     * Navigates to the command injection page using the application page object.
+     */
     public void navigateToCommandInjection() {
         wait.until(ExpectedConditions.elementToBeClickable(commandInjectionMenu)).click();
     }
 
+    /**
+     * Navigates to the SQL injection page using the application page object.
+     */
     public void navigateToSqlInjection() {
         wait.until(ExpectedConditions.elementToBeClickable(sqlInjectionMenu)).click();
     }
 
+    /**
+     * Navigates to the DVWA security page using the application page object.
+     */
     public void navigateToDvwaSecurity() {
         wait.until(ExpectedConditions.elementToBeClickable(dvwaSecurityMenu)).click();
     }
 
+    /**
+     * Navigates to the XSS reflected page using the application page object.
+     */
     public void navigateToXssReflected() {
         wait.until(d -> {
             try {
@@ -66,42 +94,74 @@ public abstract class BasePage {
         });
     }
 
+    /**
+     * Navigates to the XSS stored page using the application page object.
+     */
     public void navigateToXssStored() {
         wait.until(ExpectedConditions.elementToBeClickable(xssStoredMenu)).click();
     }
 
+    /**
+     * Navigates to the csrf page using the application page object.
+     */
     public void navigateToCsrf() {
         wait.until(ExpectedConditions.elementToBeClickable(csrfMenu)).click();
     }
 
+    /**
+     * Navigates to the file inclusion page using the application page object.
+     */
     public void navigateToFileInclusion() {
         wait.until(ExpectedConditions.elementToBeClickable(fileInclusionMenu)).click();
     }
 
+    /**
+     * Navigates to the CSP bypass page using the application page object.
+     */
     public void navigateToCspBypass() {
         wait.until(ExpectedConditions.elementToBeClickable(cspBypassMenu)).click();
     }
 
+    /**
+     * Navigates to the SQL injection blind page using the application page object.
+     */
     public void navigateToSqlInjectionBlind() {
         wait.until(ExpectedConditions.elementToBeClickable(sqlInjectionBlindMenu)).click();
     }
 
+    /**
+     * Navigates to the weak session IDS page using the application page object.
+     */
     public void navigateToWeakSessionIds() {
         wait.until(ExpectedConditions.elementToBeClickable(weakSessionMenu)).click();
     }
 
+    /**
+     * Navigates to the java script page using the application page object.
+     */
     public void navigateToJavaScript() {
         wait.until(ExpectedConditions.elementToBeClickable(javascriptMenu)).click();
     }
 
+    /**
+     * Navigates to the PHP info page using the application page object.
+     */
     public void navigateToPhpInfo() {
         wait.until(ExpectedConditions.elementToBeClickable(phpInfoMenu)).click();
     }
 
+    /**
+     * Navigates to the about page using the application page object.
+     */
     public void navigateToAbout() {
         wait.until(ExpectedConditions.elementToBeClickable(aboutMenu)).click();
     }
 
+    /**
+     * Waits for DVWA to navigate to the specified application URL.
+     *
+     * @param url the URL to navigate to, inspect, or request
+     */
     public void waitForPageLoad(String url) {
         wait.until(ExpectedConditions.urlContains(url));
     }

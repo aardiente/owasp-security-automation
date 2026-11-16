@@ -6,8 +6,22 @@ const state = {
   targetId: null, mode: "passive", view: "overview"
 };
 
+/**
+ * Returns the DOM element with the supplied identifier.
+ *
+ * @param {string} id the DOM element identifier
+ * @returns {HTMLElement|null} the matching element, or null if none exists
+ */
 const byId = id => document.getElementById(id);
 
+/**
+ * Creates a DOM node with optional class names and text content.
+ *
+ * @param {string} tag the HTML tag name
+ * @param {string} className optional CSS classes
+ * @param {string} text optional text content
+ * @returns {HTMLElement} the newly created element
+ */
 const node = (tag, className = "", text = "") => {
   const element = document.createElement(tag);
   if (className) element.className = className;
@@ -15,20 +29,54 @@ const node = (tag, className = "", text = "") => {
   return element;
 };
 
+/**
+ * Appends the supplied child nodes to a parent element and returns the parent.
+ *
+ * @param {HTMLElement} parent the DOM element receiving the new children
+ * @param {HTMLElement[]} children child elements appended in order
+ * @returns {HTMLElement} the computed result
+ */
 const add = (parent, ...children) => {
   children.forEach(child => parent.append(child));
   return parent;
 };
 
+/**
+ * Removes all child nodes from the supplied element.
+ *
+ * @param {HTMLElement} element the DOM element to modify
+ */
 const clear = element => element.replaceChildren();
+/**
+ * Counts entries whose named property equals the supplied value.
+ *
+ * @param {Object[]} items the data collection to count
+ * @param {string} key the property name used for matching
+ * @param {any} value the value to compare or render
+ * @returns {number} the number of matching items
+ */
 const countBy = (items, key, value) => items.filter(item => item[key] === value).length;
 const severityOrder = { High: 0, Medium: 1, Low: 2, Informational: 3 };
+/**
+ * Coerces a value to a lower-case string for case-insensitive matching.
+ *
+ * @param {any} value the value to compare or render
+ * @returns {string} the computed result
+ */
 const lower = value => String(value ?? "").toLowerCase();
 
+/**
+ * Reads the saved active-scanner status for the selected target application.
+ * @returns {string} the saved scanner state identifier
+ */
 function activeScanStatus() {
   return lower(state.reports?.active?.activeScan?.status || "not_configured");
 }
 
+/**
+ * Maps the scanner status identifier to a readable display label.
+ * @returns {string} a human-readable scanner state such as Completed or Timed out
+ */
 function activeScanLabel() {
   switch (activeScanStatus()) {
     case "completed": return "Completed";
@@ -42,6 +90,10 @@ function activeScanLabel() {
   }
 }
 
+/**
+ * Converts saved execution status and any scan error into a readable explanation; it does not trigger scanning.
+ * @returns {string} a display message explaining the scan state
+ */
 function activeScanDescription() {
   const status = activeScanStatus();
   const message = state.reports?.active?.activeScan?.error;
@@ -60,6 +112,13 @@ function activeScanDescription() {
   return "No active scan assessment is configured for this application.";
 }
 
+/**
+ * Retrieves a fresh JSON resource from the local read-only SPA API and rejects unsuccessful responses.
+ *
+ * @param {string} url the relative local SPA API endpoint
+ * @returns {Promise<any>} the parsed JSON response body
+ * @throws {Error} if the HTTP response has an unsuccessful status code
+ */
 async function request(url) {
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok)
@@ -67,6 +126,10 @@ async function request(url) {
   return response.json();
 }
 
+/**
+ * Initializes target selection, navigation, finding filters, and refresh actions before loading the first assessment.
+ * @returns {Promise<void>} the computed result
+ */
 async function initialize() {
   try {
     state.targets = await request("/api/targets");
@@ -123,6 +186,13 @@ async function initialize() {
   }
 }
 
+/**
+ * Fetches the selected application assessment and its passive/active reports, preserving the mode on refresh.
+ *
+ * @param {string} targetId the configured application identifier ({@code juiceshop} or {@code dvwa})
+ * @param {boolean} preserveMode whether to preserve active/passive selection during refresh
+ * @returns {Promise<void>} the computed result
+ */
 async function loadAssessment(targetId, preserveMode = true) {
   byId("loading").hidden = false;
   byId("content").hidden = true;
@@ -152,6 +222,11 @@ async function loadAssessment(targetId, preserveMode = true) {
   }
 }
 
+/**
+ * Switches between saved passive and active results for the same application without running a scan.
+ *
+ * @param {"active"|"passive"} mode the saved scan mode to display, never a command to start scanning
+ */
 function switchScan(mode) {
   if (!state.reports || !["passive", "active"].includes(mode)) return;
 
@@ -163,6 +238,9 @@ function switchScan(mode) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+/**
+ * Updates headings, the active/passive back control, report status, and all dashboard views.
+ */
 function renderAssessment() {
   state.data = state.reports[state.mode];
 
@@ -207,12 +285,22 @@ function renderAssessment() {
   renderEvidence();
 }
 
+/**
+ * Displays a user-readable SPA loading or rendering error.
+ *
+ * @param {Error|string} error the error whose message should be shown to the user
+ */
 function showError(error) {
   byId("error").hidden = false;
   byId("error").textContent = error?.message || String(error);
   byId("loading").hidden = true;
 }
 
+/**
+ * Selects one of the overview, findings, tests, or evidence views.
+ *
+ * @param {string} view the target dashboard panel
+ */
 function showView(view) {
   state.view = view;
 
@@ -234,11 +322,27 @@ function showView(view) {
       `${state.mode === "active" ? "Active scan" : "Passive scan"} / ${section}`;
 }
 
+/**
+ * Builds a styled label describing severity, status, or triage.
+ *
+ * @param {any} value the value to compare or render
+ * @param {string} kind the style key for the badge
+ * @returns {HTMLSpanElement} the computed result
+ */
 function badge(value, kind = value) {
   return node("span",
       `badge ${lower(kind).replace(/[^a-z]/g, "")}`, value);
 }
 
+/**
+ * Creates a summary card for a count or report status.
+ *
+ * @param {string} label the visible UI label
+ * @param {any} value the value to compare or render
+ * @param {string} caption secondary explanatory text
+ * @param {string} accent the CSS accent color
+ * @returns {HTMLDivElement} the computed result
+ */
 function summaryMetric(label, value, caption, accent) {
   const element = node("div", "metric");
   element.style.setProperty("--accent", accent);
@@ -251,6 +355,10 @@ function summaryMetric(label, value, caption, accent) {
   return element;
 }
 
+/**
+ * Creates the clickable status card that opens active findings within the selected application.
+ * @returns {HTMLButtonElement} the clickable scanner status card
+ */
 function activeScanMetric() {
   const element = node("button", "metric");
   element.type = "button";
@@ -285,6 +393,12 @@ function activeScanMetric() {
   return element;
 }
 
+/**
+ * Groups alert instances by scanner plugin, name, and triage decision before sorting by severity.
+ *
+ * @param {Object[]} findings the alert instances to group and sort
+ * @returns {Array<Object>} grouped alerts sorted by severity
+ */
 function groupFindings(findings) {
   const groups = new Map();
 
@@ -303,6 +417,9 @@ function groupFindings(findings) {
       || a.name.localeCompare(b.name));
 }
 
+/**
+ * Renders severity metrics, triage counts, top findings, and the active-scan navigation tile.
+ */
 function renderOverview() {
   const all = state.data.scan.findings;
   const active = all.filter(x => x.status === "INCLUDE");
@@ -431,6 +548,11 @@ function renderOverview() {
         "No active findings in the current report."));
 }
 
+/**
+ * Opens the findings view and expands the selected priority alert.
+ *
+ * @param {Object} finding the report finding selected for inspection
+ */
 function openPriorityFinding(finding) {
   byId("finding-search").value = "";
   byId("finding-status").value = "INCLUDE";
@@ -452,6 +574,13 @@ function openPriorityFinding(finding) {
   card.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+/**
+ * Creates a labeled detail field for an observed request or test result.
+ *
+ * @param {string} label the visible UI label
+ * @param {any} value the value to compare or render
+ * @returns {HTMLDivElement} the computed result
+ */
 function field(label, value) {
   const block = node("div", "detail-block");
 
@@ -462,6 +591,14 @@ function field(label, value) {
   return block;
 }
 
+/**
+ * Creates an explanatory text or preformatted evidence section.
+ *
+ * @param {string} title the heading text
+ * @param {string} content the text displayed in the section
+ * @param {boolean} pre whether the content should preserve whitespace
+ * @returns {HTMLElement} the computed result
+ */
 function textSection(title, content, pre = false) {
   const section = node("section", "description-block");
   section.append(node("h3", "", title));
@@ -476,6 +613,13 @@ function textSection(title, content, pre = false) {
   return section;
 }
 
+/**
+ * Describes the ZAP scanner evidence available for an alert instance.
+ *
+ * @param {Object} group the grouped ZAP alert
+ * @param {Object} observation the individual request observation
+ * @returns {HTMLElement} the computed result
+ */
 function detectionContext(group, observation) {
   const section = node("section", "description-block");
   section.append(node("h3", "",
@@ -507,6 +651,12 @@ function detectionContext(group, observation) {
   return section;
 }
 
+/**
+ * Builds an expandable finding card with severity, request instances, and remediation.
+ *
+ * @param {Object} group the grouped ZAP alert
+ * @returns {HTMLDetailsElement} the computed result
+ */
 function makeFinding(group) {
   const card = node("details", "result-card");
   card.dataset.pluginId = String(group.pluginId);
@@ -581,6 +731,9 @@ function makeFinding(group) {
   return card;
 }
 
+/**
+ * Filters and renders the saved ZAP findings for the selected scan mode.
+ */
 function renderFindings() {
   if (!state.data) return;
 
@@ -612,6 +765,9 @@ function renderFindings() {
   byId("findings-empty").hidden = grouped.length !== 0;
 }
 
+/**
+ * Filters and renders previously recorded TestNG results and screenshot links.
+ */
 function renderTests() {
   if (!state.data) return;
 
@@ -685,6 +841,13 @@ function renderTests() {
         "No tests match the selected filters, or no TestNG CSV is available."));
 }
 
+/**
+ * Creates an accessible link and thumbnail for a stored evidence screenshot.
+ *
+ * @param {string} src the screenshot URL from the local API
+ * @param {string} label the visible UI label
+ * @returns {HTMLAnchorElement} the computed result
+ */
 function imageLink(src, label) {
   const anchor = node("a", "screenshot");
   anchor.href = src;
@@ -700,6 +863,9 @@ function imageLink(src, label) {
   return anchor;
 }
 
+/**
+ * Builds the evidence gallery from saved screenshot references.
+ */
 function renderEvidence() {
   if (!state.data) return;
 

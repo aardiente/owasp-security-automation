@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * TestNG test class for the dvwa sql injection scenarios within the Docker security lab.
+ */
 public class DvwaSqlInjection extends BaseDvwaTest {
 
     private final String payloadSource = "src/test/java/data/sqli_payloads.xlsx";
@@ -47,6 +50,11 @@ public class DvwaSqlInjection extends BaseDvwaTest {
             List<ResultRow> rows
     ) {}
 
+    /**
+     * Builds the security-level and payload pairs for parameterized DVWA SQL injection tests.
+     *
+     * @return the TestNG data-provider matrix; each row contains the parameters for one test invocation
+     */
     @DataProvider(name = "securityAndPayloads")
     public Object[][] getSecurityAndPayloads() {
         Object[][] payloads = ExcelFileReader.extractData(payloadSource, null, false);
@@ -64,6 +72,11 @@ public class DvwaSqlInjection extends BaseDvwaTest {
         return testData;
     }
 
+    /**
+     * Opens the SQL injection module with the desired browser and security settings.
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     */
     private void prepareSqlInjectionPage(WebDriver driver) {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
@@ -98,6 +111,12 @@ public class DvwaSqlInjection extends BaseDvwaTest {
         }
     }
 
+    /**
+     * Normalizes the SQL injection payload for consistent probe execution.
+     *
+     * @param payload the test input submitted to the intentionally vulnerable lab application
+     * @return the SQL injection input after normalizing its representation
+     */
     private String normalizePayload(String payload) {
         String trimmed = payload.stripLeading();
 
@@ -116,6 +135,12 @@ public class DvwaSqlInjection extends BaseDvwaTest {
         return payload;
     }
 
+    /**
+     * Extracts structured result rows from the DVWA SQL injection response.
+     *
+     * @param response the rendered DVWA response text to parse for result records
+     * @return the database response rows parsed from the DVWA page
+     */
     private List<ResultRow> extractRows(String response) {
         List<ResultRow> rows = new ArrayList<>();
         Matcher matcher = RESULT_ROW.matcher(response);
@@ -130,6 +155,12 @@ public class DvwaSqlInjection extends BaseDvwaTest {
         return rows;
     }
 
+    /**
+     * Checks extracted SQL result rows for password-hash evidence.
+     *
+     * @param rows the rows of previously parsed test or CSV data
+     * @return {@code true} when password hash is satisfied; {@code false} otherwise
+     */
     private boolean containsPasswordHash(List<ResultRow> rows) {
         for (ResultRow row : rows) {
             if (PASSWORD_HASH.matcher(row.surname()).matches()) return true;
@@ -138,6 +169,13 @@ public class DvwaSqlInjection extends BaseDvwaTest {
         return false;
     }
 
+    /**
+     * Submits one SQL injection probe and records its observable response for assertions.
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     * @param payload the test input submitted to the intentionally vulnerable lab application
+     * @return the SQL injection probe response, parsed rows, and associated signals
+     */
     private ProbeResult submitProbe(WebDriver driver, String payload) {
         driver.get(baseUrl + SqlInjectionPage.endpoint);
 
@@ -162,6 +200,12 @@ public class DvwaSqlInjection extends BaseDvwaTest {
         return result;
     }
 
+    /**
+     * Executes a parameterized DVWA SQL injection probe at the requested security level and evaluates observed results.
+     *
+     * @param level the selected DVWA security setting
+     * @param originalPayload the input row from the SQL injection data provider
+     */
     @Test(dataProvider = "securityAndPayloads")
     public void sqlInjection_Low(String level, String originalPayload) {
         WebDriver driver = ZapManager.getDriver();

@@ -8,15 +8,30 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
+/**
+ * Juice Shop page object exposing Selenium interactions for the privacy policy view.
+ */
 public class PrivacyPolicyPage extends BasePage {
     private final By policyContainer = By.cssSelector("app-privacy-policy");
     private final By policyContent = By.cssSelector("app-privacy-policy .privacy-policy");
     private final By policyImage = By.cssSelector("app-privacy-policy img[src$='81px.png']");
 
+    /**
+     * Creates the privacy policy page component and initializes the dependencies required by its methods.
+     *
+     * <p>Creates a privacy policy page instance and initializes its dependencies.</p>
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     */
     public PrivacyPolicyPage(WebDriver driver) {
         super(driver);
     }
 
+    /**
+     * Opens the Juice Shop privacy policy route.
+     *
+     * @param baseUrl the base URL of the containerized application under test
+     */
     public void open(String baseUrl) {
         driver.get(baseUrl + "#/privacy-security/privacy-policy");
         var pageWait = new WebDriverWait(driver, Duration.ofSeconds(15));
@@ -24,7 +39,12 @@ public class PrivacyPolicyPage extends BasePage {
         pageWait.until(ExpectedConditions.presenceOfElementLocated(policyImage));
     }
 
-    /** Show an actual image when available; otherwise show the application's existing privacy policy. */
+    /**
+     * Show an actual image when available; otherwise show the application's existing privacy policy.
+     *
+     * @param baseUrl the base URL of the containerized application under test
+     * @param imageAvailable whether the page contains the expected illustration
+     */
     public void showInspectionEvidence(String baseUrl, boolean imageAvailable) {
         if (imageAvailable) {
             try {

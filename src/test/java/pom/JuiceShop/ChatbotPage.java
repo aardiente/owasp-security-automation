@@ -9,6 +9,9 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
+/**
+ * Juice Shop page object exposing Selenium interactions for the chatbot view.
+ */
 public class ChatbotPage extends BasePage
 {
     private final By sideNavButton = By.cssSelector("button[aria-label='Open Sidenav']");
@@ -17,11 +20,21 @@ public class ChatbotPage extends BasePage
     private final By sendButton = By.cssSelector("button.send-button");
     private final By botMessageContents = By.cssSelector(".chat-bubble.assistant .message-content");
 
+    /**
+     * Creates the chatbot page component and initializes the dependencies required by its methods.
+     *
+     * <p>Creates a chatbot page instance and initializes its dependencies.</p>
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     */
     public ChatbotPage(WebDriver driver)
     {
         super(driver);
     }
 
+    /**
+     * Opens the built-in Juice Shop chatbot user interface.
+     */
     public void openChatbot()
     {
         wait.until(ExpectedConditions.elementToBeClickable(sideNavButton)).click();
@@ -29,6 +42,11 @@ public class ChatbotPage extends BasePage
         wait.until(ExpectedConditions.visibilityOfElementLocated(chatInputField));
     }
 
+    /**
+     * Submits a text message to the Juice Shop chatbot.
+     *
+     * @param prompt the question or instruction sent to the demo chatbot
+     */
     public void sendMessage(String prompt)
     {
         WebElement input = wait.until(ExpectedConditions.elementToBeClickable(chatInputField));
@@ -41,6 +59,12 @@ public class ChatbotPage extends BasePage
         submitBtn.click();
     }
 
+    /**
+     * Waits for and returns the latest chatbot response after the previous message count.
+     *
+     * @param previousCount the number of messages already present before the chatbot request
+     * @return the latest chatbot reply appearing after the previous message count
+     */
     public String getLatestBotResponse(int previousCount)
     {
         driver.manage().timeouts().implicitlyWait(Duration.ZERO);
@@ -57,6 +81,11 @@ public class ChatbotPage extends BasePage
         }
     }
 
+    /**
+     * Counts the chatbot messages visible in the conversation.
+     *
+     * @return the number of chatbot messages currently rendered
+     */
     public int getBotMessageCount()
     {
         driver.manage().timeouts().implicitlyWait(Duration.ZERO);

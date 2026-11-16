@@ -15,10 +15,26 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+/**
+ * Runs a bounded ZAP spider and active scan against a configured lab URL and exports machine-readable completion metadata.
+ */
 public final class ZapActiveScan {
 
+    /**
+     * Prevents direct instantiation of this utility class.
+     */
     private ZapActiveScan() {}
 
+    /**
+     * Spiders and actively scans a configured lab origin within a deadline, writing a JSON execution summary.
+     *
+     * <p>Allocates part of the deadline to a ZAP spider crawl and spends the remainder on active scanning; writes completion, progress, timing, and error fields even on failure.</p>
+     *
+     * @param targetUrl the HTTP(S) URL of the authorized lab application to spider and scan
+     * @param limit the maximum allowed duration for the spider and active scan
+     * @param statusOutput the path where scan execution status is written as JSON
+     * @return {@code true} only if the active scan reached 100% before the deadline; otherwise {@code false}
+     */
     public static boolean run(String targetUrl, Duration limit, Path statusOutput) {
         Instant started = Instant.now();
         String scanId = "";
@@ -136,6 +152,13 @@ public final class ZapActiveScan {
         return "completed".equals(status);
     }
 
+    /**
+     * Attempts to stop any active ZAP scanner and spider jobs that were started.
+     *
+     * @param client the ZAP API client controlling scanner jobs
+     * @param scanId the identifier of the active-scan job to stop
+     * @param spiderId the identifier of the spider job to stop
+     */
     private static void stop(ClientApi client, String scanId, String spiderId) {
         if (!scanId.isBlank()) {
             try { client.ascan.stop(scanId); }

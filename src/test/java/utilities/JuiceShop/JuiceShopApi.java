@@ -22,6 +22,9 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Wraps Juice Shop HTTP endpoints, login sessions, challenge records, and multipart uploads for the test helpers.
+ */
 public final class JuiceShopApi {
 
     private final String baseUrl;
@@ -30,6 +33,13 @@ public final class JuiceShopApi {
 
     public record JuiceSession(String token, int basketId, int userId) {}
 
+    /**
+     * Creates the juice shop api component and initializes the dependencies required by its methods.
+     *
+     * <p>Creates an API helper bound to the specified Juice Shop base URL.</p>
+     *
+     * @param baseUrl the base URL of the containerized application under test
+     */
     public JuiceShopApi(String baseUrl) {
         this.baseUrl = baseUrl.endsWith("/")
                 ? baseUrl.substring(0, baseUrl.length() - 1)
@@ -47,32 +57,100 @@ public final class JuiceShopApi {
                 .build();
     }
 
+    /**
+     * Sends a GET request to the specified Juice Shop API path, optionally using a session token.
+     *
+     * @param path the application-relative HTTP endpoint to request
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> get(String path) throws IOException, InterruptedException {
         return sendApi("GET", path, null, null);
     }
 
+    /**
+     * Sends a GET request to the specified Juice Shop API path, optionally using a session token.
+     *
+     * @param path the application-relative HTTP endpoint to request
+     * @param token the optional authentication bearer token
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> get(String path, String token) throws IOException, InterruptedException {
         return sendApi("GET", path, null, token);
     }
 
+    /**
+     * Sends a JSON POST request to the specified Juice Shop API path, optionally using a session token.
+     *
+     * @param path the application-relative HTTP endpoint to request
+     * @param body the request payload being serialized and submitted to the API
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> post(String path, Object body) throws IOException, InterruptedException {
         return sendApi("POST", path, json.toJson(body), null);
     }
 
+    /**
+     * Sends a JSON POST request to the specified Juice Shop API path, optionally using a session token.
+     *
+     * @param path the application-relative HTTP endpoint to request
+     * @param body the request payload being serialized and submitted to the API
+     * @param token the optional authentication bearer token
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> post(String path, Object body, String token)
             throws IOException, InterruptedException {
         return sendApi("POST", path, json.toJson(body), token);
     }
 
+    /**
+     * Sends an authenticated JSON PUT request to a Juice Shop API endpoint.
+     *
+     * @param path the application-relative HTTP endpoint to request
+     * @param body the request payload being serialized and submitted to the API
+     * @param token the optional authentication bearer token
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> put(String path, Object body, String token)
             throws IOException, InterruptedException {
         return sendApi("PUT", path, json.toJson(body), token);
     }
 
+    /**
+     * Sends an authenticated HTTP DELETE request to a Juice Shop API endpoint.
+     *
+     * @param path the application-relative HTTP endpoint to request
+     * @param token the optional authentication bearer token
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> delete(String path, String token) throws IOException, InterruptedException {
         return sendApi("DELETE", path, null, token);
     }
 
+    /**
+     * Builds and sends an HTTP request to the Juice Shop API with optional body and authorization token.
+     *
+     * <p>Builds the HTTP request and optionally attaches the session token; callers receive the unmodified HTTP response.</p>
+     *
+     * @param method the HTTP request method or reflected Java method being processed
+     * @param path the application-relative HTTP endpoint to request
+     * @param body the request payload being serialized and submitted to the API
+     * @param token the optional authentication bearer token
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> sendApi(String method, String path, String body, String token)
             throws IOException, InterruptedException {
 
@@ -107,10 +185,26 @@ public final class JuiceShopApi {
         return response;
     }
 
+    /**
+     * Authenticates a Juice Shop user and returns the parsed session details.
+     *
+     * @return the authenticated session with token and user identifier
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public JuiceSession login() throws IOException, InterruptedException {
         return login("admin@juice-sh.op", "admin123");
     }
 
+    /**
+     * Authenticates a Juice Shop user and returns the parsed session details.
+     *
+     * @param email the email address submitted as the account identifier
+     * @param password the password submitted in the login request
+     * @return the authenticated session with token and user identifier
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     @SuppressWarnings("unchecked")
     public JuiceSession login(String email, String password) throws IOException, InterruptedException {
         HttpResponse<String> response = post(
@@ -148,6 +242,15 @@ public final class JuiceShopApi {
         return new JuiceSession(token, basketId, userId);
     }
 
+    /**
+     * Fetches the current Juice Shop Score Board challenge states from the API.
+     *
+     * <p>Fetches the Juice Shop challenges endpoint.</p>
+     *
+     * @return the HTTP response containing challenge completion records
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> getChallenges() throws IOException, InterruptedException {
         HttpResponse<String> response = get("/api/Challenges");
 
@@ -157,6 +260,16 @@ public final class JuiceShopApi {
         return response;
     }
 
+    /**
+     * Writes the returned Juice Shop challenge catalog to a destination file.
+     *
+     * <p>Fetches the challenge status API and writes its JSON response to the requested output file.</p>
+     *
+     * @param outputFile the destination path for generated output
+     * @return the path where the current challenge status JSON was saved
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public Path saveChallenges(Path outputFile) throws IOException, InterruptedException {
         HttpResponse<String> response = get("/api/Challenges");
 
@@ -174,6 +287,12 @@ public final class JuiceShopApi {
     }
 
 
+    /**
+     * Extracts a user ID from a Juice Shop authentication token.
+     *
+     * @param token the optional authentication bearer token
+     * @return the user identifier encoded in the supplied session token
+     */
     @SuppressWarnings("unchecked")
     private int extractUserId(String token) {
         String[] parts = token.split("\\.");
@@ -195,6 +314,14 @@ public final class JuiceShopApi {
         return ((Number) user.get("id")).intValue();
     }
 
+    /**
+     * Parses the submitted API response into feedback objects.
+     *
+     * <p>Parses feedback records from the supplied API response body.</p>
+     *
+     * @param responseBody the raw response body returned from Juice Shop
+     * @return the feedback records decoded from the response JSON
+     */
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getFeedbackRecords(String responseBody) {
         Map<String, Object> response = json.toType(responseBody, Map.class);
@@ -206,6 +333,14 @@ public final class JuiceShopApi {
         return (List<Map<String, Object>>) records;
     }
 
+    /**
+     * Checks the Juice Shop challenge catalog for the named completed challenge.
+     *
+     * @param challengeName the Score Board name of the Juice Shop challenge to inspect
+     * @return {@code true} when the named challenge is marked solved in the scoreboard response
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public boolean isChallengeSolved(String challengeName) throws IOException, InterruptedException {
         HttpResponse<String> response = get("/api/Challenges");
 
@@ -217,6 +352,13 @@ public final class JuiceShopApi {
         return isChallengeSolved(response.body(), challengeName);
     }
 
+    /**
+     * Checks the Juice Shop challenge catalog for the named completed challenge.
+     *
+     * @param responseBody the raw response body returned from Juice Shop
+     * @param challengeName the Score Board name of the Juice Shop challenge to inspect
+     * @return {@code true} when the named challenge is marked solved in the scoreboard response
+     */
     @SuppressWarnings("unchecked")
     private boolean isChallengeSolved(String responseBody, String challengeName) {
         Map<String, Object> response = json.toType(responseBody, Map.class);
@@ -235,6 +377,20 @@ public final class JuiceShopApi {
         throw new IllegalArgumentException("Challenge not found: " + challengeName);
     }
 
+    /**
+     * Submits a multipart file upload to the configured Juice Shop endpoint.
+     *
+     * <p>Formats the multipart request body and returns the server response for assertion in the caller.</p>
+     *
+     * @param path the application-relative HTTP endpoint to request
+     * @param filename the filename associated with a file upload or screenshot
+     * @param contentType the uploaded part’s MIME type
+     * @param fileContent the bytes uploaded as the multipart file part
+     * @param token the optional authentication bearer token
+     * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     * @throws InterruptedException if the current thread is interrupted while waiting for the operation
+     */
     public HttpResponse<String> uploadMultipart(
             String path,
             String filename,
