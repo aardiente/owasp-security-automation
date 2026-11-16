@@ -15,8 +15,16 @@ import utilities.ScreenshotManager;
 
 import java.time.Duration;
 
+/**
+ * TestNG test class for the dvwa xss reflection scenarios within the Docker security lab.
+ */
 public class DvwaXSSReflection extends BaseDvwaTest {
 
+    /**
+     * Builds the security-level and payload pairs for parameterized reflected-XSS tests.
+     *
+     * @return the TestNG data-provider matrix; each row contains the parameters for one test invocation
+     */
     @DataProvider(name = "securityAndPayloads")
     public Object[][] getSecurityAndPayloads() {
         Object[][] payloadsFromExcel = ExcelFileReader.extractData("src/test/java/data/xss_payloads.xlsx", null);
@@ -36,6 +44,12 @@ public class DvwaXSSReflection extends BaseDvwaTest {
         return testData;
     }
 
+    /**
+     * Submits a reflected-XSS payload to DVWA and checks the browser response at the selected security level.
+     *
+     * @param levelStr the DVWA security level name from the data provider
+     * @param payload the test input submitted to the intentionally vulnerable lab application
+     */
     @Test(dataProvider = "securityAndPayloads")
     public void XSS_Reflected(String levelStr, String payload) {
         var driver = ZapManager.getDriver();

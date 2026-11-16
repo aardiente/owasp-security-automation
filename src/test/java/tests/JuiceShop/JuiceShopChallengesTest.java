@@ -22,17 +22,30 @@ import utilities.ScreenshotManager;
 import java.net.URI;
 import java.time.Duration;
 
+/**
+ * Exercises selected OWASP Juice Shop challenges and public API behavior; screenshots provide evidence and the Score Board check runs last.
+ */
 public class JuiceShopChallengesTest extends JuiceShopBaseTest {
 
     private JuiceShopApi api;
     private JuiceShopChallengeActions actions;
 
+    /**
+     * Creates the shared API and challenge-action helpers before a Juice Shop challenge test.
+     */
     @BeforeMethod
     public void prepareChallengeUtilities() {
         api = new JuiceShopApi(baseUrl);
         actions = new JuiceShopChallengeActions(api);
     }
 
+    /**
+     * Tests whether an SQL injection login input bypasses Juice Shop authentication in the isolated lab.
+     *
+     * <p>Uses the LoginPage page object for browser interaction.</p>
+     * <p>Evaluates assertTrue assertion against the observed response or page state.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     */
     @Test(priority = 1)
     public void testSqlInjectionLoginBypass() {
         var driver = ZapManager.getDriver();
@@ -43,6 +56,13 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertTrue(loginPage.isUserLoggedIn(), "SQL Injection authentication bypass failed: user is not logged in.");
     }
 
+    /**
+     * Exercises DOM-based XSS in the isolated Juice Shop lab and verifies the resulting browser alert.
+     *
+     * <p>Uses the SearchPage page object for browser interaction.</p>
+     * <p>Evaluates assertEquals assertion against the observed response or page state.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     */
     @Test(priority = 2)
     public void testDomXssChallenge() {
         var driver = ZapManager.getDriver();
@@ -57,6 +77,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         System.out.println("DOM XSS payload executed successfully.");
     }
 
+    /**
+     * Exercises the Juice Shop Confidential Document challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /ftp/acquisitions.md} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Confidential Document}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 3)
     public void testConfidentialDocumentChallenge() throws Exception {
         var response = api.get("/ftp/acquisitions.md");
@@ -67,6 +96,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Confidential Document");
     }
 
+    /**
+     * Exercises the Juice Shop Exposed Metrics challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /metrics} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Exposed Metrics}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 4)
     public void testExposedMetricsChallenge() throws Exception {
         var response = api.get("/metrics");
@@ -81,6 +119,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Exposed Metrics");
     }
 
+    /**
+     * Exercises the Juice Shop Admin Section challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage, AdministrationPage page objects for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Admin Section}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 5)
     public void testAdminSectionChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -91,6 +138,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Admin Section");
     }
 
+    /**
+     * Exercises the Juice Shop Security Policy challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the ResourcePage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Security Policy}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 6)
     public void testSecurityPolicyChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -102,6 +158,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Security Policy");
     }
 
+    /**
+     * Exercises the Juice Shop Missing Encoding challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the ResourcePage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Missing Encoding}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 7)
     public void testMissingEncodingChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -114,6 +179,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Missing Encoding");
     }
 
+    /**
+     * Exercises the Juice Shop Extra Language challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the ResourcePage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Extra Language}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 8)
     public void testExtraLanguageChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -123,6 +197,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Extra Language");
     }
 
+    /**
+     * Exercises the Juice Shop Privacy Policy challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the PrivacyPolicyPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Privacy Policy}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 9)
     public void testPrivacyPolicyChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -132,6 +215,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Privacy Policy");
     }
 
+    /**
+     * Exercises the Juice Shop Error Handling challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the ResourcePage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Error Handling}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 11)
     public void testErrorHandlingChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -143,6 +235,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Error Handling");
     }
 
+    /**
+     * Exercises the Juice Shop Password Strength challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Password Strength}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 12)
     public void testPasswordStrengthChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -154,6 +255,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Password Strength");
     }
 
+    /**
+     * Exercises the Juice Shop Login Bender challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Login Bender}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 13)
     public void testLoginBenderChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -165,6 +275,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Login Bender");
     }
 
+    /**
+     * Exercises the Juice Shop Login Jim challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Login Jim}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 14)
     public void testLoginJimChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -176,6 +295,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Login Jim");
     }
 
+    /**
+     * Exercises the Juice Shop Access Log challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the ResourcePage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Access Log}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 15)
     public void testAccessLogChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -189,6 +317,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Access Log");
     }
 
+    /**
+     * Exercises the Juice Shop Misplaced IaC Files challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the ResourcePage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Misplaced IaC Files}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 16)
     public void testMisplacedIaCFilesChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -201,6 +338,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Misplaced IaC Files");
     }
 
+    /**
+     * Exercises the Juice Shop Bonus Payload challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the SearchPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Bonus Payload}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 17)
     public void testBonusPayloadChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -217,6 +363,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Bonus Payload");
     }
 
+    /**
+     * Exercises the Juice Shop Easter Egg challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /ftp/eastere.gg%2500.md} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Easter Egg}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 18)
     public void testEasterEggChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -231,6 +386,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Easter Egg");
     }
 
+    /**
+     * Exercises the Juice Shop Forgotten Developer Backup challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /ftp/package.json.bak%2500.md} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Forgotten Developer Backup}, {@code Poison Null Byte}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 19)
     public void testPoisonNullByteChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -248,6 +412,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Poison Null Byte");
     }
 
+    /**
+     * Exercises the Juice Shop Forgotten Sales Backup challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /ftp/coupons_2013.md.bak%2500.pdf} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Forgotten Sales Backup}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 20)
     public void testForgottenSalesBackupChallenge() throws Exception {
         var response = api.get("/ftp/coupons_2013.md.bak%2500.pdf");
@@ -257,6 +430,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Forgotten Sales Backup");
     }
 
+    /**
+     * Exercises the Juice Shop Misplaced Signature File challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /ftp/suspicious_errors.yml%2500.md} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Misplaced Signature File}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 21)
     public void testMisplacedSignatureFileChallenge() throws Exception {
         var response = api.get("/ftp/suspicious_errors.yml%2500.md");
@@ -266,6 +448,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Misplaced Signature File");
     }
 
+    /**
+     * Exercises the Juice Shop Outdated Allowlist challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /redirect?to=} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Outdated Allowlist}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 22)
     public void testOutdatedAllowlistChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -279,6 +470,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Outdated Allowlist");
     }
 
+    /**
+     * Exercises the Juice Shop Privacy Policy Inspection challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /assets/private/thank-you.jpg} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Privacy Policy Inspection}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 23)
     public void testPrivacyPolicyInspectionChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -298,6 +498,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         ScreenshotManager.capture(driver);
     }
 
+    /**
+     * Exercises the Juice Shop Repetitive Registration challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code registerWithMismatchedPasswords} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Repetitive Registration}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 24)
     public void testRepetitiveRegistrationChallenge() throws Exception {
         var response = actions.registerWithMismatchedPasswords();
@@ -305,6 +514,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Repetitive Registration");
     }
 
+    /**
+     * Exercises the Juice Shop Empty User Registration challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code registerEmptyUser} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Empty User Registration}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 25)
     public void testEmptyUserRegistrationChallenge() throws Exception {
         var response = actions.registerEmptyUser();
@@ -312,6 +530,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Empty User Registration");
     }
 
+    /**
+     * Exercises the Juice Shop View Basket challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code viewAnotherBasket} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code View Basket}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 26)
     public void testViewBasketChallenge() throws Exception {
         var result = actions.viewAnotherBasket();
@@ -324,6 +551,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("View Basket");
     }
 
+    /**
+     * Exercises the Juice Shop Forged Feedback challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitForgedFeedback} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Forged Feedback}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 27)
     public void testForgedFeedbackChallenge() throws Exception {
         var result = actions.submitForgedFeedback();
@@ -336,6 +572,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Forged Feedback");
     }
 
+    /**
+     * Exercises the Juice Shop Five-Star Feedback challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code removeFiveStarFeedback} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Five-Star Feedback}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 28)
     public void testFiveStarFeedbackChallenge() throws Exception {
         var result = actions.removeFiveStarFeedback();
@@ -346,6 +591,14 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Five-Star Feedback");
     }
 
+    /**
+     * Exercises the Juice Shop Web3 Sandbox challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Checks the Score Board challenge state for {@code Web3 Sandbox}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 29)
     public void testWeb3SandboxChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -354,6 +607,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Web3 Sandbox");
     }
 
+    /**
+     * Exercises the Juice Shop Admin Registration challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code registerWithAdminRole} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Admin Registration}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 30)
     public void testAdminRegistrationChallenge() throws Exception {
         var response = actions.registerWithAdminRole();
@@ -361,6 +623,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Admin Registration");
     }
 
+    /**
+     * Exercises the Juice Shop Zero Stars challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitZeroStarFeedback} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Zero Stars}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 31)
     public void testZeroStarsChallenge() throws Exception {
         var response = actions.submitZeroStarFeedback();
@@ -368,6 +639,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Zero Stars");
     }
 
+    /**
+     * Exercises the Juice Shop Forged Review challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitForgedProductReview} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Forged Review}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 32)
     public void testForgedReviewChallenge() throws Exception {
         var response = actions.submitForgedProductReview();
@@ -375,6 +655,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Forged Review");
     }
 
+    /**
+     * Exercises the Juice Shop Login MC SafeSearch challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Login MC SafeSearch}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 33)
     public void testLoginMcSafeSearchChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -383,6 +672,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Login MC SafeSearch");
     }
 
+    /**
+     * Exercises the Juice Shop Login Amy challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Login Amy}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 34)
     public void testLoginAmyChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -391,6 +689,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Login Amy");
     }
 
+    /**
+     * Exercises the Juice Shop Password Hash Leak challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage, ResourcePage page objects for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Password Hash Leak}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 35)
     public void testPasswordHashLeakChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -401,6 +708,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Password Hash Leak");
     }
 
+    /**
+     * Exercises the Juice Shop Email Leak challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /rest/user/whoami?callback=leak} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Email Leak}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 36)
     public void testEmailLeakChallenge() throws Exception {
         var response = api.get("/rest/user/whoami?callback=leak");
@@ -408,6 +724,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Email Leak");
     }
 
+    /**
+     * Exercises the Juice Shop Weird Crypto challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitCryptoComplaint} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Weird Crypto}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 37)
     public void testWeirdCryptoChallenge() throws Exception {
         var response = actions.submitCryptoComplaint();
@@ -415,6 +740,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Weird Crypto");
     }
 
+    /**
+     * Exercises the Juice Shop Vulnerable Library challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitVulnerableLibraryComplaint} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Vulnerable Library}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 38)
     public void testVulnerableLibraryChallenge() throws Exception {
         var response = actions.submitVulnerableLibraryComplaint();
@@ -422,6 +756,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Vulnerable Library");
     }
 
+    /**
+     * Exercises the Juice Shop Nested Easter Egg challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code retrieveNestedEasterEgg} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Nested Easter Egg}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 39)
     public void testNestedEasterEggChallenge() throws Exception {
         var response = actions.retrieveNestedEasterEgg();
@@ -430,6 +773,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Nested Easter Egg");
     }
 
+    /**
+     * Exercises the Juice Shop Retrieve Blueprint challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code retrieveBlueprint} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Retrieve Blueprint}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 40)
     public void testRetrieveBlueprintChallenge() throws Exception {
         var response = actions.retrieveBlueprint();
@@ -438,6 +790,14 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Retrieve Blueprint");
     }
 
+    /**
+     * Exercises the Juice Shop Blockchain Hype challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Checks the Score Board challenge state for {@code Blockchain Hype}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 41)
     public void testBlockchainHypeChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -446,6 +806,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Blockchain Hype");
     }
 
+    /**
+     * Exercises the Juice Shop Premium Paywall challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code openPremiumPage} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Premium Paywall}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 42)
     public void testPremiumPaywallChallenge() throws Exception {
         var response = actions.openPremiumPage();
@@ -454,6 +823,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Premium Paywall");
     }
 
+    /**
+     * Exercises the Juice Shop Imaginary Challenge challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code applyImaginaryContinueCode} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Imaginary Challenge}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 43)
     public void testImaginaryChallenge() throws Exception {
         var response = actions.applyImaginaryContinueCode();
@@ -461,6 +839,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Imaginary Challenge");
     }
 
+    /**
+     * Exercises the Juice Shop Allowlist Bypass challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code bypassRedirectAllowlist} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Allowlist Bypass}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 44)
     public void testAllowlistBypassChallenge() throws Exception {
         var response = actions.bypassRedirectAllowlist();
@@ -469,6 +856,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Allowlist Bypass");
     }
 
+    /**
+     * Exercises the Juice Shop Legacy Typosquatting challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitFeedback} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Legacy Typosquatting}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 45)
     public void testLegacyTyposquattingChallenge() throws Exception {
         var response = actions.submitFeedback("Suspect dependency: epilogue-js");
@@ -476,6 +872,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Legacy Typosquatting");
     }
 
+    /**
+     * Exercises the Juice Shop Frontend Typosquatting challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitFeedback} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Frontend Typosquatting}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 46)
     public void testFrontendTyposquattingChallenge() throws Exception {
         var response = actions.submitFeedback("Suspect frontend module: ngy-cookie");
@@ -483,6 +888,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Frontend Typosquatting");
     }
 
+    /**
+     * Exercises the Juice Shop Steganography challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitFeedback} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Steganography}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 47)
     public void testSteganographyChallenge() throws Exception {
         var response = actions.submitFeedback("The hidden character is Pickle Rick");
@@ -490,6 +904,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Steganography");
     }
 
+    /**
+     * Exercises the Juice Shop Supply Chain Attack challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitFeedback} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Supply Chain Attack}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 48)
     public void testSupplyChainAttackChallenge() throws Exception {
         var response = actions.submitFeedback("https://github.com/eslint/eslint-scope/issues/39");
@@ -497,6 +920,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Supply Chain Attack");
     }
 
+    /**
+     * Exercises the Juice Shop Leaked Unsafe Product challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitFeedback} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Leaked Unsafe Product}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 49)
     public void testLeakedUnsafeProductChallenge() throws Exception {
         var response = actions.submitFeedback("Rippertuer Special Juice contains unsafe ingredients: Eurogium Edule and Hueteroneel");
@@ -504,6 +936,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Leaked Unsafe Product");
     }
 
+    /**
+     * Exercises the Juice Shop Product Tampering challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code tamperWithProductDescription}, {@code waitForChallenge} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Product Tampering}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 50)
     public void testProductTamperingChallenge() throws Exception {
         var response = actions.tamperWithProductDescription();
@@ -515,6 +956,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Product Tampering");
     }
 
+    /**
+     * Exercises the Juice Shop NoSQL Manipulation challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code updateAllReviewsViaNoSql} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code NoSQL Manipulation}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 51)
     public void testNoSqlManipulationChallenge() throws Exception {
         var response = actions.updateAllReviewsViaNoSql();
@@ -522,6 +972,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("NoSQL Manipulation");
     }
 
+    /**
+     * Exercises the Juice Shop Database Schema challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code retrieveDatabaseSchema}, {@code waitForChallenge} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Database Schema}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 52)
     public void testDatabaseSchemaChallenge() throws Exception {
         var response = actions.retrieveDatabaseSchema();
@@ -535,6 +994,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Database Schema");
     }
 
+    /**
+     * Exercises the Juice Shop User Credentials challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code retrieveUserCredentials} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code User Credentials}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 53)
     public void testUserCredentialsChallenge() throws Exception {
         var response = actions.retrieveUserCredentials();
@@ -544,6 +1012,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
     }
 
     // This test is disabled in Docker Environments
+    /**
+     * Exercises the Juice Shop NoSQL Exfiltration challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code exfiltrateOrdersViaNoSql} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code NoSQL Exfiltration}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 54, enabled = false)
     public void testNoSqlExfiltrationChallenge() throws Exception {
         var response = actions.exfiltrateOrdersViaNoSql();
@@ -553,6 +1030,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("NoSQL Exfiltration");
     }
 
+    /**
+     * Exercises the Juice Shop CAPTCHA Bypass challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitRapidFeedback} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code CAPTCHA Bypass}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 55)
     public void testCaptchaBypassChallenge() throws Exception {
         var response = actions.submitRapidFeedback(12);
@@ -560,6 +1046,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("CAPTCHA Bypass");
     }
 
+    /**
+     * Exercises the Juice Shop Multiple Likes challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code likeReviewConcurrently} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Multiple Likes}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 56)
     public void testMultipleLikesChallenge() throws Exception {
         var responses = actions.likeReviewConcurrently();
@@ -568,6 +1063,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Multiple Likes");
     }
 
+    /**
+     * Exercises the Juice Shop Upload Type challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code uploadUnexpectedFileType} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Upload Type}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 57)
     public void testUploadTypeChallenge() throws Exception {
         var response = actions.uploadUnexpectedFileType();
@@ -575,6 +1079,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Upload Type");
     }
 
+    /**
+     * Exercises the Juice Shop Upload Size challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code uploadOversizedPdf} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Upload Size}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 58)
     public void testUploadSizeChallenge() throws Exception {
         var response = actions.uploadOversizedPdf();
@@ -582,6 +1095,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Upload Size");
     }
 
+    /**
+     * Exercises the Juice Shop Deprecated Interface challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code useDeprecatedXmlUpload} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Deprecated Interface}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 59)
     public void testDeprecatedInterfaceChallenge() throws Exception {
         var response = actions.useDeprecatedXmlUpload();
@@ -589,6 +1111,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Deprecated Interface");
     }
 
+    /**
+     * Exercises the Juice Shop Cross-Site Imaging challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code crossSiteImagingUrl}, {@code waitForChallenge} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Cross-Site Imaging}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 61)
     public void testCrossSiteImagingChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -601,6 +1132,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Cross-Site Imaging");
     }
 
+    /**
+     * Exercises the Juice Shop Login Bjoern challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Login Bjoern}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 62)
     public void testLoginBjoernChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -609,6 +1149,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Login Bjoern");
     }
 
+    /**
+     * Exercises the Juice Shop Login Support Team challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Login Support Team}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 63)
     public void testLoginSupportTeamChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -617,6 +1166,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Login Support Team");
     }
 
+    /**
+     * Exercises the Juice Shop GDPR Data Erasure challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Uses the LoginPage page object for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code GDPR Data Erasure}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 64)
     public void testGdprDataErasureChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -625,6 +1183,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("GDPR Data Erasure");
     }
 
+    /**
+     * Exercises the Juice Shop Ephemeral Accountant challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code ephemeralAccountantLogin} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Ephemeral Accountant}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 65)
     public void testEphemeralAccountantChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -633,6 +1200,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Ephemeral Accountant");
     }
 
+    /**
+     * Exercises the Juice Shop Leaked API Key challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitFeedback}, {@code waitForChallenge} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Leaked API Key}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 66)
     public void testLeakedApiKeyChallenge() throws Exception {
         var response = actions.submitFeedback(
@@ -644,6 +1220,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Leaked API Key");
     }
 
+    /**
+     * Exercises the Juice Shop Vulnerable Infrastructure challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitFeedback}, {@code waitForChallenge} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Vulnerable Infrastructure}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 67)
     public void testVulnerableInfrastructureChallenge() throws Exception {
         var response = actions.submitFeedback(
@@ -655,6 +1240,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Vulnerable Infrastructure");
     }
 
+    /**
+     * Exercises the Juice Shop Manipulate Basket challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code addProductToAnotherBasket} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Manipulate Basket}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 68)
     public void testManipulateBasketChallenge() throws Exception {
         var response = actions.addProductToAnotherBasket();
@@ -668,6 +1262,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
     // Additional read-only and access-control regression tests for Juice Shop v20.3.0.
     // One named challenge completion test and nineteen API contract/access-control checks.
 
+    /**
+     * Checks product catalog read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/Products} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 69)
     public void testProductCatalogRead() throws Exception {
         var response = api.get("/api/Products");
@@ -676,6 +1279,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "API response body was empty: testProductCatalogRead");
     }
 
+    /**
+     * Checks product detail read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/Products/1} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 70)
     public void testProductDetailRead() throws Exception {
         var response = api.get("/api/Products/1");
@@ -684,6 +1296,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "API response body was empty: testProductDetailRead");
     }
 
+    /**
+     * Checks product search no matches behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /rest/products/search?q=zzzznotfound9876} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 71)
     public void testProductSearchNoMatches() throws Exception {
         var response = api.get("/rest/products/search?q=zzzznotfound9876");
@@ -692,6 +1313,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "API response body was empty: testProductSearchNoMatches");
     }
 
+    /**
+     * Checks security questions catalog read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/SecurityQuestions} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 72)
     public void testSecurityQuestionsCatalogRead() throws Exception {
         var response = api.get("/api/SecurityQuestions");
@@ -700,6 +1330,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "API response body was empty: testSecurityQuestionsCatalogRead");
     }
 
+    /**
+     * Checks delivery methods read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/Deliverys} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 73)
     public void testDeliveryMethodsRead() throws Exception {
         var response = api.get("/api/Deliverys");
@@ -708,6 +1347,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "API response body was empty: testDeliveryMethodsRead");
     }
 
+    /**
+     * Checks languages catalog read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /rest/languages} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 74)
     public void testLanguagesCatalogRead() throws Exception {
         var response = api.get("/rest/languages");
@@ -716,6 +1364,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "API response body was empty: testLanguagesCatalogRead");
     }
 
+    /**
+     * Checks image captcha read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /rest/image-captcha} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 75)
     public void testImageCaptchaRead() throws Exception {
         var session = api.login();
@@ -728,6 +1385,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "Image CAPTCHA response was empty.");
     }
 
+    /**
+     * Checks public memories read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /rest/memories} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 76)
     public void testPublicMemoriesRead() throws Exception {
         var response = api.get("/rest/memories");
@@ -736,6 +1402,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "API response body was empty: testPublicMemoriesRead");
     }
 
+    /**
+     * Checks application version read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /rest/admin/application-version} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 77)
     public void testApplicationVersionRead() throws Exception {
         var response = api.get("/rest/admin/application-version");
@@ -744,6 +1419,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "API response body was empty: testApplicationVersionRead");
     }
 
+    /**
+     * Checks application configuration read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /rest/admin/application-configuration} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 78)
     public void testApplicationConfigurationRead() throws Exception {
         var response = api.get("/rest/admin/application-configuration");
@@ -753,6 +1437,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
     }
 
 
+    /**
+     * Checks hint catalog read behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/Hints} through the API client.</p>
+     * <p>Evaluates assertEquals, assertFalse assertions against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 80)
     public void testHintCatalogRead() throws Exception {
         var response = api.get("/api/Hints");
@@ -761,6 +1454,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertFalse(response.body().isBlank(), "API response body was empty: testHintCatalogRead");
     }
 
+    /**
+     * Checks anonymous complaint access denied behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/Complaints} through the API client.</p>
+     * <p>Evaluates assertTrue assertion against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 81)
     public void testAnonymousComplaintAccessDenied() throws Exception {
         var response = api.get("/api/Complaints");
@@ -768,6 +1470,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/Complaints; HTTP " + response.statusCode());
     }
 
+    /**
+     * Checks anonymous basket items access denied behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/BasketItems} through the API client.</p>
+     * <p>Evaluates assertTrue assertion against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 82)
     public void testAnonymousBasketItemsAccessDenied() throws Exception {
         var response = api.get("/api/BasketItems");
@@ -775,6 +1486,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/BasketItems; HTTP " + response.statusCode());
     }
 
+    /**
+     * Checks anonymous privacy requests access denied behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/PrivacyRequests} through the API client.</p>
+     * <p>Evaluates assertTrue assertion against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 83)
     public void testAnonymousPrivacyRequestsAccessDenied() throws Exception {
         var response = api.get("/api/PrivacyRequests");
@@ -782,6 +1502,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/PrivacyRequests; HTTP " + response.statusCode());
     }
 
+    /**
+     * Checks anonymous users access denied behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/Users} through the API client.</p>
+     * <p>Evaluates assertTrue assertion against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 84)
     public void testAnonymousUsersAccessDenied() throws Exception {
         var response = api.get("/api/Users");
@@ -789,6 +1518,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/Users; HTTP " + response.statusCode());
     }
 
+    /**
+     * Checks security answers read denied behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /api/SecurityAnswers} through the API client.</p>
+     * <p>Evaluates assertTrue assertion against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 85)
     public void testSecurityAnswersReadDenied() throws Exception {
         var response = api.get("/api/SecurityAnswers");
@@ -796,6 +1534,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/SecurityAnswers; HTTP " + response.statusCode());
     }
 
+    /**
+     * Exercises the Juice Shop Challenge Creation Denied challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /api/Challenges} through the API client.</p>
+     * <p>Evaluates assertTrue assertion against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 86)
     public void testChallengeCreationDenied() throws Exception {
         var response = api.post("/api/Challenges", java.util.Map.of());
@@ -803,6 +1550,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertTrue(response.statusCode() == 401 || response.statusCode() == 403, "Expected unauthorized access to be denied for /api/Challenges; HTTP " + response.statusCode());
     }
 
+    /**
+     * Exercises the Juice Shop Security Advisory challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Calls {@code submitFeedback}, {@code waitForChallenge} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Security Advisory}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 87)
     public void testSecurityAdvisoryChallenge() throws Exception {
         var response = actions.submitFeedback("Security advisory checksum: " +
@@ -812,6 +1568,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Security Advisory");
     }
 
+    /**
+     * Checks invalid password rejected behavior through the Juice Shop API and records test evidence.
+     *
+     * <p>Requests {@code /rest/user/login} through the API client.</p>
+     * <p>Evaluates assertEquals assertion against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 88)
     public void testInvalidPasswordRejected() throws Exception {
         var response = api.post("/rest/user/login", java.util.Map.of(
@@ -820,6 +1585,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         Assert.assertEquals(response.statusCode(), 401, "Invalid credentials unexpectedly authenticated.");
     }
 
+    /**
+     * Exercises the Juice Shop Deluxe Fraud challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /api/Users/}, {@code /rest/deluxe-membership} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Deluxe Fraud}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 89)
     public void testDeluxeFraudChallenge() throws Exception {
         String email = "deluxe-test-" + System.nanoTime() + "@example.com";
@@ -838,6 +1612,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
     }
 
 
+    /**
+     * Exercises the Juice Shop Christmas Special challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /rest/products/search?q=}, {@code /rest/basket/} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Christmas Special}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 90)
     public void testChristmasSpecialChallenge() throws Exception {
         var session = api.login();
@@ -868,6 +1651,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
 
 
 
+    /**
+     * Exercises the Juice Shop Payback Time challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /rest/basket/}, {@code /api/Products}, {@code /api/BasketItems/} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Payback Time}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 91)
     public void testPaybackTimeChallenge() throws Exception {
         var session = api.login();
@@ -937,6 +1729,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
     }
 
 
+    /**
+     * Exercises the Juice Shop Exposed Credentials challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /rest/user/whoami} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Exposed Credentials}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 92)
     public void testExposedCredentialsChallenge() throws Exception {
         var session = api.login("testing@juice-sh.op", "IamUsedForTesting");
@@ -947,6 +1748,15 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Exposed Credentials");
     }
 
+    /**
+     * Exercises the Juice Shop Forged Coupon challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /rest/basket/}, {@code /api/Products} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Forged Coupon}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 93)
     public void testForgedCouponChallenge() throws Exception {
         var session = api.login();
@@ -1010,11 +1820,97 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
     }
 
 
+    /**
+     * Exercises the Juice Shop Expired Coupon challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Requests {@code /api/Users/}, {@code /api/Products}, {@code /rest/basket/} through the API client.</p>
+     * <p>Checks the Score Board challenge state for {@code Expired Coupon}.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
+    @Test(priority = 94)
+    public void testExpiredCouponChallenge() throws Exception {
+        var driver = ZapManager.getDriver();
+
+        String email = "expired-coupon-" + System.nanoTime() + "@example.com";
+        String password = "Password123!";
+
+        var registration = api.post("/api/Users/", java.util.Map.of(
+                "email", email,
+                "password", password,
+                "passwordRepeat", password));
+
+        Assert.assertTrue(registration.statusCode() == 200 || registration.statusCode() == 201,
+                "Could not register the coupon test account. HTTP " + registration.statusCode());
+
+        var session = api.login(email, password);
+
+        var catalogResponse = api.get("/api/Products");
+        Assert.assertEquals(catalogResponse.statusCode(), 200, "Could not retrieve the product catalog.");
+
+        java.util.Map<?, ?> catalog = new org.openqa.selenium.json.Json()
+                .toType(catalogResponse.body(), java.util.Map.class);
+
+        Assert.assertTrue(catalog.get("data") instanceof java.util.List<?>,
+                "Product catalog did not contain a product list.");
+
+        int productId = -1;
+        for (Object product : (java.util.List<?>) catalog.get("data")) {
+            if (!(product instanceof java.util.Map<?, ?> entry)) continue;
+            if (!(entry.get("id") instanceof Number id)) continue;
+            if (entry.get("deletedAt") != null) continue;
+            if (entry.get("quantity") instanceof Number quantity && quantity.intValue() <= 0) continue;
+
+            productId = id.intValue();
+            break;
+        }
+
+        Assert.assertTrue(productId > 0, "No available product was found.");
+
+        var added = addProductToOwnBasket(session, productId, 1);
+        Assert.assertTrue(added.statusCode() == 200 || added.statusCode() == 201,
+                "Failed to prepare coupon basket. HTTP " + added.statusCode());
+
+        String coupon = "WMNSDY2019";
+        long campaignDate = 1551999600000L;
+
+        String couponData = java.util.Base64.getEncoder().encodeToString(
+                (coupon + "-" + campaignDate).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        var checkout = api.post("/rest/basket/" + session.basketId() + "/checkout",
+                java.util.Map.of("couponData", couponData), session.token());
+
+        ScreenshotManager.captureResponse(driver, checkout);
+
+        Assert.assertTrue(checkout.statusCode() >= 200 && checkout.statusCode() < 300,
+                "Expired coupon checkout failed. HTTP " + checkout.statusCode());
+
+        assertChallengeSolved("Expired Coupon");
+    }
+
+
+    /**
+     * Adds a test product to the authenticated user's own basket before the basket challenges.
+     *
+     * @param session the authenticated Juice Shop session containing the account and bearer token
+     * @param productId the numeric product id used by the method
+     * @param quantity the numeric quantity used by the method
+     * @return the HTTP response associated with the requested Juice Shop action
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     private java.net.http.HttpResponse<String> addProductToOwnBasket(JuiceShopApi.JuiceSession session, int productId, int quantity) throws Exception {
         return api.post("/api/BasketItems/", java.util.Map.of("BasketId", session.basketId(),
                 "ProductId", productId, "quantity", quantity), session.token());
     }
 
+    /**
+     * Finds the Juice Shop product identifier for a supplied product name.
+     *
+     * @param body the request payload being serialized and submitted to the API
+     * @param expectedName the product name whose matching identifier is requested
+     * @return the Juice Shop product identifier matching the supplied product name
+     */
     @SuppressWarnings("unchecked")
     private int productIdByName(String body, String expectedName) {
         java.util.Map<String, Object> result = new org.openqa.selenium.json.Json().toType(body, java.util.Map.class);
@@ -1029,6 +1925,12 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         return -1;
     }
 
+    /**
+     * Extracts an ID from the JSON record used in the challenge test.
+     *
+     * @param body the request payload being serialized and submitted to the API
+     * @return the feedback or review record identifier extracted from the response
+     */
     private int recordId(String body) {
         java.util.Map<?, ?> result = new org.openqa.selenium.json.Json().toType(body, java.util.Map.class);
         if (result.get("data") instanceof java.util.Map<?, ?> record && record.get("id") instanceof Number id)
@@ -1036,10 +1938,22 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         throw new IllegalStateException("Basket item response did not contain an ID.");
     }
 
+    /**
+     * URL-encodes a request path or query segment for challenge probes.
+     *
+     * @param value the input value to convert or display
+     * @return the URI query component generated from the supplied request parameter
+     */
     private String encodePathQuery(String value) {
         return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
     }
 
+    /**
+     * Encodes input bytes using the Z85 alphabet for a Juice Shop challenge.
+     *
+     * @param text the input string being normalized, sanitized, or rendered
+     * @return the Z85-encoded representation of the input bytes
+     */
     private String z85Encode(String text) {
         String alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#";
         byte[] bytes = text.getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -1059,6 +1973,33 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         return result.toString();
     }
 
+    /**
+     * Exercises the Juice Shop Retrieve All Challenges challenge in the isolated lab and records the test outcome.
+     *
+     * <p>Evaluates assertFalse assertion against the observed response or page state.</p>
+     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
+    @Test(priority = 998)
+    public void testRetrieveAllChallenges() throws Exception {
+        var response = api.getChallenges();
+
+        ScreenshotManager.captureResponse(ZapManager.getDriver(), response);
+
+        Assert.assertFalse(response.body().isBlank(), "Challenge API returned an empty response.");
+        System.out.println("[JUICE-SHOP CHALLENGES]\n" + response.body());
+    }
+
+    /**
+     * Dismisses Juice Shop notifications and verifies completion of the Mass Dispel challenge.
+     *
+     * <p>Calls {@code dismissChallengeNotifications}, {@code waitForChallenge} through the shared challenge-action helper.</p>
+     * <p>Checks the Score Board challenge state for {@code Mass Dispel}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 999)
     public void testMassDispelChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -1072,6 +2013,16 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
         assertChallengeSolved("Mass Dispel");
     }
 
+    /**
+     * Verifies the Juice Shop Score Board after the other challenge tests and exports challenge status JSON.
+     *
+     * <p>Uses the LoginPage, ScoreBoardPage page objects for browser interaction.</p>
+     * <p>Checks the Score Board challenge state for {@code Score Board}.</p>
+     * <p>Saves a browser screenshot for evidence.</p>
+     * <p>Runs at the final TestNG priority and exports challenge completion data after taking the Score Board screenshot.</p>
+     *
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     @Test(priority = 1000)
     public void testScoreBoardChallenge() throws Exception {
         var driver = ZapManager.getDriver();
@@ -1084,8 +2035,19 @@ public class JuiceShopChallengesTest extends JuiceShopBaseTest {
 
         ScreenshotManager.capture(driver);
         assertChallengeSolved("Score Board");
+
+        var outputFile = java.nio.file.Path.of(System.getProperty("user.dir"))
+                .resolve(getClass().getSimpleName() + "-challenges.json");
+
+        api.saveChallenges(outputFile);
     }
 
+    /**
+     * Asserts that the Juice Shop challenge catalog marks the supplied challenge as completed.
+     *
+     * @param challengeName the Score Board name of the Juice Shop challenge to inspect
+     * @throws Exception if a browser, HTTP, container, or scanner operation fails
+     */
     private void assertChallengeSolved(String challengeName) throws Exception {
         Assert.assertTrue(api.isChallengeSolved(challengeName), "Challenge not completed: " + challengeName);
         System.out.println("[SOLVED] " + challengeName);

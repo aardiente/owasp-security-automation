@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="DVWA ZAP Active Scan" parallel="false">
+    <parameter name="security.results.file" value="zap-dvwa-active-testng.csv"/>
+
+    <test name="DVWA Active Security Assessment">
+        <classes>
+            <class name="tests.ZapScan.DvwaZapActiveScanTest"/>
+        </classes>
+    </test>
+</suite>

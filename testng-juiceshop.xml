@@ -5,6 +5,7 @@
     <test name="Juice Shop Challenges">
         <classes>
             <class name="tests.JuiceShop.JuiceShopChallengesTest"/>
+            <class name="tests.JuiceShop.JuiceShopZapAlertsTest"/>
         </classes>
     </test>
 </suite>

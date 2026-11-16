@@ -7,6 +7,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const collapseAll = document.getElementById("collapse-all");
     const emptyState = document.getElementById("finding-empty");
 
+    /**
+ * Applies the currently selected filter and updates the static HTML assessment findings list.
+ */
     function updateFindings() {
         const query = search.value.trim().toLowerCase();
         const risk = filter.value;

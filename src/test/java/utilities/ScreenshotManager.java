@@ -34,6 +34,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+/**
+ * Captures browser or HTTP response evidence and attaches screenshot paths to TestNG results.
+ */
 public class ScreenshotManager {
 
     public static final String EVIDENCE_ATTRIBUTE = "screenshot.evidenceFile";
@@ -44,8 +47,18 @@ public class ScreenshotManager {
     private static final AtomicBoolean JUICE_LEGACY_CLEANED = new AtomicBoolean();
     private static final Pattern OLD_JUICE_NAME = Pattern.compile(".+-\\d{8}-\\d{6}-\\d{3}-\\d+\\.png");
 
+    /**
+     * Prevents direct instantiation of this utility class.
+     */
     private ScreenshotManager() {}
 
+    /**
+     * Captures the browser viewport, saves it under the current TestNG test, and records the evidence path.
+     *
+     * <p>Writes a screenshot under the current test class/method and attaches the evidence path to its TestNG result.</p>
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     */
     public static void capture(WebDriver driver) {
         Path screenshotPath = nextScreenshotPath();
 
@@ -62,6 +75,11 @@ public class ScreenshotManager {
         showResult(driver, screenshotPath);
     }
 
+    /**
+     * Captures the SQL injection result view as screenshot evidence.
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     */
     public static void captureSqlResults(WebDriver driver) {
         Dimension originalSize = null;
 
@@ -113,6 +131,12 @@ public class ScreenshotManager {
         }
     }
 
+    /**
+     * Captures visual evidence associated with a browser alert and its message.
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     * @param alertText the message displayed in the JavaScript alert being captured
+     */
     public static void captureAlert(WebDriver driver, String alertText) {
         Path screenshotPath = nextScreenshotPath();
 
@@ -165,11 +189,25 @@ public class ScreenshotManager {
         showResult(driver, screenshotPath);
     }
 
+    /**
+     * Associates an existing screenshot path with the current TestNG execution.
+     *
+     * <p>Stores the exact captured screenshot path as metadata on the current TestNG execution.</p>
+     *
+     * @param screenshotPath the generated screenshot file to associate with the test
+     */
     private static void recordEvidence(Path screenshotPath) {
         ITestResult result = Reporter.getCurrentTestResult();
         if (result != null) result.setAttribute(EVIDENCE_ATTRIBUTE, screenshotPath.getFileName().toString());
     }
 
+    /**
+     * Calculates the screenshot destination for the current test and its parameter set.
+     *
+     * <p>Uses application, class, method, and (for DVWA parameterized cases) input hashes to determine the filename.</p>
+     *
+     * @return the generated evidence path for the currently executing TestNG method
+     */
     private static Path nextScreenshotPath() {
         ITestResult result = Reporter.getCurrentTestResult();
         if (result == null) throw new IllegalStateException("ScreenshotManager must be called from a TestNG test.");
@@ -213,6 +251,11 @@ public class ScreenshotManager {
         return directory.resolve(filename);
     }
 
+    /**
+     * Removes older Juice Shop screenshot copies that conflict with the current evidence layout.
+     *
+     * @param screenshotPath the generated screenshot file to associate with the test
+     */
     private static void cleanupLegacyJuiceScreenshots(Path screenshotPath) {
         Path juiceDirectory = SCREENSHOT_DIR.resolve("juiceshop").toAbsolutePath().normalize();
         if (!screenshotPath.toAbsolutePath().normalize().startsWith(juiceDirectory)
@@ -233,6 +276,12 @@ public class ScreenshotManager {
         }
     }
 
+    /**
+     * Derives a stable short identifier from a parameterized test's inputs.
+     *
+     * @param parameters the TestNG method arguments used to identify an execution
+     * @return a stable short identifier derived from TestNG method arguments
+     */
     private static String parameterHash(Object[] parameters) {
         try {
             String values = Arrays.deepToString(parameters);
@@ -245,10 +294,22 @@ public class ScreenshotManager {
         }
     }
 
+    /**
+     * Converts arbitrary text into a safe filename component.
+     *
+     * @param value the input value to convert or display
+     * @return a filesystem-safe version of the supplied name
+     */
     private static String sanitize(String value) {
         return value.replaceAll("[^A-Za-z0-9._-]", "_");
     }
 
+    /**
+     * Displays the captured screenshot in the optional presentation overlay.
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     * @param screenshotPath the generated screenshot file to associate with the test
+     */
     private static void showResult(WebDriver driver, Path screenshotPath) {
         if (AppConfig.isSlowMoEnabled() && !AppConfig.isHeadless()) {
             PresentationOverlay.show(driver, "RESULT",
@@ -260,6 +321,14 @@ public class ScreenshotManager {
         }
     }
 
+    /**
+     * Renders an HTTP response in a temporary browser page and captures it as test evidence.
+     *
+     * <p>Creates a temporary HTML preview of an HTTP response and screenshots it with the existing browser.</p>
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     * @param response the HTTP response to display as screenshot evidence
+     */
     public static void captureResponse(WebDriver driver, HttpResponse<String> response) {
         String body = response.body() == null ? "" : response.body();
 
@@ -303,6 +372,12 @@ public class ScreenshotManager {
         }
     }
 
+    /**
+     * Escapes characters before embedding text in presentation markup.
+     *
+     * @param value the input value to convert or display
+     * @return HTML-escaped text suitable for the screenshot preview
+     */
     private static String escape(String value) {
         return value.replace("&", "&amp;").replace("<", "&lt;")
                 .replace(">", "&gt;").replace("\"", "&quot;");

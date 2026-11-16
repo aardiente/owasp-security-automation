@@ -12,14 +12,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 
+/**
+ * Manages the per-thread ZAP container, API client, proxied WebDriver, and report export lifecycle.
+ */
 public class ZapManager {
 
     private static final ThreadLocal<OWASPZapEnvironment> zapEnvironment = new ThreadLocal<>();
     private static final ThreadLocal<ClientApi> zapClient = new ThreadLocal<>();
     private static final ThreadLocal<WebDriver> zapDriver = new ThreadLocal<>();
 
+    /**
+     * Prevents direct instantiation of this utility class.
+     */
     private ZapManager() {}
 
+    /**
+     * Starts the ZAP container and initializes its API client for the current thread.
+     */
     public static void initZap() {
         if (zapEnvironment.get() != null) return;
 
@@ -53,6 +62,9 @@ public class ZapManager {
         throw new IllegalStateException("ZAP API did not become ready.", lastError);
     }
 
+    /**
+     * Creates the current thread's Selenium driver configured with the ZAP proxy.
+     */
     public static void initZapDriver() {
         if (zapEnvironment.get() == null) {
             initZap();
@@ -71,6 +83,11 @@ public class ZapManager {
         }
     }
 
+    /**
+     * Returns the ZAP-proxied WebDriver for the current thread.
+     *
+     * @return the current thread’s Selenium driver configured for the ZAP proxy
+     */
     public static WebDriver getDriver() {
         if (zapDriver.get() == null) {
             initZapDriver();
@@ -79,6 +96,9 @@ public class ZapManager {
         return zapDriver.get();
     }
 
+    /**
+     * Quits and clears the current thread's ZAP-proxied WebDriver.
+     */
     public static void quitZapDriver() {
         if (zapDriver.get() != null) {
             zapDriver.get().quit();
@@ -86,6 +106,11 @@ public class ZapManager {
         }
     }
 
+    /**
+     * Returns the ZAP API client, initializing its environment if necessary.
+     *
+     * @return the API client for the current thread’s ZAP instance
+     */
     public static ClientApi getZapClient() {
         if (zapClient.get() == null) {
             initZap();
@@ -94,6 +119,11 @@ public class ZapManager {
         return zapClient.get();
     }
 
+    /**
+     * Returns the proxy endpoint exposed by the running ZAP environment.
+     *
+     * @return the host and port used to proxy browser requests through ZAP
+     */
     public static String getProxyAddress() {
         if (zapEnvironment.get() == null) {
             initZap();
@@ -102,10 +132,22 @@ public class ZapManager {
         return zapEnvironment.get().getProxyAddress();
     }
 
+    /**
+     * Waits for pending ZAP passive-scan records, then exports the captured findings as HTML and JSON.
+     *
+     * <p>Waits for passive processing to finish, then exports both HTML and JSON data from the current ZAP instance.</p>
+     */
     public static void generateReport() {
         generateReport("zap-report.html");
     }
 
+    /**
+     * Waits for pending ZAP passive-scan records, then exports the captured findings as HTML and JSON.
+     *
+     * <p>Waits for passive processing to finish, then exports both HTML and JSON data from the current ZAP instance.</p>
+     *
+     * @param fileName the configured source or output filename
+     */
     public static void generateReport(String fileName) {
         ClientApi client = zapClient.get();
         if (client == null) return;
@@ -151,6 +193,9 @@ public class ZapManager {
         }
     }
 
+    /**
+     * Stops and clears the thread-local ZAP browser, client, and container.
+     */
     public static void quitZap() {
         quitZapDriver();
 

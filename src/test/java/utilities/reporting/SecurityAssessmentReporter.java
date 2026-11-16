@@ -30,6 +30,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
+/**
+ * Implements the TestNG HTML assessment reporter: merges test results, ZAP alerts, and screenshot links.
+ */
 public class SecurityAssessmentReporter implements IReporter {
 
     private record Target(String id, String title, String packagePrefix, String siteUrl, String zapFile) {}
@@ -42,6 +45,15 @@ public class SecurityAssessmentReporter implements IReporter {
     private record Summary(Target target, long passed, long failed, long skipped, String scanStatus,
                            int included, int review, int suppressed, int excludedInstances) {}
 
+    /**
+     * TestNG reporter entry point that assembles static HTML assessments from test results and ZAP JSON.
+     *
+     * <p>Writes the configured assessment pages using existing ZAP JSON and TestNG results; the reporter does not perform a vulnerability scan.</p>
+     *
+     * @param xmlSuites the TestNG XML suite definitions supplied to the reporter
+     * @param suites the TestNG suite results supplied to the reporter
+     * @param outputDirectory the default TestNG reporter output directory
+     */
     @Override
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
         try {
@@ -91,6 +103,13 @@ public class SecurityAssessmentReporter implements IReporter {
         }
     }
 
+    /**
+     * Loads configured application metadata for static report generation.
+     *
+     * @param config the reporting configuration used to resolve paths and rules
+     * @return the assessment target definitions loaded from reporting configuration
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private static List<Target> loadTargets(ReportingConfiguration config) throws IOException {
         List<Target> targets = new ArrayList<>();
 
@@ -110,6 +129,14 @@ public class SecurityAssessmentReporter implements IReporter {
         return targets;
     }
 
+    /**
+     * Collects applicable test execution results for an application package.
+     *
+     * @param suites the TestNG suite results supplied to the reporter
+     * @param packagePrefix the Java package prefix used to select the application test results
+     * @param config the reporting configuration used to resolve paths and rules
+     * @return the TestNG test records matching the selected target package
+     */
     private static List<TestCase> collectTests(List<ISuite> suites, String packagePrefix,
                                                ReportingConfiguration config) {
         List<TestCase> tests = new ArrayList<>();
@@ -127,6 +154,15 @@ public class SecurityAssessmentReporter implements IReporter {
         return tests;
     }
 
+    /**
+     * Converts TestNG results into normalized report test entries.
+     *
+     * @param tests the collection of tests examined by the method
+     * @param results the TestNG execution results to include in the report
+     * @param status the HTTP status code or test execution status being recorded
+     * @param packagePrefix the Java package prefix used to select the application test results
+     * @param config the reporting configuration used to resolve paths and rules
+     */
     private static void collect(List<TestCase> tests, Collection<ITestResult> results,
                                 String status, String packagePrefix, ReportingConfiguration config) {
         for (ITestResult result : results) {
@@ -148,6 +184,13 @@ public class SecurityAssessmentReporter implements IReporter {
         }
     }
 
+    /**
+     * Resolves screenshot evidence associated with a specific TestNG execution.
+     *
+     * @param result the TestNG test result whose status or evidence is recorded
+     * @param config the reporting configuration used to resolve paths and rules
+     * @return the screenshot URLs matching the current test execution
+     */
     private static List<String> screenshotLinks(ITestResult result, ReportingConfiguration config) {
         String fullClassName = result.getTestClass().getName();
         String[] parts = fullClassName.split("\\.");
@@ -204,6 +247,13 @@ public class SecurityAssessmentReporter implements IReporter {
         return links;
     }
 
+    /**
+     * Checks whether a screenshot was captured within the bounds of a test execution.
+     *
+     * @param image the screenshot file whose timestamp is being checked
+     * @param result the TestNG test result whose status or evidence is recorded
+     * @return {@code true} when captured during is satisfied; {@code false} otherwise
+     */
     private static boolean capturedDuring(Path image, ITestResult result) {
         long start = result.getStartMillis();
         long end = result.getEndMillis();
@@ -217,6 +267,12 @@ public class SecurityAssessmentReporter implements IReporter {
         }
     }
 
+    /**
+     * Computes a reproducible hash of a parameterized test's inputs.
+     *
+     * @param parameters the TestNG method arguments used to identify an execution
+     * @return the short hash representing the test parameters
+     */
     private static String parameterHash(Object[] parameters) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
@@ -228,14 +284,35 @@ public class SecurityAssessmentReporter implements IReporter {
         }
     }
 
+    /**
+     * Removes unsafe characters from a screenshot or report identifier.
+     *
+     * @param text the input string being normalized, sanitized, or rendered
+     * @return a filesystem-safe identifier derived from the supplied text
+     */
     private static String sanitize(String text) {
         return text.replaceAll("[^A-Za-z0-9._-]", "_");
     }
 
+    /**
+     * Builds an empty scan representation for missing or unreadable input.
+     *
+     * @param status the HTTP status code or test execution status being recorded
+     * @param generated the generation timestamp saved in the report metadata
+     * @return the parsed scan metadata and findings for the selected target, or a missing-report status
+     */
     private static Scan emptyScan(String status, String generated) {
         return new Scan(status, generated, List.of(), List.of(), List.of(), 0);
     }
 
+    /**
+     * Reads ZAP JSON alerts, applies configured scope/triage filters, and produces the report finding collection.
+     *
+     * @param target the configured application/report target
+     * @param tests the collection of tests examined by the method
+     * @param config the reporting configuration used to resolve paths and rules
+     * @return the parsed scan metadata and findings for the selected target, or a missing-report status
+     */
     private static Scan loadScan(Target target, List<TestCase> tests, ReportingConfiguration config) {
         Path source;
 
@@ -354,6 +431,14 @@ public class SecurityAssessmentReporter implements IReporter {
         }
     }
 
+    /**
+     * Converts a ZAP alert and its request instances into a display finding.
+     *
+     * @param alert the ZAP alert entry being converted into a report finding
+     * @param instances the request/response observations attached to a ZAP alert
+     * @param reason the explanation for the review or filtering decision
+     * @return the report finding assembled from a ZAP alert and its request instances
+     */
     private static Finding createFinding(Map<?, ?> alert, List<Map<?, ?>> instances, String reason) {
         Map<?, ?> first = instances.get(0);
 
@@ -369,6 +454,12 @@ public class SecurityAssessmentReporter implements IReporter {
                 reason == null ? "" : reason);
     }
 
+    /**
+     * Formats request-level evidence recorded for ZAP alert instances.
+     *
+     * @param instances the request/response observations attached to a ZAP alert
+     * @return the formatted evidence summary built from the matching request instances
+     */
     private static String buildEvidence(List<Map<?, ?>> instances) {
         if (instances.isEmpty())
             return "ZAP recorded this alert without individual request observations.";
@@ -410,11 +501,28 @@ public class SecurityAssessmentReporter implements IReporter {
         return details.toString().trim();
     }
 
+    /**
+     * Appends a labeled value to a text evidence block when available.
+     *
+     * @param out the mutable text buffer receiving generated report markup
+     * @param label the human-readable caption rendered with the value
+     * @param value the input value to convert or display
+     */
     private static void appendLine(StringBuilder out, String label, String value) {
         if (!value.isBlank())
             out.append(label).append(": ").append(value.trim()).append("\n");
     }
 
+    /**
+     * Renders a standalone HTML assessment for one configured target.
+     *
+     * @param target the configured application/report target
+     * @param tests the collection of tests examined by the method
+     * @param scan the parsed ZAP findings and metadata to render
+     * @param config the reporting configuration used to resolve paths and rules
+     * @param assets the collection of assets examined by the method
+     * @return the complete HTML assessment page for one configured target
+     */
     private static String buildReport(Target target, List<TestCase> tests, Scan scan,
                                       ReportingConfiguration config, List<Path> assets) {
         long passed = tests.stream().filter(t -> t.status().equals("PASSED")).count();
@@ -532,6 +640,12 @@ public class SecurityAssessmentReporter implements IReporter {
         return html.toString();
     }
 
+    /**
+     * Appends one test execution and its evidence to a generated report.
+     *
+     * @param html the HTML buffer receiving escaped report content
+     * @param test the TestNG test record to render or inspect
+     */
     private static void appendTestResult(StringBuilder html, TestCase test) {
         html.append("<details class=\"test-result\"><summary class=\"test-result-summary\">")
                 .append("<span class=\"test-status ").append(test.status().toLowerCase())
@@ -575,6 +689,15 @@ public class SecurityAssessmentReporter implements IReporter {
         html.append("</div></details>");
     }
 
+    /**
+     * Builds the HTML landing page linking to generated assessments.
+     *
+     * @param summaries the collection of summaries examined by the method
+     * @param config the reporting configuration used to resolve paths and rules
+     * @param assets the collection of assets examined by the method
+     * @return the HTML report index linking generated assessment pages
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private static String buildIndex(List<Summary> summaries, ReportingConfiguration config,
                                      List<Path> assets) throws IOException {
         StringBuilder html = new StringBuilder(4000);
@@ -611,6 +734,15 @@ public class SecurityAssessmentReporter implements IReporter {
         return html.toString();
     }
 
+    /**
+     * Starts a report HTML document, including styles and scripts when enabled.
+     *
+     * @param title the heading or browser title of the generated HTML
+     * @param interactive whether the HTML page includes interactive filtering controls
+     * @param assets the collection of assets examined by the method
+     * @param assetFolder the directory containing generated report styles and scripts
+     * @return the opening HTML document markup and configured asset links
+     */
     private static String pageStart(String title, boolean interactive, List<Path> assets,
                                     String assetFolder) {
         StringBuilder head = new StringBuilder();
@@ -632,6 +764,12 @@ public class SecurityAssessmentReporter implements IReporter {
         return head.append("</head><body>").toString();
     }
 
+    /**
+     * Appends a vulnerability finding section to the generated report.
+     *
+     * @param html the HTML buffer receiving escaped report content
+     * @param finding the filtered ZAP finding to append to the report
+     */
     private static void appendFinding(StringBuilder html, Finding finding) {
         String severity = severity(finding.risk());
         String type = severity.toLowerCase();
@@ -667,6 +805,13 @@ public class SecurityAssessmentReporter implements IReporter {
         html.append("</div></details>");
     }
 
+    /**
+     * Appends a labeled finding field to the static HTML report.
+     *
+     * @param html the HTML buffer receiving escaped report content
+     * @param label the human-readable caption rendered with the value
+     * @param value the input value to convert or display
+     */
     private static void field(StringBuilder html, String label, String value) {
         html.append("<div class=\"evidence-field\"><span class=\"field-label\">")
                 .append(escape(label))
@@ -675,6 +820,13 @@ public class SecurityAssessmentReporter implements IReporter {
                 .append("</span></div>");
     }
 
+    /**
+     * Appends a titled section with the supplied text to generated HTML.
+     *
+     * @param html the HTML buffer receiving escaped report content
+     * @param title the heading or browser title of the generated HTML
+     * @param content the source or input text to parse or transform
+     */
     private static void section(StringBuilder html, String title, String content) {
         html.append("<div class=\"evidence-section\"><h3>")
                 .append(escape(title)).append("</h3><p>")
@@ -682,16 +834,36 @@ public class SecurityAssessmentReporter implements IReporter {
                 .append("</p></div>");
     }
 
+    /**
+     * Appends a summary metric card to a generated assessment page.
+     *
+     * @param html the HTML buffer receiving escaped report content
+     * @param number the amount, count, or identifier to format
+     * @param label the human-readable caption rendered with the value
+     */
     private static void card(StringBuilder html, long number, String label) {
         html.append("<div class=\"card\"><strong>").append(number)
                 .append("</strong><span>").append(escape(label))
                 .append("</span></div>");
     }
 
+    /**
+     * Counts ZAP findings matching the selected severity risk code.
+     *
+     * @param findings the collection of findings examined by the method
+     * @param risk the numeric ZAP alert risk level
+     * @return the number of findings matching the selected ZAP risk level
+     */
     private static long count(List<Finding> findings, int risk) {
         return findings.stream().filter(f -> f.risk() == risk).count();
     }
 
+    /**
+     * Converts a numeric ZAP risk level to a readable severity label.
+     *
+     * @param risk the numeric ZAP alert risk level
+     * @return the human-readable severity corresponding to the ZAP risk level
+     */
     private static String severity(int risk) {
         return switch (risk) {
             case 3 -> "High";
@@ -701,6 +873,12 @@ public class SecurityAssessmentReporter implements IReporter {
         };
     }
 
+    /**
+     * Converts a ZAP confidence identifier to display text.
+     *
+     * @param confidence the scanner confidence code or label
+     * @return the descriptive label for the ZAP confidence code
+     */
     private static String confidenceLabel(String confidence) {
         return switch (confidence) {
             case "0" -> "False Positive";
@@ -712,10 +890,22 @@ public class SecurityAssessmentReporter implements IReporter {
         };
     }
 
+    /**
+     * Converts a nullable ZAP report value to text.
+     *
+     * @param object the value to format for the HTML report
+     * @return a safe string representation of the supplied value
+     */
     private static String value(Object object) {
         return object == null ? "" : object.toString();
     }
 
+    /**
+     * Converts HTML-marked ZAP text into plain display content.
+     *
+     * @param value the input value to convert or display
+     * @return plain text derived from source alert markup
+     */
     private static String plain(String value) {
         return value.replaceAll("(?s)<[^>]*>", " ")
                 .replace("&nbsp;", " ").replace("&amp;", "&")
@@ -723,12 +913,25 @@ public class SecurityAssessmentReporter implements IReporter {
                 .replaceAll("\\s+", " ").trim();
     }
 
+    /**
+     * Escapes special characters before writing them into generated HTML.
+     *
+     * @param value the input value to convert or display
+     * @return HTML-escaped content suitable for report rendering
+     */
     private static String escape(String value) {
         return value.replace("&", "&amp;").replace("<", "&lt;")
                 .replace(">", "&gt;").replace("\"", "&quot;")
                 .replace("'", "&#39;");
     }
 
+    /**
+     * Copies CSS/JavaScript report assets into the configured output folder.
+     *
+     * @param config the reporting configuration used to resolve paths and rules
+     * @return the asset paths copied into the generated report directory
+     * @throws IOException if a required file or HTTP stream cannot be read or written
+     */
     private static List<Path> copyAssets(ReportingConfiguration config) throws IOException {
         List<Path> assets = config.assets();
         Path destination = config.reportDirectory().resolve(config.assetFolderName());

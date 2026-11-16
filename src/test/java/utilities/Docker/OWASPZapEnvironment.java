@@ -7,6 +7,9 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
+/**
+ * Starts the proxy and API service used by the test framework to collect HTTP evidence.
+ */
 public class OWASPZapEnvironment extends DockerContainer
 {
     // Routes directly to logs/zap.log via log4j2.xml
@@ -15,11 +18,19 @@ public class OWASPZapEnvironment extends DockerContainer
     private static final String ZAP_Image = "ghcr.io/zaproxy/zaproxy:stable";
     private static final int ZAP_Internal_Port = 8080;
 
+    /**
+     * Creates the owasp zap environment component and initializes the dependencies required by its methods.
+     *
+     * <p>Creates the Docker environment for the ZAP scanning service.</p>
+     */
     public OWASPZapEnvironment()
     {
         super(ZAP_Image, ZAP_Internal_Port);
     }
 
+    /**
+     * Starts ZAP in the Docker test environment and prepares its proxy/API endpoints.
+     */
     @Override
     public void startEnvironment()
     {
@@ -56,6 +67,11 @@ public class OWASPZapEnvironment extends DockerContainer
         }
     }
 
+    /**
+     * Returns the network address Selenium uses to proxy requests through ZAP.
+     *
+     * @return the proxy hostname and port address used by the browser
+     */
     public String getProxyAddress()
     {
         if(container == null || !container.isRunning())
@@ -66,11 +82,21 @@ public class OWASPZapEnvironment extends DockerContainer
         return container.getHost() + ":" + container.getMappedPort(exposedPort);
     }
 
+    /**
+     * Returns the ZAP API host.
+     *
+     * @return the host address of the started ZAP API service
+     */
     public String getHost()
     {
         return container.getHost();
     }
 
+    /**
+     * Returns the mapped ZAP API port.
+     *
+     * @return the host port mapped to the ZAP API container
+     */
     public int getMappedPort()
     {
         return container.getMappedPort(exposedPort);

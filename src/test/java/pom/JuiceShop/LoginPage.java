@@ -11,6 +11,9 @@ import org.openqa.selenium.ElementClickInterceptedException;
 import java.util.List;
 import java.time.Duration;
 
+/**
+ * Juice Shop page object exposing Selenium interactions for the login view.
+ */
 public class LoginPage extends BasePage {
 
     private final By welcomeClose = By.cssSelector("button[aria-label='Close Welcome Banner']");
@@ -30,10 +33,20 @@ public class LoginPage extends BasePage {
     private final By passwordField = By.id("password");
     private final By loginButton = By.id("loginButton");
 
+    /**
+     * Creates the login page component and initializes the dependencies required by its methods.
+     *
+     * <p>Creates a login page instance and initializes its dependencies.</p>
+     *
+     * @param driver the Selenium WebDriver controlling the application browser
+     */
     public LoginPage(WebDriver driver) {
         super(driver);
     }
 
+    /**
+     * Dismisses Juice Shop welcome and cookie dialogs that block navigation.
+     */
     @Override
     public void dismissInitialOverlays() {
         try {
@@ -51,6 +64,9 @@ public class LoginPage extends BasePage {
         dismissCookieConsent();
     }
 
+    /**
+     * Dismisses the Juice Shop cookie-consent notice when present.
+     */
     private void dismissCookieConsent() {
         List<WebElement> cookieBanners = driver.findElements(cookieDialog);
         if (cookieBanners.stream().noneMatch(WebElement::isDisplayed)) return;
@@ -71,6 +87,9 @@ public class LoginPage extends BasePage {
         }
     }
 
+    /**
+     * Navigates to the login via navbar page using the application page object.
+     */
     @Override
     public void navigateToLoginViaNavbar() {
         wait.until(d -> !d.findElements(accountMenu).isEmpty()
@@ -90,6 +109,12 @@ public class LoginPage extends BasePage {
         wait.until(ExpectedConditions.visibilityOfElementLocated(emailField));
     }
 
+    /**
+     * Submits the supplied credentials using the Juice Shop login form.
+     *
+     * @param email the email address submitted as the account identifier
+     * @param password the password submitted in the login request
+     */
     public void login(String email, String password) {
         WebElement emailInput = wait.until(ExpectedConditions.visibilityOfElementLocated(emailField));
         emailInput.clear();
@@ -103,6 +128,13 @@ public class LoginPage extends BasePage {
         wait.until(ExpectedConditions.elementToBeClickable(loginButton)).click();
     }
 
+    /**
+     * Navigates from the storefront to the login form and signs in.
+     *
+     * @param baseUrl the base URL of the containerized application under test
+     * @param email the email address submitted as the account identifier
+     * @param password the password submitted in the login request
+     */
     public void loginFromHome(String baseUrl, String email, String password) {
         driver.get(baseUrl);
         dismissInitialOverlays();
@@ -111,6 +143,11 @@ public class LoginPage extends BasePage {
         new WebDriverWait(driver, Duration.ofSeconds(15)).until(ExpectedConditions.urlContains("/search"));
     }
 
+    /**
+     * Checks whether user logged in is present or meets the expected condition.
+     *
+     * @return {@code true} when user logged in is satisfied; {@code false} otherwise
+     */
     public boolean isUserLoggedIn() {
         try {
             if (driver.findElements(accountMenu).stream().anyMatch(WebElement::isDisplayed)) {

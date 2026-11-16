@@ -17,6 +17,15 @@ if (!host) {
     style.textContent = arguments[0];
     root.appendChild(style);
 
+    /**
+ * Creates a presentation overlay element with optional class and text content.
+ *
+ * @param {HTMLElement} parent the DOM element receiving the new children
+ * @param {string} tag the HTML tag name
+ * @param {string} className optional CSS classes
+ * @param {string} text optional text content
+ * @returns {HTMLElement} the computed result
+ */
     const make = (parent, tag, className, text = "") => {
         const element = document.createElement(tag);
         if (className) element.className = className;
