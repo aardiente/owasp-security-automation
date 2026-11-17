@@ -260,6 +260,33 @@ public final class AppConfig {
     }
 
     /**
+     * Reports whether DVWA-only development container reuse is enabled.
+     *
+     * @return true when the DVWA development container should persist between JVM runs
+     */
+    public static boolean dvwaDevelopmentReuse() {
+        return getBoolean("dvwa.development.reuse");
+    }
+
+    /**
+     * Reads the Docker container name reserved for reusable DVWA development runs.
+     *
+     * @return the configurable DVWA development container name
+     */
+    public static String dvwaDevelopmentContainerName() {
+        return getProperty("dvwa.development.containerName");
+    }
+
+    /**
+     * Determines whether development mode should intentionally reset DVWA's database on this run.
+     *
+     * @return true when the DVWA setup step should run even for an existing development container
+     */
+    public static boolean dvwaDevelopmentResetDatabase() {
+        return getBoolean("dvwa.development.resetDatabase");
+    }
+
+    /**
      * Pauses the current thread to show results when slow-motion mode is enabled.
      *
      * <p>Pauses supported presentation results only when SlowMo mode is enabled; preserves interruption.</p>

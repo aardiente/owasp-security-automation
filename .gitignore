@@ -7,6 +7,7 @@ logs/
 .kotlin
 
 ### IntelliJ IDEA ###
+.idea
 .idea/modules.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
@@ -14,7 +15,7 @@ logs/
 *.iws
 *.iml
 *.ipr
-.idea
+
 
 ### Eclipse ###
 .apt_generated
