@@ -8,31 +8,48 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
-/** Models the DVWA local file inclusion page and its rendered include result. */
+/** Models benign local-file inclusion attempts and classifies the observed DVWA response. */
 public class FileInclusionPage extends BasePage {
     private static final String ENDPOINT = "/vulnerabilities/fi/";
-    private static final String SAFE_SAMPLE = "../../phpinfo.php";
+
+    /** Classifies the result of a local information-page inclusion probe. */
+    public enum InclusionResult { INCLUDED, REJECTED, INCONCLUSIVE }
 
     /**
-     * Creates the file inclusion page object.
-     * @param driver the active DVWA WebDriver
+     * Creates the DVWA file-inclusion page object.
+     * @param driver active DVWA browser
      */
     public FileInclusionPage(WebDriver driver) { super(driver); }
 
     /**
-     * Opens the file inclusion lab and requests DVWA's own harmless PHP information page via traversal.
-     * @param baseUrl the running DVWA application's base URL
+     * Requests DVWA's own benign PHP-information page using a mode-appropriate relative path.
+     * The Medium probe checks whether path-filtering normalizes traversal before or after filtering.
+     * No operating-system files, credentials, or external URLs are requested.
+     *
+     * @param baseUrl DVWA application's base URL
+     * @param level current DVWA security mode
      */
-    public void requestLocalInformationPage(String baseUrl) {
-        driver.get(baseUrl + ENDPOINT + "?page=" + URLEncoder.encode(SAFE_SAMPLE, StandardCharsets.UTF_8));
+    public void requestLocalInformationPage(String baseUrl, SecurityPage.SecurityLevel level) {
+        if (level == null) throw new IllegalArgumentException("Security level cannot be null");
+        String sample = switch (level) {
+            case LOW -> "../../phpinfo.php";
+            case MEDIUM, HIGH, IMPOSSIBLE -> "....//....//phpinfo.php";
+        };
+        driver.get(baseUrl + ENDPOINT + "?page=" + URLEncoder.encode(sample, StandardCharsets.UTF_8));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
     }
 
     /**
-     * Determines whether the page contains diagnostic PHP information from the included sample.
-     * @return true when the local PHP information content is visibly included
+     * Distinguishes included PHP diagnostic output from explicit rejection and empty results.
+     * Empty/ambiguous output must not be treated as proof that file inclusion was blocked.
+     *
+     * @return observed inclusion result
      */
-    public boolean renderedLocalInformation() {
-        return driver.findElement(By.tagName("body")).getText().toLowerCase(Locale.ROOT).contains("php version");
+    public InclusionResult inclusionResult() {
+        String text = driver.findElement(By.tagName("body")).getText().toLowerCase(Locale.ROOT);
+        if (text.contains("php version")) return InclusionResult.INCLUDED;
+        if (text.contains("error: file not found") || text.contains("file not found"))
+            return InclusionResult.REJECTED;
+        return InclusionResult.INCONCLUSIVE;
     }
 }

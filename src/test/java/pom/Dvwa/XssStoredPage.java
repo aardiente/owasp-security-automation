@@ -18,13 +18,13 @@ public class XssStoredPage extends BasePage {
 
     /**
      * Creates the stored-XSS guestbook page object.
-     * @param driver the active DVWA WebDriver
+     * @param driver active DVWA browser
      */
     public XssStoredPage(WebDriver driver) { super(driver); }
 
     /**
-     * Opens the guestbook page and waits for its form.
-     * @param baseUrl the running DVWA application's base URL
+     * Opens the stored-XSS guestbook and waits for the message form.
+     * @param baseUrl DVWA application's base URL
      */
     public void open(String baseUrl) {
         driver.get(baseUrl + ENDPOINT);
@@ -32,37 +32,52 @@ public class XssStoredPage extends BasePage {
     }
 
     /**
-     * Submits a short, inert SVG event probe via the guestbook's message field.
-     * The probe only sets an attribute on its own element and makes no network requests.
-     * @param markerId unique identifier for this individual test run
+     * Submits a harmless SVG event marker and uses its unique ID as the guestbook author.
+     * The author name provides independent proof that the entry was saved.
+     *
+     * @param markerId unique identifier of this test's stored entry
      */
     public void submitMarkerProbe(String markerId) {
-        if (!markerId.matches("p[a-f0-9]{8}")) throw new IllegalArgumentException("Expected p followed by 8 hex digits");
+        validateMarker(markerId);
         String payload = "<svg id=" + markerId + " onload=\"this.dataset.p=1\">";
         WebElement name = wait.until(ExpectedConditions.visibilityOfElementLocated(nameInput));
         name.clear();
-        name.sendKeys("dvwa-test");
+        name.sendKeys(markerId);
         WebElement message = wait.until(ExpectedConditions.visibilityOfElementLocated(messageInput));
         message.clear();
         message.sendKeys(payload);
         if (!payload.equals(message.getDomProperty("value")))
-            throw new IllegalStateException("Guestbook message was truncated; cannot validate stored XSS probe");
+            throw new IllegalStateException("Guestbook message was truncated; cannot assess the XSS probe");
         wait.until(ExpectedConditions.elementToBeClickable(signButton)).click();
         wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
     }
 
     /**
-     * Reloads the guestbook to confirm execution comes from a persisted entry.
-     * @param baseUrl the running DVWA application's base URL
+     * Reloads the guestbook to distinguish persisted execution from immediate reflection.
+     * @param baseUrl DVWA application's base URL
      */
     public void reloadStoredEntries(String baseUrl) { open(baseUrl); }
 
     /**
-     * Checks for an SVG marker whose event handler actually ran on the reloaded page.
-     * @param markerId identifier of this test's guestbook entry
-     * @return true when the stored handler executed in the browser
+     * Checks whether the unique guestbook entry actually survived a page reload.
+     * The test must not report a pass if it never successfully saved its diagnostic entry.
+     *
+     * @param markerId identifier saved as the entry author
+     * @return true if the reloaded guestbook visibly contains that author
+     */
+    public boolean entryWasPersisted(String markerId) {
+        validateMarker(markerId);
+        String content = driver.findElement(By.tagName("body")).getText();
+        return content.contains("Name: " + markerId);
+    }
+
+    /**
+     * Checks whether the saved SVG event handler executed in the browser.
+     * @param markerId this test's unique SVG ID
+     * @return true if the matching SVG set its own diagnostic data attribute
      */
     public boolean didStoredProbeExecute(String markerId) {
+        validateMarker(markerId);
         try {
             return Boolean.TRUE.equals(new WebDriverWait(driver, Duration.ofSeconds(3)).until(d -> {
                 var matches = d.findElements(By.id(markerId));
@@ -71,5 +86,14 @@ public class XssStoredPage extends BasePage {
         } catch (TimeoutException e) {
             return false;
         }
+    }
+
+    /**
+     * Rejects malformed marker IDs before including them in the test's HTML attributes.
+     * @param markerId marker to validate
+     */
+    private void validateMarker(String markerId) {
+        if (markerId == null || !markerId.matches("p[a-f0-9]{8}"))
+            throw new IllegalArgumentException("Marker must match p followed by eight hex digits");
     }
 }

@@ -3,21 +3,21 @@ package tests.Dvwa;
 import automation.ZapManager;
 import org.openqa.selenium.WebDriver;
 import org.testng.Assert;
+import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import pom.Dvwa.FileInclusionPage;
 import pom.Dvwa.LoginPage;
 import pom.Dvwa.SecurityPage;
-import pom.Dvwa.FileInclusionPage;
 import utilities.ScreenshotManager;
 
 import java.util.Arrays;
 
-
-/** Tests unintended local file inclusion using DVWA's benign PHP information page. */
+/** Verifies whether DVWA includes an unintended but harmless local PHP-information page. */
 public class DvwaFileInclusion extends BaseDvwaTest {
     /**
-     * Provides all DVWA security levels as independent TestNG invocations.
-     * @return the Low, Medium, High, and Impossible modes
+     * Enumerates the four DVWA security modes.
+     * @return one independent invocation per mode
      */
     @DataProvider(name = "securityModes")
     public Object[][] securityModes() {
@@ -26,8 +26,8 @@ public class DvwaFileInclusion extends BaseDvwaTest {
     }
 
     /**
-     * Checks a harmless diagnostic probe and fails when the vulnerability is demonstrated.
-     * @param level the DVWA security level being assessed
+     * Fails on confirmed file inclusion, passes on explicit rejection, and skips ambiguous output.
+     * @param level DVWA security mode to assess
      */
     @Test(dataProvider = "securityModes")
     public void fileInclusionIsBlocked(SecurityPage.SecurityLevel level) {
@@ -38,9 +38,13 @@ public class DvwaFileInclusion extends BaseDvwaTest {
         new SecurityPage(driver).setSecurityLevel(level);
 
         FileInclusionPage page = new FileInclusionPage(driver);
-        page.requestLocalInformationPage(baseUrl);
-        boolean included = page.renderedLocalInformation();
+        page.requestLocalInformationPage(baseUrl, level);
+        FileInclusionPage.InclusionResult result = page.inclusionResult();
         ScreenshotManager.capture(driver);
-        Assert.assertFalse(included, "LOCAL FILE INCLUSION CONFIRMED at " + level + ": phpinfo output was included.");
+        if (result == FileInclusionPage.InclusionResult.INCONCLUSIVE)
+            throw new SkipException("File-inclusion response was blank or ambiguous at " + level
+                    + "; this probe cannot establish that the input was rejected.");
+        Assert.assertNotEquals(result, FileInclusionPage.InclusionResult.INCLUDED,
+                "LOCAL FILE INCLUSION CONFIRMED at " + level + ": phpinfo output was rendered.");
     }
 }

@@ -3,6 +3,7 @@ package tests.Dvwa;
 import automation.ZapManager;
 import org.openqa.selenium.WebDriver;
 import org.testng.Assert;
+import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import pom.Dvwa.LoginPage;
@@ -13,11 +14,11 @@ import utilities.ScreenshotManager;
 import java.util.Arrays;
 import java.util.UUID;
 
-/** Tests stored XSS using an inert SVG marker persisted in the DVWA guestbook. */
+/** Tests harmless stored-XSS execution after verifying the entry was actually persisted. */
 public class DvwaXssStored extends BaseDvwaTest {
     /**
-     * Provides all DVWA security levels as independent TestNG invocations.
-     * @return the Low, Medium, High, and Impossible modes
+     * Enumerates the four DVWA security modes.
+     * @return independent TestNG invocations for each security level
      */
     @DataProvider(name = "securityModes")
     public Object[][] securityModes() {
@@ -26,8 +27,8 @@ public class DvwaXssStored extends BaseDvwaTest {
     }
 
     /**
-     * Checks a harmless diagnostic probe and fails when the vulnerability is demonstrated.
-     * @param level the DVWA security level being assessed
+     * Fails on confirmed stored XSS and skips runs where the test entry was not saved.
+     * @param level DVWA security level under test
      */
     @Test(dataProvider = "securityModes")
     public void storedXssIsBlocked(SecurityPage.SecurityLevel level) {
@@ -42,8 +43,13 @@ public class DvwaXssStored extends BaseDvwaTest {
         page.open(baseUrl);
         page.submitMarkerProbe(marker);
         page.reloadStoredEntries(baseUrl);
-        boolean executed = page.didStoredProbeExecute(marker);
+        boolean persisted = page.entryWasPersisted(marker);
+        boolean executed = persisted && page.didStoredProbeExecute(marker);
         ScreenshotManager.capture(driver);
-        Assert.assertFalse(executed, "STORED XSS CONFIRMED at " + level + ": persisted browser event handler executed.");
+        if (!persisted)
+            throw new SkipException("Stored-XSS probe was not saved at " + level
+                    + "; a missing guestbook entry is not proof of XSS protection.");
+        Assert.assertFalse(executed, "STORED XSS CONFIRMED at " + level
+                + ": the persisted browser event handler executed.");
     }
 }

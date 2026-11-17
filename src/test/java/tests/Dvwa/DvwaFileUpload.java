@@ -5,23 +5,23 @@ import org.openqa.selenium.WebDriver;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import pom.Dvwa.FileUploadPage;
 import pom.Dvwa.LoginPage;
 import pom.Dvwa.SecurityPage;
-import pom.Dvwa.FileUploadPage;
 import utilities.ScreenshotManager;
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.charset.StandardCharsets;
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.UUID;
 
-/** Tests whether the DVWA upload restriction accepts an ordinary non-image text file. */
+/** Tests whether DVWA accepts an ordinary text file where it expects an image. */
 public class DvwaFileUpload extends BaseDvwaTest {
     /**
-     * Provides all DVWA security levels as independent TestNG invocations.
-     * @return the Low, Medium, High, and Impossible modes
+     * Enumerates the four DVWA security modes.
+     * @return one independent invocation per mode
      */
     @DataProvider(name = "securityModes")
     public Object[][] securityModes() {
@@ -30,8 +30,8 @@ public class DvwaFileUpload extends BaseDvwaTest {
     }
 
     /**
-     * Checks a harmless diagnostic probe and fails when the vulnerability is demonstrated.
-     * @param level the DVWA security level being assessed
+     * Fails when a non-image text file is confirmed stored by the DVWA upload endpoint.
+     * @param level DVWA security level to assess
      */
     @Test(dataProvider = "securityModes")
     public void nonImageUploadIsRejected(SecurityPage.SecurityLevel level) {
@@ -48,16 +48,24 @@ public class DvwaFileUpload extends BaseDvwaTest {
             file = Files.createTempFile("dvwa-evidence-", ".txt");
             Files.writeString(file, "DVWA harmless upload validation: " + UUID.randomUUID(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new IllegalStateException("Unable to prepare a harmless temporary upload file", e);
+            throw new IllegalStateException("Unable to prepare a temporary upload probe", e);
         }
+
         try {
             page.submitFile(file);
-            boolean accepted = page.hasUploadedFileLink(file.getFileName().toString());
+            boolean accepted;
+            try {
+                accepted = page.nonImageUploadAccepted(file.getFileName().toString());
+            } catch (RuntimeException e) {
+                ScreenshotManager.capture(driver);
+                throw e;
+            }
             ScreenshotManager.capture(driver);
-            Assert.assertFalse(accepted, "UNRESTRICTED FILE UPLOAD CONFIRMED at " + level + ": non-image text file was stored.");
+            Assert.assertFalse(accepted, "UNRESTRICTED FILE UPLOAD CONFIRMED at " + level
+                    + ": DVWA reported successful storage of a non-image text file.");
         } finally {
             try { Files.deleteIfExists(file); }
-            catch (IOException e) { System.err.println("Could not delete temporary upload file: " + e.getMessage()); }
+            catch (IOException e) { System.err.println("Temporary upload cleanup failed: " + e.getMessage()); }
         }
     }
 }

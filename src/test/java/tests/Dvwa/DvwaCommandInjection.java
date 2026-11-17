@@ -5,19 +5,18 @@ import org.openqa.selenium.WebDriver;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import pom.Dvwa.CommandInjectionPage;
 import pom.Dvwa.LoginPage;
 import pom.Dvwa.SecurityPage;
-import pom.Dvwa.CommandInjectionPage;
 import utilities.ScreenshotManager;
 
 import java.util.Arrays;
 
-
-/** Checks whether command injection is demonstrable in each DVWA security mode. */
+/** Verifies whether DVWA executes a harmless command marker at each security level. */
 public class DvwaCommandInjection extends BaseDvwaTest {
     /**
-     * Provides all DVWA security levels as independent TestNG invocations.
-     * @return the Low, Medium, High, and Impossible modes
+     * Enumerates the four supported DVWA security levels.
+     * @return independent TestNG invocations for all security modes
      */
     @DataProvider(name = "securityModes")
     public Object[][] securityModes() {
@@ -26,8 +25,8 @@ public class DvwaCommandInjection extends BaseDvwaTest {
     }
 
     /**
-     * Checks a harmless diagnostic probe and fails when the vulnerability is demonstrated.
-     * @param level the DVWA security level being assessed
+     * Fails when DVWA emits the marker from the additional command.
+     * @param level security mode under test
      */
     @Test(dataProvider = "securityModes")
     public void commandInjectionIsBlocked(SecurityPage.SecurityLevel level) {
@@ -40,9 +39,10 @@ public class DvwaCommandInjection extends BaseDvwaTest {
         CommandInjectionPage page = new CommandInjectionPage(driver);
         page.open(baseUrl);
         String marker = "DVWA_COMMAND_PROBE";
-        page.submitMarkerProbe(marker);
+        page.submitMarkerProbe(marker, level);
         boolean executed = page.hasExecutedMarker(marker);
         ScreenshotManager.capture(driver);
-        Assert.assertFalse(executed, "COMMAND INJECTION CONFIRMED at " + level + ": injected echo marker was executed.");
+        Assert.assertFalse(executed, "COMMAND INJECTION CONFIRMED at " + level
+                + ": the server executed the additional harmless marker command.");
     }
 }

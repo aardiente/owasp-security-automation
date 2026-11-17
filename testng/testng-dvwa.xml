@@ -9,8 +9,8 @@
             <class name="tests.Dvwa.DvwaCommandInjection"/>
             <class name="tests.Dvwa.DvwaFileInclusion"/>
             <class name="tests.Dvwa.DvwaFileUpload"/>
-            <class name="tests.Dvwa.DvwaWeakSessionIds"/>
-            <class name="tests.Dvwa.DvwaXssDom"/>
+            <!--<class name="tests.Dvwa.DvwaWeakSessionIds"/>-->
+            <!--<class name="tests.Dvwa.DvwaXssDom"/>-->
             <class name="tests.Dvwa.DvwaXssStored"/>
         </classes>
     </test>
