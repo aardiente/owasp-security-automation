@@ -33,7 +33,8 @@ public class FileInclusionPage extends BasePage {
         if (level == null) throw new IllegalArgumentException("Security level cannot be null");
         String sample = switch (level) {
             case LOW -> "../../phpinfo.php";
-            case MEDIUM, HIGH, IMPOSSIBLE -> "....//....//phpinfo.php";
+            case MEDIUM -> "....//....//phpinfo.php";
+            case HIGH, IMPOSSIBLE -> "file:///var/www/html/phpinfo.php";
         };
         driver.get(baseUrl + ENDPOINT + "?page=" + URLEncoder.encode(sample, StandardCharsets.UTF_8));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
