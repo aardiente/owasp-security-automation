@@ -42,12 +42,19 @@ public abstract class BaseDvwaTest {
     public void startServer() {
         if (container != null) return;
 
-        container = new DvwaEnvironment();
+        boolean reuse = AppConfig.dvwaDevelopmentReuse();
+        container = reuse
+                ? new DvwaEnvironment(AppConfig.dvwaDevelopmentContainerName())
+                : new DvwaEnvironment();
         container.startEnvironment();
         baseUrl = container.getInternalURL();
 
         ZapManager.initZap();
-        initializeDatabase();
+        if (!reuse || container.isNewDevelopmentContainer() || AppConfig.dvwaDevelopmentResetDatabase()) {
+            initializeDatabase();
+        } else {
+            System.out.println("[DVWA DEV] Reusing initialized DVWA container; database setup skipped.");
+        }
     }
 
     /**
