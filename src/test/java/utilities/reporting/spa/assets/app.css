@@ -543,6 +543,10 @@ h2 {
     color:#6c7890;
     background:#edf0f4
 }
+.badge.outofscope {
+    color:#4f5d75;
+    background:#e6ebf3
+}
 .muted {
     font-size:11px;
     color:#8a98ad
@@ -861,4 +865,87 @@ footer span {
     .page-header h1 {
         font-size:26px
     }
+}
+
+
+/* Class-first TestNG explorer: compact tiles and a focused execution drill-down. */
+.test-class-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(245px,1fr));
+    gap:16px;
+    align-items:stretch;
+}
+.test-class-tile {
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    padding:20px;
+    text-align:left;
+    color:inherit;
+    background:#fff;
+    border:1px solid #dfe6ef;
+    border-radius:12px;
+    box-shadow:0 3px 12px #17294104;
+    transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease;
+    min-width:0;
+}
+.test-class-tile:hover {
+    border-color:#90b6e7;
+    box-shadow:0 10px 24px #204a8514;
+    transform:translateY(-2px);
+}
+.test-tile-top {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+.test-tile-icon {
+    display:grid;
+    place-items:center;
+    width:38px;
+    height:38px;
+    border-radius:10px;
+    background:#ecf3fd;
+    color:#37649f;
+    font-size:21px;
+}
+.test-tile-arrow {color:#8d9bb0;font-size:18px}
+.test-tile-heading {flex:1;min-width:0}
+.test-tile-name {font-size:16px;font-weight:760;color:#21314c;overflow-wrap:anywhere}
+.test-tile-package {font-size:11px;color:#8997ac;margin-top:7px;overflow-wrap:anywhere}
+.test-tile-total {font-size:12px;color:#526581;margin-top:13px}
+.test-tile-counts {display:flex;flex-wrap:wrap;gap:8px}
+.test-tile-status {
+    display:inline-flex;
+    align-items:baseline;
+    gap:4px;
+    padding:6px 8px;
+    border-radius:6px;
+    background:#f1f4f8;
+    color:#61728c;
+    font-size:11px;
+}
+.test-tile-status strong {font-size:13px;font-variant-numeric:tabular-nums}
+.test-tile-status.passed {background:#e4f7f0;color:#158064}
+.test-tile-status.failed {background:#ffebef;color:#b72d45}
+.test-tile-status.skipped {background:#fff2da;color:#ad771c}
+.test-tile-bar {display:flex;overflow:hidden;gap:2px;height:5px;border-radius:5px;background:#edf0f5}
+.test-tile-bar span {min-width:0}
+.test-tile-bar-passed {background:#32aa88}
+.test-tile-bar-failed {background:#de6678}
+.test-tile-bar-skipped {background:#e7b554}
+.test-back {margin:1px 0 19px}
+.test-detail-heading {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:18px;
+    margin-bottom:18px;
+}
+.test-detail-heading h3 {font-size:21px;margin:0;color:#1d304f;overflow-wrap:anywhere}
+.test-detail-heading p {color:#8796ad;font-size:12px;margin:7px 0 0;overflow-wrap:anywhere}
+.test-class-detail .notice {margin-bottom:16px}
+@media(max-width:700px) {
+    .test-class-grid {grid-template-columns:1fr;gap:11px}
+    .test-detail-heading {align-items:flex-start;flex-direction:column}
 }

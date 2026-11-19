@@ -243,11 +243,11 @@ public final class SecurityAssessmentSpa {
     /**
      * Parses a selected ZAP findings file, filtering each alert instance against the application origin and review rules.
      *
-     * <p>Filters alerts by the configured application origin and scope; the original report JSON is not modified.</p>
+     * <p>Separates out-of-scope alert instances from in-scope security findings without modifying the original ZAP JSON.</p>
      *
      * @param target the configured application/report target
      * @param fileName the ZAP findings JSON filename configured for the selected assessment mode
-     * @return the parsed and in-scope ZAP findings plus report metadata and excluded-instance count
+     * @return separately classified in-scope and out-of-scope ZAP observations with report metadata
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
     private Map<String, Object> loadScan(Target target, String fileName)
@@ -255,8 +255,10 @@ public final class SecurityAssessmentSpa {
 
         Map<String, Object> result = new LinkedHashMap<>();
         List<Map<String, Object>> findings = new ArrayList<>();
+        List<Map<String, Object>> outOfScopeFindings = new ArrayList<>();
 
         result.put("findings", findings);
+        result.put("outOfScopeFindings", outOfScopeFindings);
         result.put("generated", "");
         result.put("status", "missing");
         result.put("excludedInstances", 0);
@@ -316,12 +318,6 @@ public final class SecurityAssessmentSpa {
                         FindingFilter.Classification classification =
                                 filter.classify(url, pluginId, name);
 
-                        if (classification.decision() ==
-                                FindingFilter.Decision.OUT_OF_SCOPE) {
-                            excluded++;
-                            continue;
-                        }
-
                         Map<String, Object> finding = new LinkedHashMap<>();
 
                         finding.put("name", name);
@@ -346,19 +342,23 @@ public final class SecurityAssessmentSpa {
                                 cleanMarkup(str(alert.get("solution"))));
                         finding.put("cwe", str(alert.get("cweid")));
 
-                        findings.add(finding);
+                        if (classification.decision() == FindingFilter.Decision.OUT_OF_SCOPE) {
+                            outOfScopeFindings.add(finding);
+                            excluded++;
+                        } else {
+                            findings.add(finding);
+                        }
                     }
                 }
             }
         }
 
-        findings.sort(
-                Comparator.comparingInt(
-                                (Map<String, Object> f) ->
-                                        severityOrder(str(f.get("severity"))))
-                        .thenComparing(f -> str(f.get("name")))
-                        .thenComparing(f -> str(f.get("url")))
-        );
+        Comparator<Map<String, Object>> order = Comparator.comparingInt(
+                        (Map<String, Object> f) -> severityOrder(str(f.get("severity"))))
+                .thenComparing(f -> str(f.get("name")))
+                .thenComparing(f -> str(f.get("url")));
+        findings.sort(order);
+        outOfScopeFindings.sort(order);
 
         result.put("status",
                 targetSeen ? "loaded" : "target-not-present");
