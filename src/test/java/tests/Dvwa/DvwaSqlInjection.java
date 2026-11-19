@@ -1,14 +1,10 @@
-
 package tests.Dvwa;
 
-import automation.AppConfig;
 import automation.ZapManager;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.TimeoutException;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
+import org.testng.Reporter;
+import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import pom.Dvwa.LoginPage;
@@ -17,272 +13,179 @@ import pom.Dvwa.SqlInjectionPage;
 import utilities.ExcelFileReader;
 import utilities.ScreenshotManager;
 
-import java.time.Duration;
+import java.net.http.HttpResponse;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * TestNG test class for the dvwa sql injection scenarios within the Docker security lab.
- */
+/** XLSX-driven DVWA SQLi checks. A confirmed vulnerability is a failing security test. */
 public class DvwaSqlInjection extends BaseDvwaTest {
-
-    private final String payloadSource = "src/test/java/data/sqli_payloads.xlsx";
-    private final String[] securityLevels = {"low"};
-
     private static final Pattern RESULT_ROW = Pattern.compile(
-            "(?m)First name:[ \\t]*([^\\r\\n]*)\\r?\\n[ \\t]*Surname:[ \\t]*([^\\r\\n]*)"
-    );
+            "(?m)First name:[ \\t]*([^\\r\\n]*)\\r?\\n[ \\t]*Surname:[ \\t]*([^\\r\\n]*)");
+    private static final Pattern SQL_ERROR = Pattern.compile(
+            "(?i)sql syntax|unknown column|mysqli error|sqlstate|error in your sql|sqlite.*error"
+                    + "|the used select statements|different number of columns|column count doesn't match"
+                    + "|operand should contain|syntax error");
+    private static final List<String> SIGNALS = List.of(
+            "CANARY", "ROW_EXPANSION", "BOOLEAN_DIFFERENTIAL", "PREFIX_CANARY", "SQL_ERROR", "TIME_DELAY");
 
-    private static final Pattern PASSWORD_HASH = Pattern.compile("(?i)^[a-f0-9]{32}$");
-
-    private static final Pattern SQL_STRUCTURE = Pattern.compile(
-            "(?i)\\bUNION\\s+SELECT\\b|\\bORDER\\s+BY\\b|\\bOR\\b\\s*(?:'|\\d|\\()"
-    );
-
+    private record SqlCase(String id, EnumSet<SecurityPage.SecurityLevel> levels, String payload,
+                           String signal, String expectedFirst, String expectedLast, String controlPayload,
+                           long minDelayMs, String technique) {
+        @Override public String toString() { return id; }
+    }
     private record ResultRow(String firstName, String surname) {}
+    private record ProbeResult(String text, List<ResultRow> rows, boolean sqlError,
+                               HttpResponse<String> response, long durationMs) {}
 
-    private record ProbeResult(
-            int recordCount,
-            boolean sqlError,
-            boolean credentialsExposed,
-            List<ResultRow> rows
-    ) {}
+    @DataProvider(name = "sqliCases")
+    public Object[][] sqliCases() {
+        String defaultWorkbook = Path.of("src", "test", "java", "data", getClass().getSimpleName() + ".xlsx").toString();
+        String workbook = System.getProperty("dvwa.sqli.workbook", defaultWorkbook);
+        Object[][] rows = ExcelFileReader.extractData(workbook, null);
+        List<Object[]> tests = new ArrayList<>();
+        for (int i = 0; i < rows.length; i++) {
+            String id = cell(rows[i], 0), levels = cell(rows[i], 1), payload = cell(rows[i], 2);
+            String signal = cell(rows[i], 3).toUpperCase(Locale.ROOT);
+            String expectedFirst = cell(rows[i], 4), expectedLast = cell(rows[i], 5);
+            String control = cell(rows[i], 6), delayText = cell(rows[i], 7), technique = cell(rows[i], 8);
+            if (id.isBlank() || levels.isBlank() || payload.isBlank() || !SIGNALS.contains(signal))
+                throw new IllegalStateException("Invalid SQLi case at workbook row " + (i + 2) + ": " + id);
+            if ((signal.equals("CANARY") || signal.equals("PREFIX_CANARY"))
+                    && (expectedFirst.isBlank() || expectedLast.isBlank()))
+                throw new IllegalStateException("Case " + id + " requires both expected result markers");
+            if ((signal.equals("BOOLEAN_DIFFERENTIAL") || signal.equals("TIME_DELAY")) && control.isBlank())
+                throw new IllegalStateException("Case " + id + " requires a comparison/control payload");
+            if (control.isBlank()) control = "0";
+            long minDelay = delayText.isBlank() ? 1400 : Long.parseLong(delayText);
+            if (minDelay < 0 || minDelay > 10000)
+                throw new IllegalStateException("Invalid minimum delay for " + id + ": " + minDelay);
 
-    /**
-     * Builds the security-level and payload pairs for parameterized DVWA SQL injection tests.
-     *
-     * @return the TestNG data-provider matrix; each row contains the parameters for one test invocation
-     */
-    @DataProvider(name = "securityAndPayloads")
-    public Object[][] getSecurityAndPayloads() {
-        Object[][] payloads = ExcelFileReader.extractData(payloadSource, null, false);
-        Object[][] testData = new Object[payloads.length * securityLevels.length][2];
-
-        int index = 0;
-        for (String level : securityLevels) {
-            for (Object[] row : payloads) {
-                testData[index][0] = level;
-                testData[index][1] = row[0].toString();
-                index++;
-            }
+            EnumSet<SecurityPage.SecurityLevel> selected = EnumSet.noneOf(SecurityPage.SecurityLevel.class);
+            if (levels.equalsIgnoreCase("ALL")) selected = EnumSet.allOf(SecurityPage.SecurityLevel.class);
+            else for (String level : levels.split("\\|"))
+                selected.add(SecurityPage.SecurityLevel.valueOf(level.trim().toUpperCase(Locale.ROOT)));
+            SqlCase test = new SqlCase(id, selected, payload, signal, expectedFirst, expectedLast, control,
+                    minDelay, technique.isBlank() ? signal : technique);
+            for (SecurityPage.SecurityLevel level : SecurityPage.SecurityLevel.values())
+                if (selected.contains(level)) tests.add(new Object[]{level, test});
         }
-
-        return testData;
+        if (tests.isEmpty()) throw new IllegalStateException("SQLi workbook produced no test cases");
+        return tests.toArray(Object[][]::new);
     }
 
-    /**
-     * Opens the SQL injection module with the desired browser and security settings.
-     *
-     * @param driver the Selenium WebDriver controlling the application browser
-     */
-    private void prepareSqlInjectionPage(WebDriver driver) {
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    private static String cell(Object[] row, int column) {
+        return column >= row.length || row[column] == null ? "" : row[column].toString().trim();
+    }
 
+    @Test(dataProvider = "sqliCases")
+    public void sqlInjectionValidation(SecurityPage.SecurityLevel level, SqlCase test) {
+        WebDriver driver = ZapManager.getDriver();
         driver.get(baseUrl + LoginPage.loginEndpoint);
-
-        LoginPage loginPage = new LoginPage(driver);
-        loginPage.login("admin", "password");
-
+        new LoginPage(driver).login("admin", "password");
         driver.get(baseUrl + SecurityPage.securityEndpoint);
-
-        SecurityPage securityPage = new SecurityPage(driver);
-        securityPage.setSecurityLevel(SecurityPage.SecurityLevel.LOW);
-
-        driver.get(baseUrl + SqlInjectionPage.endpoint);
-
-        try {
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("id")));
-        } catch (TimeoutException e) {
-            String url = driver.getCurrentUrl();
-            String title = driver.getTitle();
-            String body = driver.findElement(By.tagName("body")).getText();
-
-            System.err.println("[DVWA SQLi] Expected SQL injection input was not found.");
-            System.err.println("[DVWA SQLi] URL: " + url);
-            System.err.println("[DVWA SQLi] Title: " + title);
-            System.err.println("[DVWA SQLi] Page contents:\n" + body);
-
-            throw new IllegalStateException(
-                    "DVWA SQL Injection page did not contain input[name='id']. URL: "
-                            + url + " | Title: " + title
-                            + " | Page contents: " + body.substring(0, Math.min(body.length(), 1000)), e);
-        }
-    }
-
-    /**
-     * Normalizes the SQL injection payload for consistent probe execution.
-     *
-     * @param payload the test input submitted to the intentionally vulnerable lab application
-     * @return the SQL injection input after normalizing its representation
-     */
-    private String normalizePayload(String payload) {
-        String trimmed = payload.stripLeading();
-
-        if (trimmed.startsWith("?id=")) {
-            String value = trimmed.substring(4);
-            int nextParameter = value.indexOf('&');
-
-            if (nextParameter >= 0) {
-                value = value.substring(0, nextParameter);
-            }
-
-            System.out.println("Converted URL-style payload to ID input value.");
-            return value;
-        }
-
-        return payload;
-    }
-
-    /**
-     * Extracts structured result rows from the DVWA SQL injection response.
-     *
-     * @param response the rendered DVWA response text to parse for result records
-     * @return the database response rows parsed from the DVWA page
-     */
-    private List<ResultRow> extractRows(String response) {
-        List<ResultRow> rows = new ArrayList<>();
-        Matcher matcher = RESULT_ROW.matcher(response);
-
-        while (matcher.find()) {
-            rows.add(new ResultRow(
-                    matcher.group(1).trim(),
-                    matcher.group(2).trim()
-            ));
-        }
-
-        return rows;
-    }
-
-    /**
-     * Checks extracted SQL result rows for password-hash evidence.
-     *
-     * @param rows the rows of previously parsed test or CSV data
-     * @return {@code true} when password hash is satisfied; {@code false} otherwise
-     */
-    private boolean containsPasswordHash(List<ResultRow> rows) {
-        for (ResultRow row : rows) {
-            if (PASSWORD_HASH.matcher(row.surname()).matches()) return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Submits one SQL injection probe and records its observable response for assertions.
-     *
-     * @param driver the Selenium WebDriver controlling the application browser
-     * @param payload the test input submitted to the intentionally vulnerable lab application
-     * @return the SQL injection probe response, parsed rows, and associated signals
-     */
-    private ProbeResult submitProbe(WebDriver driver, String payload) {
-        driver.get(baseUrl + SqlInjectionPage.endpoint);
+        new SecurityPage(driver).setSecurityLevel(level);
 
         SqlInjectionPage page = new SqlInjectionPage(driver);
-        page.injectPayload(payload);
+        ProbeResult baseline = submit(page, level, "0");
+        Assert.assertFalse(baseline.sqlError(), "Control ID 0 produced a SQL error at " + level);
+        Assert.assertTrue(baseline.rows().isEmpty(), "Control ID 0 unexpectedly returned rows at " + level);
+        ProbeResult comparison = test.controlPayload().equals("0")
+                ? baseline : submit(page, level, test.controlPayload());
+        Assert.assertFalse(comparison.sqlError(), "Comparison request returned a SQL error for " + test.id());
+        ProbeResult injected = submit(page, level, test.payload());
 
-        String response = page.getInjectionResultText();
-        List<ResultRow> rows = extractRows(response);
+        long firstDeltaMs = injected.durationMs() - comparison.durationMs();
+        long repeatDeltaMs = -1;
+        boolean confirmed = switch (test.signal()) {
+            case "CANARY" -> hasCanary(injected, test, false);
+            case "PREFIX_CANARY" -> hasCanary(injected, test, true);
+            case "ROW_EXPANSION" -> injected.rows().size() > baseline.rows().size();
+            case "BOOLEAN_DIFFERENTIAL" -> comparison.rows().isEmpty()
+                    && injected.rows().size() > comparison.rows().size();
+            case "SQL_ERROR" -> injected.sqlError();
+            case "TIME_DELAY" -> !injected.rows().isEmpty() && injected.rows().equals(comparison.rows())
+                    && firstDeltaMs >= test.minDelayMs();
+            default -> throw new IllegalStateException("Unsupported SQLi signal: " + test.signal());
+        };
 
-        ProbeResult result = new ProbeResult(
-                page.getResultCount(),
-                page.hasSqlError(),
-                containsPasswordHash(rows),
-                rows
-        );
+        // A second paired observation prevents a single slow UI/navigation response from counting as time-based SQLi.
+        ProbeResult evidence = injected;
+        if (test.signal().equals("TIME_DELAY") && confirmed) {
+            ProbeResult repeatControl = submit(page, level, test.controlPayload());
+            ProbeResult repeatInjected = submit(page, level, test.payload());
+            repeatDeltaMs = repeatInjected.durationMs() - repeatControl.durationMs();
+            confirmed = !repeatControl.sqlError() && !repeatInjected.sqlError()
+                    && !repeatInjected.rows().isEmpty() && repeatInjected.rows().equals(repeatControl.rows())
+                    && repeatDeltaMs >= test.minDelayMs();
+            evidence = repeatInjected;
+        }
 
-        System.out.println("Payload: " + payload);
-        System.out.println("Records returned: " + result.recordCount());
-        System.out.println("SQL error: " + result.sqlError());
-        System.out.println("Credential hash detected: " + result.credentialsExposed());
+        boolean maskedError = injected.text().contains("Something went wrong.");
+        Reporter.log("SQLi | level=" + level + " | case=" + test.id() + " | technique=" + test.technique()
+                + " | signal=" + test.signal() + " | controlRows=" + comparison.rows().size()
+                + " | injectedRows=" + injected.rows().size() + " | sqlError=" + injected.sqlError()
+                + " | maskedError=" + maskedError + " | delayMs=" + firstDeltaMs
+                + " | repeatDelayMs=" + repeatDeltaMs + " | confirmed=" + confirmed, true);
 
-        return result;
+        if (evidence.response() != null) ScreenshotManager.captureResponse(driver, evidence.response());
+        else ScreenshotManager.captureSqlResults(driver);
+
+        // A masked query failure is not evidence that a non-error injection was safely blocked.
+        if (injected.text().contains("Something went wrong.") && !test.signal().equals("SQL_ERROR"))
+            throw new SkipException("INCONCLUSIVE SQLi probe at " + level + " for " + test.id()
+                    + ": DVWA returned a masked SQL error, so the intended " + test.signal()
+                    + " signal could not be evaluated.");
+
+        if (test.signal().equals("SQL_ERROR"))
+            Assert.assertFalse(confirmed, "SQL ERROR DISCLOSURE at " + level + " for " + test.id()
+                    + "; this is a security finding, not by itself confirmation of data retrieval.");
+        else {
+            Assert.assertFalse(injected.sqlError(), "SQL ERROR DISCLOSURE at " + level + " for " + test.id()
+                    + "; intended " + test.signal() + " signal was not assessable.");
+            Assert.assertFalse(confirmed, "SQL INJECTION CONFIRMED at " + level + " for " + test.id()
+                    + " (" + test.technique() + ", " + test.signal() + "). Control rows="
+                    + comparison.rows().size() + ", injected rows=" + injected.rows().size()
+                    + (test.signal().equals("TIME_DELAY") ? ", first delay=" + firstDeltaMs
+                            + " ms, repeat delay=" + repeatDeltaMs + " ms" : "") + ".");
+        }
     }
 
-    /**
-     * Executes a parameterized DVWA SQL injection probe at the requested security level and evaluates observed results.
-     *
-     * @param level the selected DVWA security setting
-     * @param originalPayload the input row from the SQL injection data provider
-     */
-    @Test(dataProvider = "securityAndPayloads")
-    public void sqlInjection_Low(String level, String originalPayload) {
-        WebDriver driver = ZapManager.getDriver();
-        prepareSqlInjectionPage(driver);
+    private boolean hasCanary(ProbeResult result, SqlCase test, boolean prefix) {
+        return result.rows().stream().anyMatch(row -> row.surname().equals(test.expectedLast())
+                && (prefix ? row.firstName().startsWith(test.expectedFirst())
+                    && row.firstName().length() > test.expectedFirst().length()
+                    : row.firstName().equals(test.expectedFirst())));
+    }
 
-        String payload = normalizePayload(originalPayload);
-        Assert.assertFalse(payload.isBlank(), "SQL injection payload cannot be blank.");
-
-        boolean numericLeading = payload.stripLeading().matches("^\\d+.*");
-        String controlId = numericLeading ? "1" : "999999999";
-
-        ProbeResult control = submitProbe(driver, controlId);
-        Assert.assertFalse(control.sqlError(), "Normal control request returned a SQL error.");
-
-        ProbeResult injected = submitProbe(driver, payload);
-
-        ScreenshotManager.captureSqlResults(driver);
-
-        // Keep the final response visible during presentation mode.
-        AppConfig.pauseForResults();
-
-        // Finding 1: Database error disclosure.
-        if (injected.sqlError()) {
-            System.out.println("RESULT: SQL_ERROR_DISCLOSURE");
-
-            Assert.fail("SQL ERROR DISCLOSURE detected for payload: " + originalPayload
-                    + ". MariaDB exposed a query error. Successful SQL injection "
-                    + "execution is not confirmed.");
-        }
-
-        // Finding 2: Unexpected database records.
-        boolean unexpectedRecords = injected.recordCount() > control.recordCount();
-        boolean differentData = false;
-
-        for (ResultRow row : injected.rows()) {
-            if (!control.rows().contains(row)) {
-                differentData = true;
-                break;
+    private ProbeResult submit(SqlInjectionPage page, SecurityPage.SecurityLevel level, String payload) {
+        page.open(baseUrl);
+        HttpResponse<String> response = null;
+        long started = System.nanoTime();
+        String text;
+        switch (level) {
+            case MEDIUM -> {
+                response = page.injectMediumPayload(baseUrl, payload);
+                text = page.getHttpResultText(response.body());
             }
+            case HIGH -> {
+                page.injectHighPayload(baseUrl, payload);
+                text = page.getInjectionResultText();
+            }
+            case LOW, IMPOSSIBLE -> {
+                page.injectPayload(payload);
+                text = page.getInjectionResultText();
+            }
+            default -> throw new IllegalStateException("Unexpected DVWA level: " + level);
         }
-
-        // Finding 3: Credential hash disclosure.
-        boolean credentialDisclosure = injected.credentialsExposed()
-                && !control.credentialsExposed();
-
-        boolean injectionConfirmed = unexpectedRecords
-                || differentData
-                || credentialDisclosure;
-
-        // Finding 4: SQL-like input accepted as a valid database lookup.
-        // This is a validation finding, not proof that the SQL keywords executed.
-        boolean unsafeSqlInputAccepted = SQL_STRUCTURE.matcher(payload).find()
-                && injected.recordCount() > 0
-                && !injectionConfirmed;
-
-        if (credentialDisclosure) {
-            System.out.println("RESULT: CREDENTIAL_DISCLOSURE_CONFIRMED");
-        } else if (injectionConfirmed) {
-            System.out.println("RESULT: SQL_INJECTION_DETECTED");
-        } else if (unsafeSqlInputAccepted) {
-            System.out.println("RESULT: UNSAFE_SQL_INPUT_ACCEPTED");
-        } else {
-            System.out.println("RESULT: NO_CONFIRMED_FINDING");
-        }
-
-        Assert.assertFalse(injectionConfirmed,
-                "SQL INJECTION DETECTED for payload: " + originalPayload
-                        + ". Unexpected records: " + unexpectedRecords
-                        + ". Different data: " + differentData
-                        + ". Credential disclosure: " + credentialDisclosure
-                        + ". Control records: " + control.recordCount()
-                        + ", injected records: " + injected.recordCount());
-
-        Assert.assertFalse(unsafeSqlInputAccepted,
-                "UNSAFE SQL INPUT ACCEPTED for payload: " + originalPayload
-                        + ". The application returned database data for input containing SQL commands."
-                        + " This indicates insufficient input validation, but does not"
-                        + " independently confirm execution of those commands.");
+        long durationMs = (System.nanoTime() - started) / 1_000_000;
+        List<ResultRow> results = new ArrayList<>();
+        Matcher matcher = RESULT_ROW.matcher(text);
+        while (matcher.find()) results.add(new ResultRow(matcher.group(1).trim(), matcher.group(2).trim()));
+        return new ProbeResult(text, results, SQL_ERROR.matcher(text).find(), response, durationMs);
     }
 }
