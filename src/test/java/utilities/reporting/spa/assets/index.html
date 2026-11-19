@@ -18,6 +18,7 @@
       <nav aria-label="Assessment navigation">
         <button class="nav-item active" data-view="overview" type="button"><span>▦</span> Overview</button>
         <button class="nav-item" data-view="findings" type="button"><span>◇</span> Security findings <span id="nav-findings-count" class="nav-count">—</span></button>
+        <button class="nav-item" data-view="out-of-scope" type="button"><span>↗</span> Out of scope <span id="nav-out-of-scope-count" class="nav-count">—</span></button>
         <button class="nav-item" data-view="tests" type="button"><span>☑</span> Automated tests</button>
         <button class="nav-item" data-view="evidence" type="button"><span>▧</span> Evidence library</button>
       </nav>
@@ -42,7 +43,24 @@
           <div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="finding-search" type="search" placeholder="Search findings, endpoints, evidence…" aria-label="Search findings"></label><select id="finding-status" aria-label="Finding status"><option value="INCLUDE">Active</option><option value="REVIEW">Needs validation</option><option value="SUPPRESS">Suppressed</option><option value="ALL">All in scope</option></select><select id="finding-severity" aria-label="Finding severity"><option value="ALL">All severities</option><option>High</option><option>Medium</option><option>Low</option><option>Informational</option></select><button id="expand-findings" class="outline-button" type="button">Expand all</button><button id="collapse-findings" class="outline-button" type="button">Collapse all</button></div>
           <div id="findings-list" class="results-list"></div><div id="findings-empty" class="empty" hidden>No findings match the selected filters.</div>
         </section>
-        <section id="tests-view" class="view" hidden><div class="section-heading"><div><h2>Automated tests</h2><p>TestNG execution records with associated screenshot filenames where available.</p></div><span id="test-count" class="count-pill"></span></div><div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="test-search" type="search" placeholder="Search test names and classes…" aria-label="Search tests"></label><select id="test-status" aria-label="Test status"><option value="ALL">All statuses</option><option>PASSED</option><option>FAILED</option><option>SKIPPED</option></select></div><div id="tests-list" class="results-list"></div></section>
+        <section id="out-of-scope-view" class="view" hidden>
+          <div class="section-heading"><div><h2>Out-of-scope findings</h2><p>Saved ZAP observations outside the configured target origin or path scope. These are excluded from Security Findings and severity metrics.</p></div><span id="out-of-scope-count" class="count-pill"></span></div>
+          <div class="notice">These observations are retained for review only. They are not attributed to the selected application's security posture. Each entry explains why its URL was excluded.</div>
+          <div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="out-of-scope-search" type="search" placeholder="Search excluded alerts, domains, reasons…" aria-label="Search out-of-scope findings"></label><select id="out-of-scope-severity" aria-label="Out-of-scope severity"><option value="ALL">All severities</option><option>High</option><option>Medium</option><option>Low</option><option>Informational</option></select><button id="expand-out-of-scope" class="outline-button" type="button">Expand all</button><button id="collapse-out-of-scope" class="outline-button" type="button">Collapse all</button></div>
+          <div id="out-of-scope-list" class="results-list"></div><div id="out-of-scope-empty" class="empty" hidden>No out-of-scope findings match this scan and the selected filters.</div>
+        </section>
+        <section id="tests-view" class="view" hidden>
+          <div class="section-heading"><div><h2>Automated tests</h2><p>Choose a test class to inspect its individual TestNG executions, outcomes, and screenshot evidence.</p></div><span id="test-count" class="count-pill"></span></div>
+          <div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="test-search" type="search" placeholder="Search test classes or methods…" aria-label="Search tests"></label><select id="test-status" aria-label="Test status"><option value="ALL">All statuses</option><option>PASSED</option><option>FAILED</option><option>SKIPPED</option></select></div>
+          <div id="test-class-grid" class="test-class-grid"></div>
+          <div id="test-class-empty" class="empty" hidden>No test classes match the filters, or no TestNG CSV is available.</div>
+          <div id="test-class-detail" class="test-class-detail" hidden>
+            <button id="test-back" class="outline-button test-back" type="button">← All test classes</button>
+            <div class="test-detail-heading"><div><h3 id="test-detail-title"></h3><p id="test-detail-package"></p></div><span id="test-detail-count" class="count-pill"></span></div>
+            <div class="notice">Each entry is one TestNG execution. Security-level and payload parameters are not recorded in the current TestNG CSV, so repeated runs of one method cannot be labeled by level here.</div>
+            <div id="tests-list" class="results-list"></div>
+          </div>
+        </section>
         <section id="evidence-view" class="view" hidden><div class="section-heading"><div><h2>Evidence library</h2><p>Existing ScreenshotManager images; no new screenshot files are created.</p></div><span id="evidence-count" class="count-pill"></span></div><div class="notice">Screenshot links are associated by test class and method filename. TestNG CSV does not record screenshot timestamps or test parameters, so these images are not independently verified as belonging to the latest run.</div><div id="evidence-list" class="evidence-gallery"></div><div id="evidence-empty" class="empty" hidden>No matching screenshots were found.</div></section>
         <footer>Read-only local dashboard <span>•</span> No automatic vulnerability validation <span>•</span> Evidence may contain sensitive testing data</footer>
       </div>

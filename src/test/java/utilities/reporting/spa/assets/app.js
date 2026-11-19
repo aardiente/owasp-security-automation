@@ -3,7 +3,7 @@
 
 const state = {
   targets: [], reports: null, data: null,
-  targetId: null, mode: "passive", view: "overview"
+  targetId: null, mode: "passive", view: "overview", selectedTestClass: null
 };
 
 /**
@@ -167,10 +167,20 @@ async function initialize() {
             id === "finding-search" ? "input" : "change",
             renderFindings));
 
+    ["out-of-scope-search", "out-of-scope-severity"].forEach(id =>
+        byId(id).addEventListener(
+            id === "out-of-scope-search" ? "input" : "change",
+            renderOutOfScope));
+
     ["test-search", "test-status"].forEach(id =>
         byId(id).addEventListener(
             id === "test-search" ? "input" : "change",
             renderTests));
+
+    byId("test-back").addEventListener("click", () => {
+      state.selectedTestClass = null;
+      renderTests();
+    });
 
     byId("expand-findings").addEventListener("click", () =>
         document.querySelectorAll("#findings-list details")
@@ -178,6 +188,14 @@ async function initialize() {
 
     byId("collapse-findings").addEventListener("click", () =>
         document.querySelectorAll("#findings-list details")
+            .forEach(card => { card.open = false; }));
+
+    byId("expand-out-of-scope").addEventListener("click", () =>
+        document.querySelectorAll("#out-of-scope-list details")
+            .forEach(card => { card.open = true; }));
+
+    byId("collapse-out-of-scope").addEventListener("click", () =>
+        document.querySelectorAll("#out-of-scope-list details")
             .forEach(card => { card.open = false; }));
 
     await loadAssessment(select.value, false);
@@ -202,6 +220,7 @@ async function loadAssessment(targetId, preserveMode = true) {
     if (!preserveMode || state.targetId !== targetId) {
       state.mode = "passive";
       state.view = "overview";
+      state.selectedTestClass = null;
     }
 
     state.targetId = targetId;
@@ -279,8 +298,12 @@ function renderAssessment() {
       state.data.scan.findings.filter(
           x => x.status === "INCLUDE")).length;
 
+  byId("nav-out-of-scope-count").textContent = groupFindings(
+      state.data.scan.outOfScopeFindings || []).length;
+
   renderOverview();
   renderFindings();
+  renderOutOfScope();
   renderTests();
   renderEvidence();
 }
@@ -297,7 +320,7 @@ function showError(error) {
 }
 
 /**
- * Selects one of the overview, findings, tests, or evidence views.
+ * Selects one of the overview, findings, out-of-scope, tests, or evidence views.
  *
  * @param {string} view the target dashboard panel
  */
@@ -314,6 +337,7 @@ function showView(view) {
   const section = {
     overview: "Overview",
     findings: "Security findings",
+    "out-of-scope": "Out of scope",
     tests: "Automated tests",
     evidence: "Evidence library"
   }[view];
@@ -403,7 +427,8 @@ function groupFindings(findings) {
   const groups = new Map();
 
   for (const finding of findings) {
-    const key = [finding.pluginId, finding.name, finding.status].join("\u0000");
+    const key = [finding.pluginId, finding.name, finding.status,
+      finding.status === "OUT_OF_SCOPE" ? finding.reason : ""].join("\u0000");
 
     if (!groups.has(key))
       groups.set(key, { ...finding, instances: [] });
@@ -678,7 +703,8 @@ function makeFinding(group) {
       badge(
           group.status === "INCLUDE" ? "Active"
               : group.status === "REVIEW" ? "Needs validation"
-                  : "Suppressed",
+                  : group.status === "OUT_OF_SCOPE" ? "Out of scope"
+                      : "Suppressed",
           group.status),
       node("span", "muted", "▾"));
 
@@ -766,79 +792,198 @@ function renderFindings() {
 }
 
 /**
- * Filters and renders previously recorded TestNG results and screenshot links.
+ * Renders out-of-scope ZAP observations separately from in-scope security findings.
+ * The original scan JSON and reporting classification are never modified.
+ */
+function renderOutOfScope() {
+  if (!state.data) return;
+
+  const term = lower(byId("out-of-scope-search").value.trim());
+  const severity = byId("out-of-scope-severity").value;
+  const excluded = state.data.scan.outOfScopeFindings || [];
+  const matches = excluded.filter(item =>
+      (severity === "ALL" || item.severity === severity) &&
+      (!term || [
+        item.name, item.url, item.reason, item.pluginId, item.cwe,
+        item.evidence, item.otherInfo, item.parameter
+      ].some(value => lower(value).includes(term))));
+
+  const grouped = groupFindings(matches);
+  byId("out-of-scope-count").textContent =
+      `${grouped.length} findings / ${matches.length} instances`;
+
+  const list = byId("out-of-scope-list");
+  clear(list);
+  grouped.forEach(group => list.append(makeFinding(group)));
+  byId("out-of-scope-empty").hidden = grouped.length !== 0;
+}
+
+/**
+ * Filters recorded TestNG executions and displays either a grid of test-class tiles
+ * or the individual test cases belonging to the selected class.
  */
 function renderTests() {
   if (!state.data) return;
 
   const term = lower(byId("test-search").value.trim());
   const status = byId("test-status").value;
-
-  const tests = state.data.tests.filter(test =>
+  const allTests = Array.isArray(state.data.tests) ? state.data.tests : [];
+  const matching = allTests.filter(test =>
       (status === "ALL" || test.status === status) &&
-      (!term ||
-          lower(test.method).includes(term) ||
+      (!term || lower(test.method).includes(term) ||
           lower(test.className).includes(term)));
 
-  byId("test-count").textContent = `${tests.length} test executions`;
-
-  const list = byId("tests-list");
-  clear(list);
-
-  for (const test of tests) {
-    const card = node("details", "result-card");
-    const summary = node("summary");
-    const main = node("div", "result-main");
-
-    add(main,
-        node("div", "result-title", test.method),
-        node("div", "result-subtitle", test.className));
-
-    const meta = node("div", "result-meta");
-
-    add(meta,
-        badge(test.status),
-        node("span", "muted", `${test.durationMs} ms`),
-        node("span", "muted", "▾"));
-
-    add(summary, main, meta);
-
-    const body = node("div", "result-content");
-
-    if (test.error)
-      body.append(textSection(
-          "Test failure", test.error.replaceAll("\\n", "\n"), true));
-
-    const screenshots = Array.isArray(test.screenshots)
-        ? test.screenshots : [];
-
-    const hasExactScreenshot = !test.ambiguousEvidence &&
-        screenshots.length === 1 &&
-        typeof screenshots[0] === "string" &&
-        screenshots[0].startsWith("/api/screenshots/");
-
-    if (hasExactScreenshot) {
-      const src = screenshots[0];
-      const filename = decodeURIComponent(src.split("/").at(-1));
-
-      body.append(node("h3", "",
-          "Execution screenshot"));
-
-      const gallery = node("div", "screenshot-set");
-      gallery.append(imageLink(src, filename));
-      body.append(gallery);
-    } else {
-      body.append(node("p", "note",
-          "Screenshot not linked to this execution. The report must contain the exact screenshot filename for this test run."));
-    }
-
-    card.append(summary, body);
-    list.append(card);
+  const groups = new Map();
+  for (const test of matching) {
+    const name = test.className || "Uncategorized tests";
+    if (!groups.has(name)) groups.set(name, []);
+    groups.get(name).push(test);
   }
 
-  if (!tests.length)
-    list.append(node("div", "empty",
-        "No tests match the selected filters, or no TestNG CSV is available."));
+  byId("test-count").textContent =
+      `${groups.size} test classes / ${matching.length} executions`;
+
+  const grid = byId("test-class-grid");
+  const detail = byId("test-class-detail");
+  const gridEmpty = byId("test-class-empty");
+  clear(grid);
+
+  // Keep the selected class open while filters change, even when zero cases match.
+  const selected = state.selectedTestClass;
+  grid.hidden = !!selected;
+  detail.hidden = !selected;
+  gridEmpty.hidden = !!selected || groups.size !== 0;
+
+  if (selected) {
+    const cases = matching.filter(test =>
+        (test.className || "Uncategorized tests") === selected);
+    const simpleName = selected.split(".").at(-1);
+    byId("test-detail-title").textContent = simpleName;
+    byId("test-detail-package").textContent = selected;
+    byId("test-detail-count").textContent = `${cases.length} matching executions`;
+    const list = byId("tests-list");
+    clear(list);
+    cases.forEach((test, index) =>
+        list.append(makeTestExecution(test, index + 1)));
+    if (!cases.length)
+      list.append(node("div", "empty",
+          "No executions in this class match the current filters."));
+    return;
+  }
+
+  const names = [...groups.keys()].sort((left, right) =>
+      left.split(".").at(-1).localeCompare(right.split(".").at(-1)));
+
+  for (const className of names) {
+    const cases = groups.get(className);
+    const simpleName = className.split(".").at(-1);
+    const passed = countBy(cases, "status", "PASSED");
+    const failed = countBy(cases, "status", "FAILED");
+    const skipped = countBy(cases, "status", "SKIPPED");
+
+    const tile = node("button", "test-class-tile");
+    tile.type = "button";
+    tile.setAttribute("aria-label",
+        `View ${simpleName}: ${cases.length} matching test executions`);
+
+    const top = node("div", "test-tile-top");
+    add(top, node("span", "test-tile-icon", "▣"),
+        node("span", "test-tile-arrow", "↗"));
+
+    const heading = node("div", "test-tile-heading");
+    add(heading, node("div", "test-tile-name", simpleName),
+        node("div", "test-tile-package", className),
+        node("div", "test-tile-total", `${cases.length} test execution${cases.length === 1 ? "" : "s"}`));
+
+    const counts = node("div", "test-tile-counts");
+    add(counts,
+        testTileCount(passed, "passed", "Passed"),
+        testTileCount(failed, "failed", "Failed"),
+        testTileCount(skipped, "skipped", "Skipped"));
+
+    const bar = node("div", "test-tile-bar");
+    bar.setAttribute("aria-hidden", "true");
+    for (const [amount, kind] of [[passed, "passed"], [failed, "failed"], [skipped, "skipped"]]) {
+      if (amount > 0) {
+        const segment = node("span", `test-tile-bar-${kind}`);
+        segment.style.flex = String(amount);
+        bar.append(segment);
+      }
+    }
+
+    add(tile, top, heading, counts, bar);
+    tile.addEventListener("click", () => {
+      state.selectedTestClass = className;
+      renderTests();
+    });
+    grid.append(tile);
+  }
+}
+
+/**
+ * Returns a labelled count for one TestNG result status within a class tile.
+ *
+ * @param {number} amount matching test execution count
+ * @param {string} kind result status used for styling
+ * @param {string} label human-readable status label
+ * @returns {HTMLElement} compact status display
+ */
+function testTileCount(amount, kind, label) {
+  const element = node("span", `test-tile-status ${kind}`);
+  add(element, node("strong", "", amount), node("span", "", label));
+  return element;
+}
+
+/**
+ * Creates one expandable execution row, preserving errors and screenshot handling.
+ *
+ * @param {Object} test one saved TestNG execution from the report API
+ * @param {number} ordinal its visible order within the selected class
+ * @returns {HTMLDetailsElement} expandable execution result
+ */
+function makeTestExecution(test, ordinal) {
+  const card = node("details", "result-card");
+  const summary = node("summary");
+  const main = node("div", "result-main");
+
+  add(main,
+      node("div", "result-title", test.method),
+      node("div", "result-subtitle", `Execution ${ordinal} · ${test.suite || "TestNG"}`));
+
+  const meta = node("div", "result-meta");
+  add(meta,
+      badge(test.status),
+      node("span", "muted", `${test.durationMs} ms`),
+      node("span", "muted", "▾"));
+
+  add(summary, main, meta);
+  const body = node("div", "result-content");
+
+  if (test.error)
+    body.append(textSection(
+        "Test failure", test.error.replaceAll("\\n", "\n"), true));
+
+  const screenshots = Array.isArray(test.screenshots)
+      ? test.screenshots : [];
+  const hasExactScreenshot = !test.ambiguousEvidence &&
+      screenshots.length === 1 &&
+      typeof screenshots[0] === "string" &&
+      screenshots[0].startsWith("/api/screenshots/");
+
+  if (hasExactScreenshot) {
+    const src = screenshots[0];
+    const filename = decodeURIComponent(src.split("/").at(-1));
+    body.append(node("h3", "", "Execution screenshot"));
+    const gallery = node("div", "screenshot-set");
+    gallery.append(imageLink(src, filename));
+    body.append(gallery);
+  } else {
+    body.append(node("p", "note",
+        "Screenshot not linked to this execution. The report must contain the exact screenshot filename for this test run."));
+  }
+
+  card.append(summary, body);
+  return card;
 }
 
 /**
