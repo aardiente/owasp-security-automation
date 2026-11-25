@@ -6,10 +6,8 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import pom.Dvwa.FileUploadPage;
-import pom.Dvwa.LoginPage;
 import pom.Dvwa.SecurityPage;
 import utilities.ScreenshotManager;
-import utilities.ExcelFileReader;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -57,14 +55,7 @@ public class DvwaFileUpload extends BaseDvwaTest {
     @DataProvider(name = "fileUploadCases")
     public Object[][] fileUploadCases() {
         List<UploadCase> cases = readCases();
-        List<Object[]> invocations = new ArrayList<>();
-        for (SecurityPage.SecurityLevel level : SecurityPage.SecurityLevel.values()) {
-            for (UploadCase probe : cases) {
-                if (probe.levels().contains(level)) invocations.add(new Object[]{level, probe});
-            }
-        }
-        if (invocations.isEmpty()) throw new IllegalStateException("File Upload Excel workbook produced no test cases");
-        return invocations.toArray(Object[][]::new);
+        return DvwaCases.levelFirst(cases, UploadCase::levels, "File Upload");
     }
 
     /**
@@ -77,10 +68,7 @@ public class DvwaFileUpload extends BaseDvwaTest {
     @Test(dataProvider = "fileUploadCases")
     public void fileUploadValidation(SecurityPage.SecurityLevel level, UploadCase probe) {
         WebDriver driver = ZapManager.getDriver();
-        driver.get(baseUrl + LoginPage.loginEndpoint);
-        new LoginPage(driver).login("admin", "password");
-        driver.get(baseUrl + SecurityPage.securityEndpoint);
-        new SecurityPage(driver).setSecurityLevel(level);
+        prepareSecurityLevel(level);
 
         FileUploadPage page = new FileUploadPage(driver);
         Path temporaryFile = createTemporaryFile(probe);
@@ -131,14 +119,13 @@ public class DvwaFileUpload extends BaseDvwaTest {
     }
 
     /**
-     * Loads cases from the established src/test/java/data workbook directory using the shared reader.
+     * Loads cases from the configured test data directory using the shared reader.
      * The workbook begins with: case_id, levels, extension, encoding, payload, kind.
      *
      * @return validated test cases from the Excel workbook
      */
     private static List<UploadCase> readCases() {
-        String workbook = Path.of("src", "test", "java", "data", DvwaFileUpload.class.getSimpleName() + ".xlsx").toString();
-        Object[][] rows = ExcelFileReader.extractData(workbook, null);
+        Object[][] rows = DvwaCases.load("dvwa.fileUpload.workbook", null);
         List<UploadCase> cases = new ArrayList<>();
 
         for (int i = 0; i < rows.length; i++) {
@@ -149,7 +136,7 @@ public class DvwaFileUpload extends BaseDvwaTest {
 
             String[] fields = new String[6];
             for (int j = 0; j < fields.length; j++)
-                fields[j] = row[j] == null ? "" : row[j].toString().trim();
+                fields[j] = DvwaCases.cell(row, j);
 
             String id = fields[0];
             String extension = fields[2];
@@ -165,19 +152,7 @@ public class DvwaFileUpload extends BaseDvwaTest {
             if (fields[4].isEmpty())
                 throw new IllegalStateException("Missing upload content in workbook row " + excelRow);
 
-            EnumSet<SecurityPage.SecurityLevel> levels = EnumSet.noneOf(SecurityPage.SecurityLevel.class);
-            if (fields[1].equalsIgnoreCase("ALL")) {
-                levels = EnumSet.allOf(SecurityPage.SecurityLevel.class);
-            } else {
-                for (String value : fields[1].split("\\|")) {
-                    try { levels.add(SecurityPage.SecurityLevel.valueOf(value.trim().toUpperCase(Locale.ROOT))); }
-                    catch (IllegalArgumentException e) {
-                        throw new IllegalStateException("Unknown security level in workbook row " + excelRow, e);
-                    }
-                }
-            }
-            if (levels.isEmpty())
-                throw new IllegalStateException("Missing security levels in workbook row " + excelRow);
+            EnumSet<SecurityPage.SecurityLevel> levels = DvwaCases.levels(fields[1], excelRow);
 
             cases.add(new UploadCase(id, levels, extension, encoding, fields[4], kind));
         }

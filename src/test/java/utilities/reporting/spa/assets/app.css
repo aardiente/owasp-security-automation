@@ -949,3 +949,39 @@ footer span {
     .test-class-grid {grid-template-columns:1fr;gap:11px}
     .test-detail-heading {align-items:flex-start;flex-direction:column}
 }
+
+
+/* DVWA security-level result cards */
+.security-level-results {display:flex;flex-direction:column;gap:16px;min-width:0}
+.security-level-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.security-level-card {
+    --level-accent:#8997ac;
+    display:flex;
+    flex-direction:column;
+    gap:13px;
+    min-width:0;
+    padding:16px;
+    background:#fff;
+    border:1px solid #dfe6ef;
+    border-top:3px solid var(--level-accent);
+    border-radius:12px;
+    box-shadow:0 3px 12px #17294107;
+}
+.security-level-card.level-low {--level-accent:#64aa9a}
+.security-level-card.level-medium {--level-accent:#6a99ce}
+.security-level-card.level-high {--level-accent:#b68a55}
+.security-level-card.level-impossible {--level-accent:#8f7bb9}
+.security-level-heading {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.security-level-heading h3 {font-size:18px;color:#21314c;margin:0}
+.security-level-total {font-size:12px;color:#687a94;font-variant-numeric:tabular-nums}
+.security-level-executions {gap:8px;min-width:0}
+.security-level-executions .result-card {box-shadow:none}
+.security-level-executions .result-card summary {padding:13px;gap:8px;flex-wrap:wrap}
+.security-level-executions .result-main {flex:1 1 145px}
+.security-level-executions .result-meta {flex-wrap:wrap;gap:7px}
+.security-level-executions .result-content {padding:13px;overflow-wrap:anywhere}
+.security-level-empty {font-size:12px;color:#75859c;margin:0;padding:12px;background:#f6f8fb;border-radius:7px}
+.security-level-results>.notice {margin:0}
+@media(max-width:1000px) {
+    .security-level-grid {grid-template-columns:1fr}
+}

@@ -43,12 +43,7 @@ public class DvwaZapActiveScanTest extends BaseDvwaTest {
     public void testDvwaActiveScan() throws Exception {
         WebDriver driver = ZapManager.getDriver();
 
-        driver.get(baseUrl + LoginPage.loginEndpoint);
-        LoginPage loginPage = new LoginPage(driver);
-        loginPage.login("admin", "password");
-
-        driver.get(baseUrl + SecurityPage.securityEndpoint);
-        new SecurityPage(driver).setSecurityLevel(SecurityPage.SecurityLevel.LOW);
+        LoginPage loginPage = prepareSecurityLevel(SecurityPage.SecurityLevel.LOW);
 
         List<Consumer<LoginPage>> pages = List.of(
                 LoginPage::navigateToSqlInjection,

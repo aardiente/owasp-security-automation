@@ -2,10 +2,10 @@
 package utilities.reporting;
 
 import org.openqa.selenium.json.Json;
+import utilities.EvidenceNames;
+import utilities.ScreenshotManager;
 import org.testng.IReporter;
 import org.testng.ISuite;
-import org.testng.ISuiteResult;
-import org.testng.ITestContext;
 import org.testng.ITestResult;
 import org.testng.xml.XmlSuite;
 
@@ -15,18 +15,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HexFormat;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -35,14 +29,13 @@ import java.util.stream.Stream;
  */
 public class SecurityAssessmentReporter implements IReporter {
 
-    private record Target(String id, String title, String packagePrefix, String siteUrl, String zapFile) {}
     private record TestCase(String method, String className, String variant, String status,
                             long durationMs, long startMs, String error, List<String> screenshots) {}
     private record Finding(String name, int risk, String confidence, String url, String method,
                            String evidence, String description, String solution, String cwe, String reason) {}
     private record Scan(String status, String generated, List<Finding> findings,
                         List<Finding> review, List<Finding> suppressed, int excludedInstances) {}
-    private record Summary(Target target, long passed, long failed, long skipped, String scanStatus,
+    private record Summary(ReportingTarget target, long passed, long failed, long skipped, String scanStatus,
                            int included, int review, int suppressed, int excludedInstances) {}
 
     /**
@@ -58,14 +51,15 @@ public class SecurityAssessmentReporter implements IReporter {
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
         try {
             ReportingConfiguration config = ReportingConfiguration.load();
-            List<Target> targets = loadTargets(config);
+            List<ReportingTarget> targets = config.targets();
             Files.createDirectories(config.reportDirectory());
             List<Path> assets = copyAssets(config);
 
             List<Summary> summaries = new ArrayList<>();
+            List<TestExecutions.Execution> executions = TestExecutions.from(suites);
 
-            for (Target target : targets) {
-                List<TestCase> tests = collectTests(suites, target.packagePrefix(), config);
+            for (ReportingTarget target : targets) {
+                List<TestCase> tests = collectTests(executions, target.packagePrefix(), config);
                 if (tests.isEmpty()) continue;
 
                 tests.sort(Comparator.comparingLong(TestCase::startMs)
@@ -104,84 +98,29 @@ public class SecurityAssessmentReporter implements IReporter {
     }
 
     /**
-     * Loads configured application metadata for static report generation.
-     *
-     * @param config the reporting configuration used to resolve paths and rules
-     * @return the assessment target definitions loaded from reporting configuration
-     * @throws IOException if a required file or HTTP stream cannot be read or written
-     */
-    private static List<Target> loadTargets(ReportingConfiguration config) throws IOException {
-        List<Target> targets = new ArrayList<>();
-
-        for (String raw : config.required("targets").split(",")) {
-            String id = raw.trim();
-
-            if (!id.matches("[a-zA-Z0-9_-]+"))
-                throw new IOException("Invalid reporting target ID: " + id);
-
-            String key = "target." + id + ".";
-
-            targets.add(new Target(id, config.required(key + "title"),
-                    config.required(key + "package"), config.required(key + "site"),
-                    config.required(key + "zapFile")));
-        }
-
-        return targets;
-    }
-
-    /**
      * Collects applicable test execution results for an application package.
      *
-     * @param suites the TestNG suite results supplied to the reporter
+     * @param executions normalized TestNG executions
      * @param packagePrefix the Java package prefix used to select the application test results
      * @param config the reporting configuration used to resolve paths and rules
      * @return the TestNG test records matching the selected target package
      */
-    private static List<TestCase> collectTests(List<ISuite> suites, String packagePrefix,
+    private static List<TestCase> collectTests(List<TestExecutions.Execution> executions, String packagePrefix,
                                                ReportingConfiguration config) {
         List<TestCase> tests = new ArrayList<>();
-
-        for (ISuite suite : suites) {
-            for (ISuiteResult suiteResult : suite.getResults().values()) {
-                ITestContext context = suiteResult.getTestContext();
-
-                collect(tests, context.getPassedTests().getAllResults(), "PASSED", packagePrefix, config);
-                collect(tests, context.getFailedTests().getAllResults(), "FAILED", packagePrefix, config);
-                collect(tests, context.getSkippedTests().getAllResults(), "SKIPPED", packagePrefix, config);
-            }
-        }
-
-        return tests;
-    }
-
-    /**
-     * Converts TestNG results into normalized report test entries.
-     *
-     * @param tests the collection of tests examined by the method
-     * @param results the TestNG execution results to include in the report
-     * @param status the HTTP status code or test execution status being recorded
-     * @param packagePrefix the Java package prefix used to select the application test results
-     * @param config the reporting configuration used to resolve paths and rules
-     */
-    private static void collect(List<TestCase> tests, Collection<ITestResult> results,
-                                String status, String packagePrefix, ReportingConfiguration config) {
-        for (ITestResult result : results) {
-            String className = result.getTestClass().getName();
-            if (!className.startsWith(packagePrefix)) continue;
-
-            String error = result.getThrowable() == null ? "" : result.getThrowable().toString();
-            long duration = Math.max(0, result.getEndMillis() - result.getStartMillis());
+        for (TestExecutions.Execution execution : executions) {
+            if (!execution.className().startsWith(packagePrefix)) continue;
+            ITestResult result = execution.result();
             Object[] parameters = result.getParameters();
             String variant = "";
-
             if (parameters != null && parameters.length > 0) {
                 String candidate = String.valueOf(parameters[0]);
                 if (candidate.matches("[A-Za-z0-9_-]{1,32}")) variant = candidate;
             }
-
-            tests.add(new TestCase(result.getMethod().getMethodName(), className, variant, status,
-                    duration, result.getStartMillis(), error, screenshotLinks(result, config)));
+            tests.add(new TestCase(execution.method(), execution.className(), variant, execution.status().name(),
+                    execution.durationMs(), result.getStartMillis(), execution.error(), screenshotLinks(result, config)));
         }
+        return tests;
     }
 
     /**
@@ -192,34 +131,32 @@ public class SecurityAssessmentReporter implements IReporter {
      * @return the screenshot URLs matching the current test execution
      */
     private static List<String> screenshotLinks(ITestResult result, ReportingConfiguration config) {
-        String fullClassName = result.getTestClass().getName();
-        String[] parts = fullClassName.split("\\.");
-        if (parts.length < 2) return List.of();
-
-        String application = parts[0].equalsIgnoreCase("tests") && parts.length > 2
-                ? parts[1] : parts[parts.length - 2];
-
-        Path folder = config.screenshotDirectory()
-                .resolve(sanitize(application.toLowerCase(Locale.ROOT)))
-                .resolve(sanitize(result.getTestClass().getRealClass().getSimpleName()));
+        EvidencePolicy policy;
+        try {
+            policy = config.evidencePolicyFor(result.getTestClass().getRealClass());
+        } catch (IOException e) {
+            System.err.println("[SECURITY REPORT] Evidence configuration invalid: " + e.getMessage());
+            return List.of();
+        }
+        Path folder = config.screenshotDirectory().resolve(policy.folder())
+                .resolve(EvidenceNames.sanitize(result.getTestClass().getRealClass().getSimpleName()));
 
         if (!Files.isDirectory(folder)) return List.of();
 
-        String method = sanitize(result.getMethod().getMethodName());
-        Object[] parameters = result.getParameters();
-        if (parameters == null) parameters = new Object[0];
-
-        String filename = parameters.length == 0 ? method + ".png"
-                : method + "-" + sanitize(String.valueOf(parameters[0])) +
-                "-" + parameterHash(parameters) + ".png";
-
+        String method = EvidenceNames.sanitize(result.getMethod().getMethodName());
+        String filename = EvidenceNames.deterministicName(policy.naming(), method, result.getParameters());
+        Object evidence = result.getAttribute(ScreenshotManager.EVIDENCE_ATTRIBUTE);
+        if (evidence instanceof String recorded && recorded.matches("[A-Za-z0-9._-]+\\.png")
+                && (recorded.equals(method + ".png") || recorded.startsWith(method + "-"))) {
+            filename = recorded;
+        }
         List<Path> matches = new ArrayList<>();
-        Path exact = folder.resolve(filename);
+        if (filename != null) {
+            Path exact = folder.resolve(filename);
+            if (Files.isRegularFile(exact) && capturedDuring(exact, result)) matches.add(exact);
+        }
 
-        if (Files.isRegularFile(exact) && capturedDuring(exact, result))
-            matches.add(exact);
-
-        if (matches.isEmpty() && parameters.length == 0) {
+        if (matches.isEmpty() && policy.naming() == EvidenceNames.Mode.TIMESTAMP) {
             try (Stream<Path> files = Files.list(folder)) {
                 matches.addAll(files.filter(Files::isRegularFile)
                         .filter(p -> p.getFileName().toString().startsWith(method + "-"))
@@ -268,33 +205,6 @@ public class SecurityAssessmentReporter implements IReporter {
     }
 
     /**
-     * Computes a reproducible hash of a parameterized test's inputs.
-     *
-     * @param parameters the TestNG method arguments used to identify an execution
-     * @return the short hash representing the test parameters
-     */
-    private static String parameterHash(Object[] parameters) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(Arrays.deepToString(parameters).getBytes(StandardCharsets.UTF_8));
-
-            return HexFormat.of().formatHex(Arrays.copyOf(digest, 6));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is unavailable.", e);
-        }
-    }
-
-    /**
-     * Removes unsafe characters from a screenshot or report identifier.
-     *
-     * @param text the input string being normalized, sanitized, or rendered
-     * @return a filesystem-safe identifier derived from the supplied text
-     */
-    private static String sanitize(String text) {
-        return text.replaceAll("[^A-Za-z0-9._-]", "_");
-    }
-
-    /**
      * Builds an empty scan representation for missing or unreadable input.
      *
      * @param status the HTTP status code or test execution status being recorded
@@ -313,7 +223,7 @@ public class SecurityAssessmentReporter implements IReporter {
      * @param config the reporting configuration used to resolve paths and rules
      * @return the parsed scan metadata and findings for the selected target, or a missing-report status
      */
-    private static Scan loadScan(Target target, List<TestCase> tests, ReportingConfiguration config) {
+    private static Scan loadScan(ReportingTarget target, List<TestCase> tests, ReportingConfiguration config) {
         Path source;
 
         try {
@@ -523,7 +433,7 @@ public class SecurityAssessmentReporter implements IReporter {
      * @param assets the collection of assets examined by the method
      * @return the complete HTML assessment page for one configured target
      */
-    private static String buildReport(Target target, List<TestCase> tests, Scan scan,
+    private static String buildReport(ReportingTarget target, List<TestCase> tests, Scan scan,
                                       ReportingConfiguration config, List<Path> assets) {
         long passed = tests.stream().filter(t -> t.status().equals("PASSED")).count();
         long failed = tests.stream().filter(t -> t.status().equals("FAILED")).count();

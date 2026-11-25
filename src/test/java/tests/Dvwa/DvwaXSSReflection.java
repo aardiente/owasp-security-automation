@@ -10,7 +10,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import pom.Dvwa.LoginPage;
 import pom.Dvwa.SecurityPage;
-import utilities.ExcelFileReader;
 import utilities.ScreenshotManager;
 
 import java.time.Duration;
@@ -27,7 +26,7 @@ public class DvwaXSSReflection extends BaseDvwaTest {
      */
     @DataProvider(name = "securityAndPayloads")
     public Object[][] getSecurityAndPayloads() {
-        Object[][] payloadsFromExcel = ExcelFileReader.extractData("src/test/java/data/xss_payloads.xlsx", null);
+        Object[][] payloadsFromExcel = DvwaCases.load("dvwa.reflectedXss.workbook", null);
         String[] securityLevels = {"low", "medium", "high"};
 
         Object[][] testData = new Object[payloadsFromExcel.length * securityLevels.length][2];
@@ -62,15 +61,8 @@ public class DvwaXSSReflection extends BaseDvwaTest {
             }
         }
 
-        driver.get(baseUrl + LoginPage.loginEndpoint);
-
-        LoginPage loginPage = new LoginPage(driver);
-        loginPage.login("admin", "password");
-
-        driver.get(baseUrl + SecurityPage.securityEndpoint);
-
+        LoginPage loginPage = prepareSecurityLevel(securityLevel);
         SecurityPage securityPage = new SecurityPage(driver);
-        securityPage.setSecurityLevel(securityLevel);
 
         loginPage.navigateToXssReflected();
 

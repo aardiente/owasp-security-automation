@@ -9,7 +9,7 @@ import utilities.Docker.OWASPZapEnvironment;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import utilities.reporting.ReportingConfiguration;
 import java.time.Duration;
 
 /**
@@ -138,7 +138,7 @@ public class ZapManager {
      * <p>Waits for passive processing to finish, then exports both HTML and JSON data from the current ZAP instance.</p>
      */
     public static void generateReport() {
-        generateReport("zap-report.html");
+        generateReport(AppConfig.zapDefaultReportName());
     }
 
     /**
@@ -162,7 +162,7 @@ public class ZapManager {
             } while (recordsRemaining != 0);
 
             byte[] htmlReport = client.core.htmlreport();
-            Path htmlPath = Paths.get("target", fileName);
+            Path htmlPath = AppConfig.zapHtmlReportDirectory().resolve(fileName);
 
             Files.createDirectories(htmlPath.getParent());
             Files.write(htmlPath, htmlReport);
@@ -173,7 +173,7 @@ public class ZapManager {
                     ? fileName.substring(0, fileName.length() - 5) + ".json"
                     : fileName + ".json";
 
-            Path jsonPath = Paths.get("target", "security-reports", jsonFileName);
+            Path jsonPath = ReportingConfiguration.load().zapFile(jsonFileName);
 
             try {
                 byte[] jsonReport = client.core.jsonreport();

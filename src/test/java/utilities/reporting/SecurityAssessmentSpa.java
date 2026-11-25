@@ -26,11 +26,8 @@ public final class SecurityAssessmentSpa {
 
     private final ReportingConfiguration config;
     private final Path webDirectory;
-    private final List<Target> targets;
+    private final List<ReportingTarget> targets;
     private final Json json = new Json();
-
-    private record Target(String id, String title, String site, String packagePrefix,
-                          String zapFile, String screenshotFolder) {}
 
     private record TestData(List<Map<String, Object>> tests,
                             List<Map<String, Object>> evidence) {}
@@ -44,30 +41,12 @@ public final class SecurityAssessmentSpa {
      */
     private SecurityAssessmentSpa() throws IOException {
         config = ReportingConfiguration.load();
-        webDirectory = resolved(config.required("report.spa.assetDirectory"));
+        webDirectory = config.path("report.spa.assetDirectory");
 
         if (!Files.isDirectory(webDirectory))
             throw new IOException("SPA asset directory missing: " + webDirectory);
 
-        targets = new ArrayList<>();
-
-        for (String item : config.required("targets").split(",")) {
-            String id = item.trim();
-
-            if (!id.matches("[A-Za-z0-9_-]+"))
-                throw new IOException("Invalid target ID: " + id);
-
-            String prefix = "target." + id + ".";
-
-            targets.add(new Target(
-                    id,
-                    config.required(prefix + "title"),
-                    config.required(prefix + "site"),
-                    config.required(prefix + "package"),
-                    config.required(prefix + "zapFile"),
-                    config.required(prefix + "screenshotFolder")
-            ));
-        }
+        targets = config.targets();
     }
 
     /**
@@ -127,7 +106,7 @@ public final class SecurityAssessmentSpa {
                 sendJson(exchange, 200, targetList());
             } else if (path.startsWith("/api/assessments/")) {
                 String id = path.substring("/api/assessments/".length());
-                Target target = findTarget(id);
+                ReportingTarget target = findTarget(id);
 
                 if (target == null) {
                     sendText(exchange, 404, "Unknown assessment");
@@ -158,11 +137,11 @@ public final class SecurityAssessmentSpa {
     private List<Map<String, Object>> targetList() {
         List<Map<String, Object>> result = new ArrayList<>();
 
-        for (Target target : targets) {
+        for (ReportingTarget target : targets) {
             result.add(Map.of(
                     "id", target.id(),
                     "title", target.title(),
-                    "site", target.site()
+                    "site", target.siteUrl()
             ));
         }
 
@@ -178,20 +157,20 @@ public final class SecurityAssessmentSpa {
      * @return the JSON-ready assessment containing both scan types, test results, and evidence links for one application
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
-    private Map<String, Object> assessment(Target target) throws IOException {
+    private Map<String, Object> assessment(ReportingTarget target) throws IOException {
         Map<String, Object> result = new LinkedHashMap<>();
 
         result.put("target", Map.of(
                 "id", target.id(),
                 "title", target.title(),
-                "site", target.site()
+                "site", target.siteUrl()
         ));
 
         // Both reports belong to the same application.
         result.put("scan", loadScan(target, target.zapFile()));
 
         result.put("activeFindings", loadScan(target,
-                config.optional("target." + target.id() + ".activeZapFile", "")));
+                target.activeZapFile()));
 
         result.put("activeScan", loadActiveScan(target));
 
@@ -212,9 +191,8 @@ public final class SecurityAssessmentSpa {
      * @return the active-scan status fields, or a missing/not-configured status
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
-    private Map<String, Object> loadActiveScan(Target target) throws IOException {
-        String fileName = config.optional(
-                "target." + target.id() + ".activeScanFile", "");
+    private Map<String, Object> loadActiveScan(ReportingTarget target) throws IOException {
+        String fileName = target.activeScanFile();
 
         if (fileName.isBlank())
             return Map.of("status", "not_configured");
@@ -250,7 +228,7 @@ public final class SecurityAssessmentSpa {
      * @return separately classified in-scope and out-of-scope ZAP observations with report metadata
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
-    private Map<String, Object> loadScan(Target target, String fileName)
+    private Map<String, Object> loadScan(ReportingTarget target, String fileName)
             throws IOException {
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -283,7 +261,7 @@ public final class SecurityAssessmentSpa {
                 Files.getLastModifiedTime(source).toInstant().toString());
 
         FindingFilter filter = new FindingFilter(
-                config, target.id(), target.site());
+                config, target.id(), target.siteUrl());
 
         int excluded = 0;
         boolean targetSeen = false;
@@ -376,14 +354,14 @@ public final class SecurityAssessmentSpa {
      * @return the matching TestNG tests and screenshot references for one application
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
-    private TestData loadTests(Target target) throws IOException {
+    private TestData loadTests(ReportingTarget target) throws IOException {
         Path csv = config.reportDirectory().resolve(
                 config.testResultsFile());
 
         if (!Files.isRegularFile(csv))
             return new TestData(List.of(), List.of());
 
-        List<List<String>> rows = parseCsv(
+        List<List<String>> rows = ReportCsv.parse(
                 Files.readString(csv, StandardCharsets.UTF_8));
 
         if (rows.size() < 2)
@@ -413,6 +391,7 @@ public final class SecurityAssessmentSpa {
             test.put("className", className);
             test.put("method", method);
             test.put("status", row.getOrDefault("Status", ""));
+            test.put("securityLevel", row.getOrDefault("SecurityLevel", ""));
             test.put("durationMs", row.getOrDefault("DurationMs", ""));
             test.put("error", row.getOrDefault("Error", ""));
             test.put("screenshots", List.of());
@@ -481,7 +460,7 @@ public final class SecurityAssessmentSpa {
      * @return the safe SPA screenshot URL, or {@code null} when no valid file matches
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
-    private String screenshotLink(Target target, String className,
+    private String screenshotLink(ReportingTarget target, String className,
                                   String method, String filename)
             throws IOException {
 
@@ -528,7 +507,7 @@ public final class SecurityAssessmentSpa {
      * @return the newest matching screenshot URLs associated with a test method
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
-    private List<String> screenshotLinks(Target target, String className,
+    private List<String> screenshotLinks(ReportingTarget target, String className,
                                          String method) throws IOException {
 
         if (!className.startsWith(target.packagePrefix()))
@@ -596,7 +575,7 @@ public final class SecurityAssessmentSpa {
             return;
         }
 
-        Target target = findTarget(remaining.substring(0, slash));
+        ReportingTarget target = findTarget(remaining.substring(0, slash));
 
         if (target == null) {
             sendText(exchange, 404, "Unknown target");
@@ -671,8 +650,8 @@ public final class SecurityAssessmentSpa {
      * @param id the configured identifier to look up
      * @return the matching configured application, or {@code null} if not found
      */
-    private Target findTarget(String id) {
-        for (Target target : targets)
+    private ReportingTarget findTarget(String id) {
+        for (ReportingTarget target : targets)
             if (target.id().equals(id)) return target;
 
         return null;
@@ -849,71 +828,4 @@ public final class SecurityAssessmentSpa {
                 value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
-    /**
-     * Resolves an asset pathname relative to the current working directory.
-     *
-     * @param name the finding, resource, or application name to resolve
-     * @return the normalized absolute path of a configured file or directory
-     */
-    private static Path resolved(String name) {
-        Path path = Path.of(name);
-
-        return (path.isAbsolute()
-                ? path
-                : Path.of("").toAbsolutePath().resolve(path)).normalize();
-    }
-
-    /**
-     * Parses RFC 4180-style CSV rows, including quoted delimiters and escaped quotes.
-     *
-     * <p>Supports quoted fields, escaped double quotes, CRLF line endings, and embedded separators.</p>
-     *
-     * @param content the source or input text to parse or transform
-     * @return the CSV records and fields, including quoted commas and escaped quote characters
-     */
-    private static List<List<String>> parseCsv(String content) {
-        List<List<String>> rows = new ArrayList<>();
-        List<String> row = new ArrayList<>();
-        StringBuilder field = new StringBuilder();
-        boolean quoted = false;
-
-        for (int i = 0; i < content.length(); i++) {
-            char c = content.charAt(i);
-
-            if (c == '"') {
-                if (quoted && i + 1 < content.length() &&
-                        content.charAt(i + 1) == '"') {
-                    field.append('"');
-                    i++;
-                } else {
-                    quoted = !quoted;
-                }
-            } else if (c == ',' && !quoted) {
-                row.add(field.toString());
-                field.setLength(0);
-            } else if ((c == '\n' || c == '\r') && !quoted) {
-                if (c == '\r' && i + 1 < content.length() &&
-                        content.charAt(i + 1) == '\n') {
-                    i++;
-                }
-
-                row.add(field.toString());
-                field.setLength(0);
-
-                if (!(row.size() == 1 && row.get(0).isEmpty()))
-                    rows.add(row);
-
-                row = new ArrayList<>();
-            } else {
-                field.append(c);
-            }
-        }
-
-        if (!row.isEmpty() || field.length() > 0) {
-            row.add(field.toString());
-            rows.add(row);
-        }
-
-        return rows;
-    }
 }

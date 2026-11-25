@@ -60,25 +60,10 @@ def java_entries():
         source_file = Path(path)
         source = source_file.read_text(encoding="utf-8")
 
-        docs = list(re.finditer(
-            r"/\*\*[\s\S]*?\*/",
-            source[:offset]
-        ))
-
-        if not docs:
-            raise ValueError(
-                f"Missing Javadoc for {source_file}:{name}"
-            )
-
-        doc = docs[-1]
-        intervening = source[doc.end():offset]
-
-        if len(intervening) > 450 or re.search(r"[;{}]", intervening):
-            raise ValueError(
-                f"Javadoc not attached to {source_file}:{name}"
-            )
-
-        parsed = parse_doc(doc.group())
+        attached = base64.b64decode(values[8]).decode()
+        if not attached.strip():
+            raise ValueError(f"Missing Javadoc for {source_file}:{name}")
+        parsed = parse_doc(attached)
 
         if not parsed["summary"]:
             raise ValueError(

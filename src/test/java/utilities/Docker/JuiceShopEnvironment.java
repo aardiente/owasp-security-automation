@@ -1,5 +1,7 @@
 package utilities.Docker;
 
+import automation.AppConfig;
+
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import java.time.Duration;
@@ -16,7 +18,7 @@ public class JuiceShopEnvironment extends DockerContainer
      */
     public JuiceShopEnvironment()
     {
-        super("bkimminich/juice-shop:v20.3.0", 3000);
+        super(AppConfig.juiceShopImage(), AppConfig.juiceShopPort());
     }
 
     /**

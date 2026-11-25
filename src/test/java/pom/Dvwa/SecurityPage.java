@@ -1,4 +1,3 @@
-
 package pom.Dvwa;
 
 import org.openqa.selenium.By;
@@ -38,7 +37,7 @@ public class SecurityPage extends BasePage {
     }
 
     /**
-     * Changes the DVWA security level through the security settings form.
+     * Changes the DVWA security level and waits for the submitted settings page to reload.
      *
      * @param lvl the selected DVWA security setting
      */
@@ -54,16 +53,28 @@ public class SecurityPage extends BasePage {
         wait.until(ExpectedConditions.elementToBeClickable(SUBMIT_BUTTON)).click();
 
         try {
+            // An existing cookie can already match the requested level before the form reloads.
+            wait.until(ExpectedConditions.stalenessOf(dropdown));
+            wait.until(ExpectedConditions.urlContains(securityEndpoint));
             wait.until(d -> {
                 Cookie cookie = d.manage().getCookieNamed("security");
-                return cookie != null && expectedLevel.equalsIgnoreCase(cookie.getValue());
+                if (cookie == null || !expectedLevel.equalsIgnoreCase(cookie.getValue())) return false;
+
+                WebElement currentDropdown = ExpectedConditions.visibilityOfElementLocated(SECURITY_LEVEL_DROPDOWN).apply(d);
+                if (currentDropdown == null) return false;
+                try {
+                    return expectedLevel.equalsIgnoreCase(new Select(currentDropdown)
+                            .getFirstSelectedOption().getAttribute("value"));
+                } catch (org.openqa.selenium.StaleElementReferenceException e) {
+                    return false;
+                }
             });
         } catch (TimeoutException e) {
             Cookie cookie = driver.manage().getCookieNamed("security");
             String actualLevel = cookie == null ? "<missing>" : cookie.getValue();
 
             throw new IllegalStateException(
-                    "DVWA security level was not saved. Expected: " + expectedLevel +
+                    "DVWA security settings did not finish loading or the level was not saved. Expected: " + expectedLevel +
                             ", actual: " + actualLevel + ", URL: " + driver.getCurrentUrl(), e
             );
         }

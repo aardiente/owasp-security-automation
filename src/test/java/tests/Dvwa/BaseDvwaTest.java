@@ -12,19 +12,19 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.*;
 import pom.Dvwa.LoginPage;
 import utilities.Docker.DvwaEnvironment;
-import utilities.ExcelFileReader;
+import pom.Dvwa.SecurityPage;
+import tests.framework.LabLifecycle;
+import tests.framework.ProxiedBrowserTest;
 
 import java.time.Duration;
 
 /**
  * Provides shared TestNG suite setup and teardown for the Docker-based DVWA tests, including database initialization and ZAP reporting.
  */
-public abstract class BaseDvwaTest {
+public abstract class BaseDvwaTest extends ProxiedBrowserTest {
 
-    protected static DvwaEnvironment container;
+    private static final LabLifecycle<DvwaEnvironment> LAB = new LabLifecycle<>();
     protected static String baseUrl;
-    protected String payloadSource = "";
-    protected String[] securityLevels = {"low", "medium", "high"};
 
     /**
      * Selects the output filename for the DVWA suite's ZAP report; standalone subclasses may override it.
@@ -40,64 +40,34 @@ public abstract class BaseDvwaTest {
      */
     @BeforeSuite
     public void startServer() {
-        if (container != null) return;
-
         boolean reuse = AppConfig.dvwaDevelopmentReuse();
-        container = reuse
-                ? new DvwaEnvironment(AppConfig.dvwaDevelopmentContainerName())
-                : new DvwaEnvironment();
-        container.startEnvironment();
-        baseUrl = container.getInternalURL();
-
-        ZapManager.initZap();
-        if (!reuse || container.isNewDevelopmentContainer() || AppConfig.dvwaDevelopmentResetDatabase()) {
-            initializeDatabase();
-        } else {
-            System.out.println("[DVWA DEV] Reusing initialized DVWA container; database setup skipped.");
-        }
+        baseUrl = LAB.start(() -> reuse
+                        ? new DvwaEnvironment(AppConfig.dvwaDevelopmentContainerName())
+                        : new DvwaEnvironment(),
+                DvwaEnvironment::startEnvironment,
+                (environment, url) -> {
+                    if (!reuse || environment.isNewDevelopmentContainer() || AppConfig.dvwaDevelopmentResetDatabase()) {
+                        initializeDatabase(url);
+                    } else {
+                        System.out.println("[DVWA DEV] Reusing initialized DVWA container; database setup skipped.");
+                    }
+                });
     }
 
-    /**
-     * TestNG suite teardown: exports the selected DVWA ZAP report and closes the ZAP and DVWA environments.
-     */
+    /** Exports the DVWA report and releases the shared target and scanner. */
     @AfterSuite(alwaysRun = true)
     public void stopServer() {
-        if (container == null) return;
-
-        try {
-            ZapManager.generateReport(zapReportName());
-        } finally {
-            try {
-                ZapManager.quitZap();
-            } finally {
-                container.stopEnvironment();
-                container = null;
-            }
-        }
-    }
-
-    /**
-     * TestNG method setup: creates a fresh ZAP-proxied browser for the upcoming DVWA test.
-     */
-    @BeforeMethod
-    public void initBrowser() {
-        ZapManager.initZapDriver();
-    }
-
-    /**
-     * TestNG method teardown: closes the current ZAP-proxied browser.
-     */
-    @AfterMethod(alwaysRun = true)
-    public void closeBrowser() {
-        ZapManager.quitZapDriver();
+        try { LAB.stop(zapReportName()); }
+        finally { baseUrl = null; }
     }
 
     /**
      * Opens DVWA setup, creates its database, and performs the initial administrator login.
      *
      * <p>Opens the DVWA setup page, presses the database initialization control, and authenticates to prepare the test suite.</p>
+     * @param baseUrl running application URL
      */
-    private void initializeDatabase() {
+    private void initializeDatabase(String baseUrl) {
         ZapManager.initZapDriver();
         WebDriver driver = ZapManager.getDriver();
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
@@ -125,7 +95,7 @@ public abstract class BaseDvwaTest {
             });
 
             driver.get(baseUrl + LoginPage.loginEndpoint);
-            new LoginPage(driver).login("admin", "password");
+            new LoginPage(driver).login(AppConfig.dvwaUsername(), AppConfig.dvwaPassword());
 
             System.out.println("DVWA database initialized and authenticated successfully");
         } finally {
@@ -134,25 +104,24 @@ public abstract class BaseDvwaTest {
     }
 
     /**
-     * Expands Excel payloads into parameterized DVWA security-level test inputs.
-     *
-     * @return the TestNG data-provider matrix; each row contains the parameters for one test invocation
+     * Logs in and selects the requested DVWA mode using the original page objects.
+     * @param level security level for this invocation
+     * @return authenticated login page for subsequent navigation
      */
-    @DataProvider(name = "securityAndPayloads")
-    public Object[][] getSecurityAndPayloads() {
-        Object[][] payloadsFromExcel = ExcelFileReader.extractData(payloadSource, null);
-        Object[][] testData = new Object[payloadsFromExcel.length * securityLevels.length][2];
+    protected LoginPage prepareSecurityLevel(SecurityPage.SecurityLevel level) {
+        WebDriver driver = ZapManager.getDriver();
+        driver.get(baseUrl + LoginPage.loginEndpoint);
+        LoginPage loginPage = new LoginPage(driver);
+        loginPage.login(AppConfig.dvwaUsername(), AppConfig.dvwaPassword());
+        driver.get(baseUrl + SecurityPage.securityEndpoint);
+        new SecurityPage(driver).setSecurityLevel(level);
+        return loginPage;
+    }
 
-        int index = 0;
-
-        for (String level : securityLevels) {
-            for (Object[] row : payloadsFromExcel) {
-                testData[index][0] = level;
-                testData[index][1] = row[0].toString();
-                index++;
-            }
-        }
-
-        return testData;
+    /** Enumerates all existing DVWA modes in the established order. */
+    @DataProvider(name = "securityModes")
+    public Object[][] securityModes() {
+        return java.util.Arrays.stream(SecurityPage.SecurityLevel.values())
+                .map(level -> new Object[]{level}).toArray(Object[][]::new);
     }
 }

@@ -304,4 +304,63 @@ public final class AppConfig {
             throw new IllegalStateException("Result display pause interrupted", e);
         }
     }
+
+    /** Returns the configured output path for the final Juice Shop challenge catalog. */
+    public static Path juiceShopChallengesOutput() { return Path.of(getProperty("juiceshop.challenges.output")); }
+
+    /** Returns the configured local DVWA lab username. */
+    public static String dvwaUsername() { return getProperty("dvwa.username"); }
+
+    /** Returns the configured local DVWA lab password. */
+    public static String dvwaPassword() { return getProperty("dvwa.password"); }
+
+    /** Returns the configured Juice Shop Docker image. */
+    public static String juiceShopImage() { return getProperty("juiceshop.image"); }
+
+    /** Returns the configured Juice Shop internal service port. */
+    public static int juiceShopPort() { return getInt("juiceshop.port", 1); }
+
+    /** Returns the configured DVWA Docker image. */
+    public static String dvwaImage() { return getProperty("dvwa.image"); }
+
+    /** Returns the configured DVWA internal service port. */
+    public static int dvwaPort() { return getInt("dvwa.port", 1); }
+
+    /** Returns the default data directory for external workbook overrides. */
+    public static Path testDataDirectory() { return Path.of(getProperty("test.data.directory")); }
+
+    /**
+     * Resolves the default workbook or an explicitly configured override.
+     * @param key system property for the specific workbook
+     * @return path or classpath resource name consumed by ExcelFileReader
+     */
+    public static String testWorkbook(String key) {
+        String override = System.getProperty(key);
+        if (override != null && !override.isBlank()) return override.trim();
+        return testDataDirectory().resolve(getProperty(key)).toString().replace(java.io.File.separatorChar, '/');
+    }
+
+    /** Returns the configured base wait duration for Juice Shop pages, in seconds. */
+    public static int juiceShopPageWaitSeconds() { return getInt("juiceshop.page.waitSeconds", 1); }
+
+    /** Returns the configured base wait duration for DVWA pages, in seconds. */
+    public static int dvwaPageWaitSeconds() { return getInt("dvwa.page.waitSeconds", 1); }
+
+    /** Returns the configured default ZAP report filename. */
+    public static String zapDefaultReportName() { return getProperty("zap.default.reportName"); }
+
+    /** Returns the output directory for ZAP HTML reports. */
+    public static Path zapHtmlReportDirectory() { return Path.of(getProperty("zap.htmlReportDirectory")); }
+
+    /** Returns the connection timeout used by the existing Juice Shop API client. */
+    public static int juiceShopApiConnectSeconds() { return getInt("juiceshop.api.connectSeconds", 1); }
+
+    /** Returns the timeout for existing Juice Shop JSON requests. */
+    public static int juiceShopApiRequestSeconds() { return getInt("juiceshop.api.requestSeconds", 1); }
+
+    /** Returns the timeout for existing Juice Shop multipart requests. */
+    public static int juiceShopApiUploadSeconds() { return getInt("juiceshop.api.uploadSeconds", 1); }
+
+    /** Returns the user-agent value shared by existing Juice Shop requests. */
+    public static String juiceShopApiUserAgent() { return getProperty("juiceshop.api.userAgent"); }
 }

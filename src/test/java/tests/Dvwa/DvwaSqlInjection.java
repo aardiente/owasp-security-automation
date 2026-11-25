@@ -7,14 +7,11 @@ import org.testng.Reporter;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import pom.Dvwa.LoginPage;
 import pom.Dvwa.SecurityPage;
 import pom.Dvwa.SqlInjectionPage;
-import utilities.ExcelFileReader;
 import utilities.ScreenshotManager;
 
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -36,23 +33,29 @@ public class DvwaSqlInjection extends BaseDvwaTest {
     private record SqlCase(String id, EnumSet<SecurityPage.SecurityLevel> levels, String payload,
                            String signal, String expectedFirst, String expectedLast, String controlPayload,
                            long minDelayMs, String technique) {
+        /**
+         * Returns the stable workbook case identifier for reports.
+         * @return case identifier
+         */
         @Override public String toString() { return id; }
     }
     private record ResultRow(String firstName, String surname) {}
     private record ProbeResult(String text, List<ResultRow> rows, boolean sqlError,
                                HttpResponse<String> response, long durationMs) {}
 
+    /**
+     * Loads and validates SQLi workbook cases in the original case-first order.
+     * @return security-level and case pairs for TestNG
+     */
     @DataProvider(name = "sqliCases")
     public Object[][] sqliCases() {
-        String defaultWorkbook = Path.of("src", "test", "java", "data", getClass().getSimpleName() + ".xlsx").toString();
-        String workbook = System.getProperty("dvwa.sqli.workbook", defaultWorkbook);
-        Object[][] rows = ExcelFileReader.extractData(workbook, null);
+        Object[][] rows = DvwaCases.load("dvwa.sqli.workbook", null);
         List<Object[]> tests = new ArrayList<>();
         for (int i = 0; i < rows.length; i++) {
-            String id = cell(rows[i], 0), levels = cell(rows[i], 1), payload = cell(rows[i], 2);
-            String signal = cell(rows[i], 3).toUpperCase(Locale.ROOT);
-            String expectedFirst = cell(rows[i], 4), expectedLast = cell(rows[i], 5);
-            String control = cell(rows[i], 6), delayText = cell(rows[i], 7), technique = cell(rows[i], 8);
+            String id = DvwaCases.cell(rows[i], 0), levels = DvwaCases.cell(rows[i], 1), payload = DvwaCases.cell(rows[i], 2);
+            String signal = DvwaCases.cell(rows[i], 3).toUpperCase(Locale.ROOT);
+            String expectedFirst = DvwaCases.cell(rows[i], 4), expectedLast = DvwaCases.cell(rows[i], 5);
+            String control = DvwaCases.cell(rows[i], 6), delayText = DvwaCases.cell(rows[i], 7), technique = DvwaCases.cell(rows[i], 8);
             if (id.isBlank() || levels.isBlank() || payload.isBlank() || !SIGNALS.contains(signal))
                 throw new IllegalStateException("Invalid SQLi case at workbook row " + (i + 2) + ": " + id);
             if ((signal.equals("CANARY") || signal.equals("PREFIX_CANARY"))
@@ -65,30 +68,24 @@ public class DvwaSqlInjection extends BaseDvwaTest {
             if (minDelay < 0 || minDelay > 10000)
                 throw new IllegalStateException("Invalid minimum delay for " + id + ": " + minDelay);
 
-            EnumSet<SecurityPage.SecurityLevel> selected = EnumSet.noneOf(SecurityPage.SecurityLevel.class);
-            if (levels.equalsIgnoreCase("ALL")) selected = EnumSet.allOf(SecurityPage.SecurityLevel.class);
-            else for (String level : levels.split("\\|"))
-                selected.add(SecurityPage.SecurityLevel.valueOf(level.trim().toUpperCase(Locale.ROOT)));
+            EnumSet<SecurityPage.SecurityLevel> selected = DvwaCases.levels(levels, i + 2);
             SqlCase test = new SqlCase(id, selected, payload, signal, expectedFirst, expectedLast, control,
                     minDelay, technique.isBlank() ? signal : technique);
-            for (SecurityPage.SecurityLevel level : SecurityPage.SecurityLevel.values())
-                if (selected.contains(level)) tests.add(new Object[]{level, test});
+            DvwaCases.appendCase(tests, test, selected);
         }
         if (tests.isEmpty()) throw new IllegalStateException("SQLi workbook produced no test cases");
         return tests.toArray(Object[][]::new);
     }
 
-    private static String cell(Object[] row, int column) {
-        return column >= row.length || row[column] == null ? "" : row[column].toString().trim();
-    }
-
+    /**
+     * Compares the existing test and control observations and asserts the expected protection.
+     * @param level DVWA security mode
+     * @param test validated workbook case
+     */
     @Test(dataProvider = "sqliCases")
     public void sqlInjectionValidation(SecurityPage.SecurityLevel level, SqlCase test) {
         WebDriver driver = ZapManager.getDriver();
-        driver.get(baseUrl + LoginPage.loginEndpoint);
-        new LoginPage(driver).login("admin", "password");
-        driver.get(baseUrl + SecurityPage.securityEndpoint);
-        new SecurityPage(driver).setSecurityLevel(level);
+        prepareSecurityLevel(level);
 
         SqlInjectionPage page = new SqlInjectionPage(driver);
         ProbeResult baseline = submit(page, level, "0");
@@ -155,6 +152,13 @@ public class DvwaSqlInjection extends BaseDvwaTest {
         }
     }
 
+    /**
+     * Compares observed rows to the expected workbook markers.
+     * @param result observed result
+     * @param test workbook case
+     * @param prefix whether a prefix match is requested
+     * @return whether a matching row exists
+     */
     private boolean hasCanary(ProbeResult result, SqlCase test, boolean prefix) {
         return result.rows().stream().anyMatch(row -> row.surname().equals(test.expectedLast())
                 && (prefix ? row.firstName().startsWith(test.expectedFirst())
@@ -162,6 +166,13 @@ public class DvwaSqlInjection extends BaseDvwaTest {
                     : row.firstName().equals(test.expectedFirst())));
     }
 
+    /**
+     * Submits an existing workbook input using the selected page flow and records the observed result.
+     * @param page current SQL injection page
+     * @param level selected security mode
+     * @param payload workbook or control input
+     * @return normalized observation and elapsed time
+     */
     private ProbeResult submit(SqlInjectionPage page, SecurityPage.SecurityLevel level, String payload) {
         page.open(baseUrl);
         HttpResponse<String> response = null;
