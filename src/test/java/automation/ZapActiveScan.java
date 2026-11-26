@@ -47,36 +47,32 @@ public final class ZapActiveScan {
 
         try {
             URI target = URI.create(targetUrl);
-            if (!"http".equalsIgnoreCase(target.getScheme()) &&
-                    !"https".equalsIgnoreCase(target.getScheme()))
+            if (!"http".equalsIgnoreCase(target.getScheme()) && !"https".equalsIgnoreCase(target.getScheme()))
                 throw new IllegalArgumentException("Active scanning requires HTTP(S).");
             if (target.getHost() == null || target.getRawAuthority() == null)
                 throw new IllegalArgumentException("Invalid active scan target.");
 
             String origin = target.getScheme() + "://" + target.getRawAuthority();
-            String contextName = "Automation_" +
-                    target.getHost().replaceAll("[^A-Za-z0-9_-]", "_");
+            String contextName = "Automation_" + target.getHost().replaceAll("[^A-Za-z0-9_-]", "_");
 
             client = ZapManager.getZapClient();
             client.context.newContext(contextName);
-            client.context.includeInContext(contextName,
-                    Pattern.quote(origin) + "(?:/.*|\\?.*)?");
+            client.context.includeInContext(contextName, Pattern.quote(origin) + "(?:/.*|\\?.*)?");
             client.context.setContextInScope(contextName, "true");
             client.core.accessUrl(origin + "/", "false");
 
             Instant deadline = Instant.now().plus(limit);
             Instant spiderDeadline = Instant.now().plus(limit.dividedBy(5));
 
-            ApiResponseElement spiderStart = (ApiResponseElement) client.spider.scan(
-                    origin + "/", "20", "true", contextName, "false");
+            ApiResponseElement spiderStart = (ApiResponseElement) client.spider.scan(origin + "/", "20", "true", contextName, "false");
             spiderId = spiderStart.getValue();
             status = "spider_running";
             System.out.println("[ZAP SPIDER] Started " + spiderId + " for " + origin);
 
             while (Instant.now().isBefore(spiderDeadline) && Instant.now().isBefore(deadline)) {
-                spiderProgress = Integer.parseInt(
-                        ((ApiResponseElement) client.spider.status(spiderId)).getValue());
+                spiderProgress = Integer.parseInt(((ApiResponseElement) client.spider.status(spiderId)).getValue());
                 if (spiderProgress >= 100) break;
+
                 Thread.sleep(1000);
             }
 
@@ -95,8 +91,7 @@ public final class ZapActiveScan {
                 System.out.println("[ZAP ACTIVE] Started " + scanId + " for " + origin);
 
                 while (Instant.now().isBefore(deadline)) {
-                    progress = Integer.parseInt(
-                            ((ApiResponseElement) client.ascan.status(scanId)).getValue());
+                    progress = Integer.parseInt(((ApiResponseElement) client.ascan.status(scanId)).getValue());
 
                     if (progress >= 100) {
                         status = "completed";
@@ -118,12 +113,17 @@ public final class ZapActiveScan {
             Thread.currentThread().interrupt();
             status = "interrupted";
             error = "Scan thread interrupted.";
-            if (client != null) stop(client, scanId, spiderId);
+
+            if (client != null)
+                stop(client, scanId, spiderId);
         } catch (Exception e) {
             status = "failed";
             error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
             System.err.println("[ZAP ACTIVE] " + error);
-            if (client != null) stop(client, scanId, spiderId);
+
+            if (client != null)
+                stop(client, scanId, spiderId);
+
         } finally {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("status", status);

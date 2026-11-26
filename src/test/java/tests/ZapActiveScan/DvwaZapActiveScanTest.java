@@ -1,5 +1,5 @@
 
-package tests.ZapScan;
+package tests.ZapActiveScan;
 
 import automation.AppConfig;
 import automation.ZapActiveScan;

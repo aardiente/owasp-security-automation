@@ -129,8 +129,10 @@ public class DvwaSqlInjection extends BaseDvwaTest {
                 + " | maskedError=" + maskedError + " | delayMs=" + firstDeltaMs
                 + " | repeatDelayMs=" + repeatDeltaMs + " | confirmed=" + confirmed, true);
 
-        if (evidence.response() != null) ScreenshotManager.captureResponse(driver, evidence.response());
-        else ScreenshotManager.captureSqlResults(driver);
+        if (evidence.response() != null)
+            ScreenshotManager.captureResponse(driver, evidence.response());
+        else
+            ScreenshotManager.captureSqlResults(driver);
 
         // A masked query failure is not evidence that a non-error injection was safely blocked.
         if (injected.text().contains("Something went wrong.") && !test.signal().equals("SQL_ERROR"))

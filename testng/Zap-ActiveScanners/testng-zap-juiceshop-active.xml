@@ -6,7 +6,7 @@
 
     <test name="ZAP Active Security Assessment">
         <classes>
-            <class name="tests.ZapScan.JuiceShopZapActiveScanTest"/>
+            <class name="tests.ZapActiveScan.JuiceShopZapActiveScanTest"/>
         </classes>
     </test>
 </suite>

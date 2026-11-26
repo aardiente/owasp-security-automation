@@ -11,6 +11,7 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
 import org.openqa.selenium.Proxy;
+import org.openqa.selenium.Point;
 
 /**
  * Creates Selenium browser instances and applies viewport or ZAP proxy configuration for test execution.
@@ -30,12 +31,17 @@ public class BrowserFactory {
     }
 
     /**
-     * Applies the configured viewport dimensions to an existing browser session.
+     * Applies the configured viewport dimensions and positions
+     * non-headless browsers at the top-left corner of the screen.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
     public static void setViewport(WebDriver driver) {
         driver.manage().window().setSize(AppConfig.viewport());
+
+        if (!AppConfig.isHeadless()) {
+            driver.manage().window().setPosition(new Point(0, 0));
+        }
     }
 
     /**
