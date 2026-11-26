@@ -1,81 +1,42 @@
-
 package tests.JuiceShop;
 
 import automation.AppConfig;
-import automation.ZapManager;
-import org.testng.annotations.AfterMethod;
+import org.openqa.selenium.WebDriver;
 import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
+import tests.framework.LabLifecycle;
+import tests.framework.ProxiedBrowserTest;
 import utilities.Docker.JuiceShopEnvironment;
-
 import java.time.Duration;
 
-/**
- * Provides the Juice Shop TestNG lifecycle: Docker container, ZAP proxy, browser, and suite-specific report export.
- */
-public abstract class JuiceShopBaseTest {
-
-    protected static JuiceShopEnvironment container;
+/** Owns the Juice Shop suite context, shared by API, UI and standalone scanner tests. */
+public abstract class JuiceShopBaseTest extends ProxiedBrowserTest {
+    private static final LabLifecycle<JuiceShopEnvironment> LAB = new LabLifecycle<>();
     protected static String baseUrl;
-    protected String payloadSource = "";
 
-    /**
-     * Selects the output filename for the Juice Shop suite's ZAP report; standalone subclasses may override it.
-     *
-     * @return the HTML report filename selected for Juice Shop suite teardown
-     */
-    protected String zapReportName() {
-        return AppConfig.zapPassiveReportName();
-    }
+    /** Returns the configured ZAP passive report name; standalone scans may override it. */
+    protected String zapReportName() { return AppConfig.zapPassiveReportName(); }
 
-    /**
-     * TestNG suite setup: starts the Juice Shop container and initializes ZAP.
-     */
+    /** Starts the application and its scanner once per sequential suite. */
     @BeforeSuite
     public void startServer() {
-        if (container != null) return;
-
-        container = new JuiceShopEnvironment();
-        container.startServer();
-        baseUrl = container.getInternalURL();
-
-        ZapManager.initZap();
+        baseUrl = LAB.start(JuiceShopEnvironment::new, JuiceShopEnvironment::startServer,
+                (environment, url) -> { });
     }
 
-    /**
-     * TestNG suite teardown: exports the selected Juice Shop report and shuts down ZAP and the application.
-     */
+    /** Exports the selected report and stops the shared application environment. */
     @AfterSuite(alwaysRun = true)
     public void stopServer() {
-        if (container == null) return;
-
-        try {
-            ZapManager.generateReport(zapReportName());
-        } finally {
-            try {
-                ZapManager.quitZap();
-            } finally {
-                container.stopEnvironment();
-                container = null;
-            }
-        }
+        try { LAB.stop(zapReportName()); }
+        finally { baseUrl = null; }
     }
 
     /**
-     * TestNG method setup: opens a fresh ZAP-proxied browser with an immediate implicit wait.
+     * Keeps Juice Shop on explicit waits, as in the original suite.
+     * @param driver current ZAP-proxied browser
      */
-    @BeforeMethod
-    public void initBrowser() {
-        ZapManager.initZapDriver();
-        ZapManager.getDriver().manage().timeouts().implicitlyWait(Duration.ZERO);
-    }
-
-    /**
-     * TestNG method teardown: closes the current ZAP-proxied browser.
-     */
-    @AfterMethod(alwaysRun = true)
-    public void closeBrowser() {
-        ZapManager.quitZapDriver();
+    @Override
+    protected void configureBrowser(WebDriver driver) {
+        driver.manage().timeouts().implicitlyWait(Duration.ZERO);
     }
 }

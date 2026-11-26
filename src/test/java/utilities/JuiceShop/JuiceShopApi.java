@@ -2,6 +2,7 @@
 package utilities.JuiceShop;
 
 import automation.ZapManager;
+import automation.AppConfig;
 import org.openqa.selenium.json.Json;
 
 import java.io.ByteArrayOutputStream;
@@ -20,7 +21,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.nio.file.Path;
 import java.nio.file.Files;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Wraps Juice Shop HTTP endpoints, login sessions, challenge records, and multipart uploads for the test helpers.
@@ -52,7 +52,7 @@ public final class JuiceShopApi {
 
         client = HttpClient.newBuilder()
                 .proxy(proxy)
-                .connectTimeout(Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(AppConfig.juiceShopApiConnectSeconds()))
                 .followRedirects(HttpClient.Redirect.NEVER)
                 .build();
     }
@@ -155,15 +155,8 @@ public final class JuiceShopApi {
             throws IOException, InterruptedException {
 
         String normalizedPath = path.startsWith("/") ? path : "/" + path;
-        URI uri = URI.create(baseUrl + normalizedPath);
-
-        HttpRequest.Builder request = HttpRequest.newBuilder(uri)
-                .timeout(Duration.ofSeconds(15))
-                .header("User-Agent", "JuiceShopSecurityAutomation/1.0")
-                .header("Accept", "application/json");
-
-        if (token != null && !token.isBlank())
-            request.header("Authorization", "Bearer " + token);
+        HttpRequest.Builder request = requestBuilder(normalizedPath, token, "application/json",
+                Duration.ofSeconds(AppConfig.juiceShopApiRequestSeconds()));
 
         if (body != null)
             request.header("Content-Type", "application/json");
@@ -412,19 +405,10 @@ public final class JuiceShopApi {
         body.write(("\r\n--" + boundary + "--\r\n")
                 .getBytes(StandardCharsets.UTF_8));
 
-        URI uri = URI.create(
-                baseUrl + (path.startsWith("/") ? path : "/" + path)
-        );
-
-        HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
-                .timeout(Duration.ofSeconds(30))
-                .header("User-Agent", "JuiceShopSecurityAutomation/1.0")
-                .header("Accept", "*/*")
+        HttpRequest.Builder builder = requestBuilder(path, token, "*/*",
+                Duration.ofSeconds(AppConfig.juiceShopApiUploadSeconds()))
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()));
-
-        if (token != null && !token.isBlank())
-            builder.header("Authorization", "Bearer " + token);
 
         HttpResponse<String> response = client.send(
                 builder.build(),
@@ -437,5 +421,23 @@ public final class JuiceShopApi {
         );
 
         return response;
+    }
+
+    /**
+     * Applies common request metadata for the existing JSON and multipart methods.
+     * @param path application-relative path
+     * @param token optional session token
+     * @param accept response media type expected by the caller
+     * @param timeout caller-specific request timeout
+     * @return configured HTTP request builder
+     */
+    private HttpRequest.Builder requestBuilder(String path, String token, String accept, Duration timeout) {
+        URI uri = URI.create(baseUrl + (path.startsWith("/") ? path : "/" + path));
+        HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
+                .timeout(timeout)
+                .header("User-Agent", AppConfig.juiceShopApiUserAgent())
+                .header("Accept", accept);
+        if (token != null && !token.isBlank()) builder.header("Authorization", "Bearer " + token);
+        return builder;
     }
 }

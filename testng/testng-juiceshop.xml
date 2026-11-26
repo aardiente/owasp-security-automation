@@ -2,10 +2,13 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 
 <suite name="Juice Shop Security Tests" parallel="false">
-    <test name="Juice Shop Challenges">
+    <test name="Juice Shop Challenges" preserve-order="false">
         <classes>
-            <class name="tests.JuiceShop.JuiceShopChallengesTest"/>
-            <class name="tests.JuiceShop.JuiceShopZapAlertsTest"/>
+            <class name="tests.JuiceShop.api.JuiceShopResourceApiTest"/>
+            <class name="tests.JuiceShop.api.JuiceShopStateApiTest"/>
+            <class name="tests.JuiceShop.api.JuiceShopCommerceApiTest"/>
+            <class name="tests.JuiceShop.ui.JuiceShopUiChallengeTest"/>
+            <class name="tests.JuiceShop.ui.JuiceShopScoreBoardTest"/>
         </classes>
     </test>
 </suite>

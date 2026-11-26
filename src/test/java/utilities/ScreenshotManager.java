@@ -3,6 +3,8 @@ package utilities;
 
 import automation.AppConfig;
 import automation.PresentationOverlay;
+import utilities.reporting.ReportingConfiguration;
+import utilities.reporting.EvidencePolicy;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
@@ -22,14 +24,10 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.HexFormat;
-import java.util.Locale;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -41,16 +39,24 @@ public class ScreenshotManager {
 
     public static final String EVIDENCE_ATTRIBUTE = "screenshot.evidenceFile";
 
-    private static final Path SCREENSHOT_DIR = Path.of("target", "screenshots");
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS");
     private static final AtomicLong SEQUENCE = new AtomicLong();
-    private static final AtomicBoolean JUICE_LEGACY_CLEANED = new AtomicBoolean();
-    private static final Pattern OLD_JUICE_NAME = Pattern.compile(".+-\\d{8}-\\d{6}-\\d{3}-\\d+\\.png");
+    private static final Set<Path> CLEANED_DIRECTORIES = ConcurrentHashMap.newKeySet();
+    private static final Pattern LEGACY_TIMESTAMP_NAME = Pattern.compile(".+-\\d{8}-\\d{6}-\\d{3}-\\d+\\.png");
 
     /**
      * Prevents direct instantiation of this utility class.
      */
     private ScreenshotManager() {}
+
+    /** Uses the same evidence root and target metadata as both report consumers. */
+    private static ReportingConfiguration reportingConfig() {
+        try {
+            return ReportingConfiguration.load();
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to resolve screenshot directory", e);
+        }
+    }
 
     /**
      * Captures the browser viewport, saves it under the current TestNG test, and records the evidence path.
@@ -63,10 +69,7 @@ public class ScreenshotManager {
         Path screenshotPath = nextScreenshotPath();
 
         try {
-            byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-            Files.write(screenshotPath, screenshot);
-            cleanupLegacyJuiceScreenshots(screenshotPath);
-            recordEvidence(screenshotPath);
+            writeBrowserEvidence(driver, screenshotPath);
             System.out.println("[SCREENSHOT] Saved: " + screenshotPath.toAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save screenshot: " + screenshotPath, e);
@@ -100,10 +103,7 @@ public class ScreenshotManager {
 
             driver.manage().window().setSize(new Dimension(width, height));
 
-            byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-            Files.write(screenshotPath, screenshot);
-            cleanupLegacyJuiceScreenshots(screenshotPath);
-            recordEvidence(screenshotPath);
+            writeBrowserEvidence(driver, screenshotPath);
 
             System.out.println("[SQLi SCREENSHOT] Full webpage saved: " + screenshotPath.toAbsolutePath());
 
@@ -112,9 +112,7 @@ public class ScreenshotManager {
 
             try {
                 Path fallback = nextScreenshotPath();
-                Files.write(fallback, ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES));
-                cleanupLegacyJuiceScreenshots(fallback);
-                recordEvidence(fallback);
+                writeBrowserEvidence(driver, fallback);
                 System.out.println("[SQLi SCREENSHOT] Browser fallback saved: " + fallback.toAbsolutePath());
             } catch (Exception fallbackError) {
                 System.out.println("[SQLi SCREENSHOT] Unable to save screenshot: " + fallbackError.getMessage());
@@ -159,9 +157,7 @@ public class ScreenshotManager {
                 graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
                 graphics.drawString("DVWA Reflected XSS - Alert Detected", 20, 35);
 
-                graphics.setFont(Font.getFont(Font.SANS_SERIF, null) == null
-                        ? new Font(Font.MONOSPACED, Font.PLAIN, 16)
-                        : new Font(Font.MONOSPACED, Font.PLAIN, 16));
+                graphics.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
                 String message = "Alert: " + alertText.replace("\n", "\\n").replace("\r", "\\r");
 
                 while (message.length() > 1
@@ -179,14 +175,33 @@ public class ScreenshotManager {
                 throw new IOException("PNG image writer unavailable.");
             }
 
-            cleanupLegacyJuiceScreenshots(screenshotPath);
-            recordEvidence(screenshotPath);
+            finalizeEvidence(screenshotPath);
             System.out.println("[XSS SCREENSHOT] Saved: " + screenshotPath.toAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save XSS screenshot.", e);
         }
 
         showResult(driver, screenshotPath);
+    }
+
+    /**
+     * Persists a browser viewport screenshot and associates it with the current test.
+     * @param driver browser providing screenshot bytes
+     * @param destination resolved evidence path
+     * @throws IOException if the screenshot cannot be written
+     */
+    private static void writeBrowserEvidence(WebDriver driver, Path destination) throws IOException {
+        Files.write(destination, ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES));
+        finalizeEvidence(destination);
+    }
+
+    /**
+     * Applies the common evidence cleanup and TestNG metadata policy after a successful write.
+     * @param destination saved evidence path
+     */
+    private static void finalizeEvidence(Path destination) {
+        cleanupLegacyScreenshots(destination);
+        recordEvidence(destination);
     }
 
     /**
@@ -204,7 +219,7 @@ public class ScreenshotManager {
     /**
      * Calculates the screenshot destination for the current test and its parameter set.
      *
-     * <p>Uses application, class, method, and (for DVWA parameterized cases) input hashes to determine the filename.</p>
+     * <p>Uses the configured target folder and naming mode, class, method, and parameter hash when needed.</p>
      *
      * @return the generated evidence path for the currently executing TestNG method
      */
@@ -213,33 +228,20 @@ public class ScreenshotManager {
         if (result == null) throw new IllegalStateException("ScreenshotManager must be called from a TestNG test.");
 
         Class<?> testClass = result.getTestClass().getRealClass();
-        String[] packages = testClass.getPackageName().split("\\.");
-
-        String application = packages.length > 1 && packages[0].equalsIgnoreCase("tests")
-                ? packages[1] : packages[packages.length - 1];
-
-        Path directory = SCREENSHOT_DIR.resolve(sanitize(application.toLowerCase(Locale.ROOT)))
-                .resolve(sanitize(testClass.getSimpleName()));
-
-        String testName = sanitize(result.getMethod().getMethodName());
-        String filename;
-
-        if (application.equalsIgnoreCase("dvwa")) {
-            Object[] parameters = result.getParameters();
-
-            if (parameters.length > 0) {
-                String level = sanitize(String.valueOf(parameters[0]));
-                String hash = parameterHash(parameters);
-                filename = testName + "-" + level + "-" + hash + ".png";
-            } else {
-                filename = testName + ".png";
-            }
-        } else if (application.equalsIgnoreCase("juiceshop")) {
-            filename = testName + ".png";
-        } else {
-            filename = testName + "-"
-                    + LocalDateTime.now().format(TIMESTAMP) + "-"
-                    + SEQUENCE.incrementAndGet() + ".png";
+        ReportingConfiguration config = reportingConfig();
+        EvidencePolicy policy;
+        try {
+            policy = config.evidencePolicyFor(testClass);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to resolve screenshot naming policy", e);
+        }
+        Path directory = config.screenshotDirectory().resolve(policy.folder())
+                .resolve(EvidenceNames.sanitize(testClass.getSimpleName()));
+        String method = result.getMethod().getMethodName();
+        String filename = EvidenceNames.deterministicName(policy.naming(), method, result.getParameters());
+        if (filename == null) {
+            filename = EvidenceNames.sanitize(method) + "-" + LocalDateTime.now().format(TIMESTAMP)
+                    + "-" + SEQUENCE.incrementAndGet() + ".png";
         }
 
         try {
@@ -252,18 +254,28 @@ public class ScreenshotManager {
     }
 
     /**
-     * Removes older Juice Shop screenshot copies that conflict with the current evidence layout.
+     * Removes old timestamped copies only for targets that opt into legacy cleanup.
      *
      * @param screenshotPath the generated screenshot file to associate with the test
      */
-    private static void cleanupLegacyJuiceScreenshots(Path screenshotPath) {
-        Path juiceDirectory = SCREENSHOT_DIR.resolve("juiceshop").toAbsolutePath().normalize();
-        if (!screenshotPath.toAbsolutePath().normalize().startsWith(juiceDirectory)
-                || !JUICE_LEGACY_CLEANED.compareAndSet(false, true)) return;
+    private static void cleanupLegacyScreenshots(Path screenshotPath) {
+        ITestResult result = Reporter.getCurrentTestResult();
+        if (result == null) return;
+        ReportingConfiguration config = reportingConfig();
+        EvidencePolicy policy;
+        try {
+            policy = config.evidencePolicyFor(result.getTestClass().getRealClass());
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to resolve legacy screenshot policy", e);
+        }
+        if (!policy.cleanupLegacy() || policy.naming() == EvidenceNames.Mode.TIMESTAMP) return;
+        Path evidenceDirectory = config.screenshotDirectory().resolve(policy.folder()).toAbsolutePath().normalize();
+        if (!screenshotPath.toAbsolutePath().normalize().startsWith(evidenceDirectory)
+                || !CLEANED_DIRECTORIES.add(evidenceDirectory)) return;
 
-        try (Stream<Path> files = Files.walk(juiceDirectory)) {
+        try (Stream<Path> files = Files.walk(evidenceDirectory)) {
             files.filter(Files::isRegularFile)
-                    .filter(file -> OLD_JUICE_NAME.matcher(file.getFileName().toString()).matches())
+                    .filter(file -> LEGACY_TIMESTAMP_NAME.matcher(file.getFileName().toString()).matches())
                     .forEach(file -> {
                         try { Files.delete(file); }
                         catch (IOException e) {
@@ -272,36 +284,8 @@ public class ScreenshotManager {
                         }
                     });
         } catch (IOException e) {
-            System.err.println("[SCREENSHOT] Could not clean old Juice Shop screenshots: " + e.getMessage());
+            System.err.println("[SCREENSHOT] Could not clean old screenshots: " + e.getMessage());
         }
-    }
-
-    /**
-     * Derives a stable short identifier from a parameterized test's inputs.
-     *
-     * @param parameters the TestNG method arguments used to identify an execution
-     * @return a stable short identifier derived from TestNG method arguments
-     */
-    private static String parameterHash(Object[] parameters) {
-        try {
-            String values = Arrays.deepToString(parameters);
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(values.getBytes(StandardCharsets.UTF_8));
-
-            return HexFormat.of().formatHex(Arrays.copyOf(digest, 6));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is unavailable.", e);
-        }
-    }
-
-    /**
-     * Converts arbitrary text into a safe filename component.
-     *
-     * @param value the input value to convert or display
-     * @return a filesystem-safe version of the supplied name
-     */
-    private static String sanitize(String value) {
-        return value.replaceAll("[^A-Za-z0-9._-]", "_");
     }
 
     /**

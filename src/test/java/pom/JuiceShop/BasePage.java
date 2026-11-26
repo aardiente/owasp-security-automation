@@ -4,17 +4,15 @@ package pom.JuiceShop;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import automation.AppConfig;
+import pom.common.BrowserPage;
 
 import java.time.Duration;
 
 /**
  * Juice Shop page object exposing Selenium interactions for the base view.
  */
-public abstract class BasePage {
-
-    protected WebDriver driver;
-    protected WebDriverWait wait;
+public abstract class BasePage extends BrowserPage {
 
     private final By dismissBannerButton = By.cssSelector("button[aria-label='Close Welcome Banner']");
     private final By acceptCookiesButton = By.cssSelector("a[aria-label='dismiss cookie message']");
@@ -31,8 +29,7 @@ public abstract class BasePage {
      * @param driver the Selenium WebDriver controlling the application browser
      */
     public BasePage(WebDriver driver) {
-        this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(7));
+        super(driver, Duration.ofSeconds(AppConfig.juiceShopPageWaitSeconds()));
     }
 
     /**

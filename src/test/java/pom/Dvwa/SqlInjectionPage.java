@@ -37,8 +37,16 @@ public class SqlInjectionPage extends BasePage {
     private final By results = By.cssSelector(".vulnerable_code_area pre");
     private final By highInputLink = By.cssSelector(".vulnerable_code_area a[onclick*='session-input.php']");
 
+    /**
+     * Initializes the SQL injection page with the current WebDriver.
+     * @param driver current test browser
+     */
     public SqlInjectionPage(WebDriver driver) { super(driver); }
 
+    /**
+     * Opens the SQL injection module and waits for its form to appear.
+     * @param baseUrl running application URL
+     */
     public void open(String baseUrl) {
         driver.get(baseUrl + endpoint);
         try {
@@ -148,6 +156,10 @@ public class SqlInjectionPage extends BasePage {
         throw new IllegalStateException("Unexpected DVWA SQLi response. " + pageContext());
     }
 
+    /**
+     * Summarizes the current browser context for module-loading diagnostics.
+     * @return diagnostic context string
+     */
     private String pageContext() {
         String body;
         try {

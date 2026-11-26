@@ -1,6 +1,9 @@
 
 package utilities.reporting;
 
+import utilities.EvidenceNames;
+import java.util.Locale;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -9,6 +12,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Properties;
 import java.util.stream.Stream;
 
@@ -20,7 +25,7 @@ import java.util.stream.Stream;
  * An external properties file can be selected using the
  * security.reporting.config JVM property.</p>
  */
-final class ReportingConfiguration {
+public final class ReportingConfiguration {
 
     private final Properties settings = new Properties();
     private final Path reportDirectory;
@@ -30,6 +35,7 @@ final class ReportingConfiguration {
     private final String indexFile;
     private final String assessmentPattern;
     private final String testResultsFile;
+    private final List<ReportingTarget> targets;
 
     /**
      * Validates loaded settings and resolves report and asset
@@ -56,6 +62,7 @@ final class ReportingConfiguration {
             throw new IOException("report.assessmentPattern must contain {id}.");
 
         fileName(assessmentPattern.replace("{id}", "example"));
+        targets = loadTargets();
     }
 
     /**
@@ -68,7 +75,7 @@ final class ReportingConfiguration {
      * @return validated reporting configuration
      * @throws IOException if configuration cannot be loaded or validated
      */
-    static ReportingConfiguration load() throws IOException {
+    public static ReportingConfiguration load() throws IOException {
         Properties loaded = new Properties();
         String override = System.getProperty("security.reporting.config");
 
@@ -142,7 +149,7 @@ final class ReportingConfiguration {
      *
      * @return directory containing screenshot evidence
      */
-    Path screenshotDirectory() {
+    public Path screenshotDirectory() {
         return screenshotDirectory;
     }
 
@@ -208,8 +215,65 @@ final class ReportingConfiguration {
      * @return path to the ZAP report
      * @throws IOException if the filename is invalid
      */
-    Path zapFile(String fileName) throws IOException {
+    public Path zapFile(String fileName) throws IOException {
         return zapDirectory.resolve(fileName(fileName));
+    }
+
+    /** Reads target metadata once through a common schema, in configured order. */
+    List<ReportingTarget> targets() { return targets; }
+
+    /** Validates and loads all configured targets in declaration order. */
+    private List<ReportingTarget> loadTargets() throws IOException {
+        List<ReportingTarget> targets = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (String raw : required("targets").split(",", -1)) {
+            String id = raw.trim();
+            if (!id.matches("[A-Za-z0-9_-]+") || !seen.add(id))
+                throw new IOException("Invalid or duplicate reporting target ID: " + id);
+            String prefix = "target." + id + ".";
+            targets.add(new ReportingTarget(id, required(prefix + "title"),
+                    required(prefix + "package"), required(prefix + "site"),
+                    fileName(required(prefix + "zapFile")),
+                    evidencePolicy(prefix, id),
+                    optionalFile(prefix + "activeZapFile"),
+                    optionalFile(prefix + "activeScanFile")));
+        }
+        return List.copyOf(targets);
+    }
+
+    /** Reads and validates the evidence policy for a target. */
+    private EvidencePolicy evidencePolicy(String prefix, String id) throws IOException {
+        String mode = optional(prefix + "screenshotNaming", "timestamp");
+        String cleanup = optional(prefix + "screenshotCleanupLegacy", "false");
+        if (!cleanup.equalsIgnoreCase("true") && !cleanup.equalsIgnoreCase("false"))
+            throw new IOException("Invalid boolean: " + prefix + "screenshotCleanupLegacy");
+        try {
+            return new EvidencePolicy(fileName(optional(prefix + "screenshotFolder", id)),
+                    EvidenceNames.Mode.valueOf(mode.toUpperCase(Locale.ROOT)), Boolean.parseBoolean(cleanup));
+        } catch (IllegalArgumentException e) {
+            throw new IOException("Invalid evidence naming mode for " + id + ": " + mode, e);
+        }
+    }
+
+    /** Finds evidence settings by configured test package; most specific prefix wins. */
+    public EvidencePolicy evidencePolicyFor(Class<?> testClass) throws IOException {
+        String name = testClass.getName();
+        return targets().stream().filter(target -> name.startsWith(target.packagePrefix()))
+                .max(Comparator.comparingInt(target -> target.packagePrefix().length()))
+                .map(ReportingTarget::evidencePolicy)
+                .orElseGet(() -> new EvidencePolicy(EvidenceNames.defaultFolder(testClass.getPackageName()),
+                        EvidenceNames.Mode.TIMESTAMP, false));
+    }
+
+    /** Validates an optional filename if one is supplied. */
+    private String optionalFile(String key) throws IOException {
+        String value = optional(key, "");
+        return value.isEmpty() ? value : fileName(value);
+    }
+
+    /** Resolves a configured asset path relative to the working directory. */
+    Path path(String key) throws IOException {
+        return resolve(Path.of("").toAbsolutePath().normalize(), required(key));
     }
 
     /**

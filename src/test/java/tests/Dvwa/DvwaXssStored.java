@@ -6,14 +6,11 @@ import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import pom.Dvwa.LoginPage;
 import pom.Dvwa.SecurityPage;
 import pom.Dvwa.XssStoredPage;
 import pom.Dvwa.XssStoredPage.ProbeField;
-import utilities.ExcelFileReader;
 import utilities.ScreenshotManager;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -27,13 +24,20 @@ public class DvwaXssStored extends BaseDvwaTest {
 
     private record XssCase(String id, EnumSet<SecurityPage.SecurityLevel> levels,
                            ProbeField field, String payload) {
+        /**
+         * Returns a stable case and field identifier for evidence naming.
+         * @return case and field identifier
+         */
         @Override public String toString() { return id + "-" + field; }
     }
 
+    /**
+     * Loads and validates stored-XSS workbook cases and expands their configured security levels.
+     * @return security-level and case pairs for TestNG
+     */
     @DataProvider(name = "storedXssPayloads")
     public Object[][] storedXssPayloads() {
-        String workbook = Path.of("src", "test", "java", "data", DvwaXssStored.class.getSimpleName() + ".xlsx").toString();
-        Object[][] rows = ExcelFileReader.extractData(workbook, "Payloads");
+        Object[][] rows = DvwaCases.load("dvwa.storedXss.workbook", "Payloads");
         List<XssCase> cases = new ArrayList<>();
         Set<String> ids = new HashSet<>();
 
@@ -43,10 +47,10 @@ public class DvwaXssStored extends BaseDvwaTest {
             if (row == null || row.length != 4)
                 throw new IllegalStateException("Expected case_id, levels, field, payload in workbook row " + excelRow);
 
-            String id = value(row[0]);
-            String levelText = value(row[1]);
-            String fieldText = value(row[2]);
-            String payload = value(row[3]);
+            String id = DvwaCases.cell(row, 0);
+            String levelText = DvwaCases.cell(row, 1);
+            String fieldText = DvwaCases.cell(row, 2);
+            String payload = DvwaCases.cell(row, 3);
             if (!id.matches("[A-Za-z0-9_-]{1,60}") || !ids.add(id))
                 throw new IllegalStateException("Missing, invalid, or duplicate case_id in workbook row " + excelRow);
             if (!payload.contains("{{MARKER}}") || !payload.contains("this.dataset.p=1"))
@@ -59,34 +63,18 @@ public class DvwaXssStored extends BaseDvwaTest {
                 throw new IllegalStateException("Unknown probe field in workbook row " + excelRow, e);
             }
 
-            EnumSet<SecurityPage.SecurityLevel> levels = EnumSet.noneOf(SecurityPage.SecurityLevel.class);
-            if (levelText.equalsIgnoreCase("ALL")) levels = EnumSet.allOf(SecurityPage.SecurityLevel.class);
-            else for (String part : levelText.split("\\|")) {
-                try { levels.add(SecurityPage.SecurityLevel.valueOf(part.trim().toUpperCase(Locale.ROOT))); }
-                catch (IllegalArgumentException e) {
-                    throw new IllegalStateException("Unknown security level in workbook row " + excelRow, e);
-                }
-            }
-            if (levels.isEmpty()) throw new IllegalStateException("No security levels in workbook row " + excelRow);
+            EnumSet<SecurityPage.SecurityLevel> levels = DvwaCases.levels(levelText, excelRow);
             cases.add(new XssCase(id, levels, field, payload));
         }
 
-        List<Object[]> invocations = new ArrayList<>();
-        for (SecurityPage.SecurityLevel level : SecurityPage.SecurityLevel.values())
-            for (XssCase probe : cases)
-                if (probe.levels().contains(level)) invocations.add(new Object[]{level, probe});
-        if (invocations.isEmpty()) throw new IllegalStateException("Stored-XSS workbook contains no enabled test cases");
-        return invocations.toArray(Object[][]::new);
+        return DvwaCases.levelFirst(cases, XssCase::levels, "Stored-XSS");
     }
 
     /** A successfully executed, persisted event handler is a confirmed finding and fails the test. */
     @Test(dataProvider = "storedXssPayloads")
     public void storedXssIsBlocked(SecurityPage.SecurityLevel level, XssCase probe) {
         WebDriver driver = ZapManager.getDriver();
-        driver.get(baseUrl + LoginPage.loginEndpoint);
-        new LoginPage(driver).login("admin", "password");
-        driver.get(baseUrl + SecurityPage.securityEndpoint);
-        new SecurityPage(driver).setSecurityLevel(level);
+        prepareSecurityLevel(level);
 
         XssStoredPage page = new XssStoredPage(driver);
         String marker = "p" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
@@ -107,5 +95,4 @@ public class DvwaXssStored extends BaseDvwaTest {
                 + " for workbook case " + probe.id() + " (marker=" + marker + ").");
     }
 
-    private static String value(Object cell) { return cell == null ? "" : cell.toString().trim(); }
 }

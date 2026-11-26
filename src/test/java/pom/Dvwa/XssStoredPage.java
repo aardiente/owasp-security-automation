@@ -31,8 +31,16 @@ public class XssStoredPage extends BasePage {
     private final By messageInput = By.name("mtxMessage");
     private final By signButton = By.name("btnSign");
 
+    /**
+     * Initializes the stored-XSS page with the current WebDriver.
+     * @param driver current test browser
+     */
     public XssStoredPage(WebDriver driver) { super(driver); }
 
+    /**
+     * Opens the guestbook and waits for the message field.
+     * @param baseUrl running application URL
+     */
     public void open(String baseUrl) {
         driver.get(baseUrl + ENDPOINT);
         wait.until(ExpectedConditions.visibilityOfElementLocated(messageInput));
@@ -100,6 +108,11 @@ public class XssStoredPage extends BasePage {
         }
     }
 
+    /**
+     * Encodes an existing form value for HTTP submission.
+     * @param value form field value
+     * @return URL-encoded value
+     */
     private String encode(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8); }
 
     /** Reloads to distinguish stored execution from the immediate submission response. */
@@ -113,6 +126,12 @@ public class XssStoredPage extends BasePage {
         return By.xpath("//div[@id='guestbook_comments'][contains(., '" + text + "')]");
     }
 
+    /**
+     * Checks whether the uniquely identified guestbook entry is present.
+     * @param markerId identifier of this test invocation
+     * @param field guestbook field under assessment
+     * @return whether the entry was found
+     */
     public boolean entryWasPersisted(String markerId, ProbeField field) {
         try {
             wait.until(ExpectedConditions.presenceOfElementLocated(entryLocator(markerId, field)));
@@ -144,6 +163,10 @@ public class XssStoredPage extends BasePage {
         new Actions(driver).moveToElement(markers.isEmpty() ? entry : markers.get(0)).perform();
     }
 
+    /**
+     * Rejects malformed test markers before they are used in selectors.
+     * @param markerId identifier to validate
+     */
     private void validateMarker(String markerId) {
         if (markerId == null || !markerId.matches("p[a-f0-9]{8}"))
             throw new IllegalArgumentException("Marker must match p followed by eight hex digits");

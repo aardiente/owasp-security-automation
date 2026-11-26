@@ -204,11 +204,11 @@ owasp-security-automation/
 │   └── test/
 │       ├── java/
 │       │   ├── automation/
-│       │   ├── data/
 │       │   ├── pom/
 │       │   ├── tests/
 │       │   └── utilities/
 │       └── resources/
+│           └── data/
 ├── testng/
 │   ├── testng-all.xml
 │   ├── testng-dvwa.xml
@@ -220,6 +220,12 @@ owasp-security-automation/
 ```
 
 The framework separates browser automation, Page Object Models, test assertions, reusable utilities, and report generation.
+
+Juice Shop challenge coverage is separated into `tests.JuiceShop.api` (resource, state, and commerce tests) and `tests.JuiceShop.ui` (browser-driven and final Score Board tests). Both use the shared `JuiceShopChallengeTestBase`. Keep the full challenge suite sequential: it shares application state and the final Score Board depends on earlier challenge tests. API tests still use the browser for visual HTTP evidence.
+
+All DVWA workbooks are under `src/test/resources/data/`; configuration keys in `config.properties` select their filenames. JVM properties such as `-Ddvwa.sqli.workbook=/path/to/workbook.xlsx` override an individual workbook. The challenge catalog output is configurable with `-Djuiceshop.challenges.output=/path/to/challenges.json`.
+
+See [Refactoring notes](docs/REFACTORING.md) and [Challenge inventory](docs/challenge-inventory.json) for changes and migration details.
 
 ---
 

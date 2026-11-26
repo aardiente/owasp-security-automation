@@ -831,7 +831,8 @@ function renderTests() {
   const matching = allTests.filter(test =>
       (status === "ALL" || test.status === status) &&
       (!term || lower(test.method).includes(term) ||
-          lower(test.className).includes(term)));
+          lower(test.className).includes(term) ||
+          lower(test.securityLevel).includes(term)));
 
   const groups = new Map();
   for (const test of matching) {
@@ -863,11 +864,15 @@ function renderTests() {
     byId("test-detail-count").textContent = `${cases.length} matching executions`;
     const list = byId("tests-list");
     clear(list);
-    cases.forEach((test, index) =>
-        list.append(makeTestExecution(test, index + 1)));
-    if (!cases.length)
-      list.append(node("div", "empty",
-          "No executions in this class match the current filters."));
+    if (state.targetId === "dvwa") {
+      list.append(makeSecurityLevelGrid(cases));
+    } else {
+      cases.forEach((test, index) =>
+          list.append(makeTestExecution(test, index + 1)));
+      if (!cases.length)
+        list.append(node("div", "empty",
+            "No executions in this class match the current filters."));
+    }
     return;
   }
 
@@ -932,6 +937,63 @@ function testTileCount(amount, kind, label) {
   const element = node("span", `test-tile-status ${kind}`);
   add(element, node("strong", "", amount), node("span", "", label));
   return element;
+}
+
+/**
+ * Builds the security-level result grid for a selected DVWA test class.
+ * Unclassified executions from older CSV reports remain visible separately.
+ *
+ * @param {Object[]} cases the filtered test executions
+ * @returns {HTMLElement} grid of security-level cards
+ */
+function makeSecurityLevelGrid(cases) {
+  const levels = ["Low", "Medium", "High", "Impossible"];
+  const groups = new Map(levels.map(level => [level.toUpperCase(), []]));
+  const unknown = [];
+  cases.forEach((test, index) => {
+    const group = groups.get(String(test.securityLevel ?? "").trim().toUpperCase());
+    (group || unknown).push({test, ordinal: index + 1});
+  });
+
+  const container = node("div", "security-level-results");
+  const grid = node("div", "security-level-grid");
+  for (const level of levels)
+    grid.append(makeSecurityLevelCard(level, groups.get(level.toUpperCase())));
+  container.append(grid);
+
+  if (unknown.length) {
+    container.append(node("p", "notice",
+        "Some executions have no recorded security level. Run the suite with the updated CSV reporter to classify them."));
+    container.append(makeSecurityLevelCard("Unclassified", unknown));
+  }
+  return container;
+}
+
+/**
+ * Renders a security level summary and its original expandable execution rows.
+ *
+ * @param {string} level the displayed security level
+ * @param {Object[]} executions test records paired with their visible ordinals
+ * @returns {HTMLElement} security level result card
+ */
+function makeSecurityLevelCard(level, executions) {
+  const card = node("section", `security-level-card level-${lower(level)}`);
+  const header = node("div", "security-level-heading");
+  add(header, node("h3", "", level), node("span", "security-level-total",
+      `${executions.length} execution${executions.length === 1 ? "" : "s"}`));
+  const counts = node("div", "test-tile-counts");
+  const tests = executions.map(execution => execution.test);
+  for (const [status, label] of [["PASSED", "Passed"], ["FAILED", "Failed"], ["SKIPPED", "Skipped"]])
+    counts.append(testTileCount(countBy(tests, "status", status), lower(status), label));
+  add(card, header, counts);
+
+  const list = node("div", "results-list security-level-executions");
+  for (const {test, ordinal} of executions)
+    list.append(makeTestExecution(test, ordinal));
+  if (!executions.length)
+    list.append(node("p", "security-level-empty", "No matching executions."));
+  card.append(list);
+  return card;
 }
 
 /**

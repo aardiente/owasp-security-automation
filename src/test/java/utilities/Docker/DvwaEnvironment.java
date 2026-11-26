@@ -1,5 +1,7 @@
 package utilities.Docker;
 
+import automation.AppConfig;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
@@ -39,7 +41,7 @@ public class DvwaEnvironment extends DockerContainer {
      * @param developmentName the configured, persistent Docker container name, or null for clean-start mode
      */
     public DvwaEnvironment(String developmentName) {
-        super("vulnerables/web-dvwa:1.9", 80);
+        super(AppConfig.dvwaImage(), AppConfig.dvwaPort());
         if (developmentName != null && !developmentName.matches("[A-Za-z0-9][A-Za-z0-9_.-]*"))
             throw new IllegalArgumentException("Invalid DVWA development container name: " + developmentName);
         this.developmentName = developmentName;

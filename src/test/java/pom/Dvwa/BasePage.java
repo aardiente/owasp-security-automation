@@ -5,17 +5,15 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import automation.AppConfig;
+import pom.common.BrowserPage;
 
 import java.time.Duration;
 
 /**
  * DVWA page object exposing Selenium interactions for the base module.
  */
-public abstract class BasePage {
-
-    protected WebDriver driver;
-    protected WebDriverWait wait;
+public abstract class BasePage extends BrowserPage {
 
     /**
      * Creates the base page component and initializes the dependencies required by its methods.
@@ -25,8 +23,7 @@ public abstract class BasePage {
      * @param driver the Selenium WebDriver controlling the application browser
      */
     public BasePage(WebDriver driver) {
-        this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        super(driver, Duration.ofSeconds(AppConfig.dvwaPageWaitSeconds()));
     }
 
     private final By logoutLink = By.linkText("Logout");

@@ -1,0 +1,856 @@
+{
+  "retained": [
+    {
+      "method": "testSqlInjectionLoginBypass",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 1,
+      "disabled": false,
+      "challenge_verification": "direct UI evidence",
+      "normalized_body_sha256": "96baadaf2c5e9973cd987400d29ae6e363a581411613710c3931d7a9afc8d51a"
+    },
+    {
+      "method": "testDomXssChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 2,
+      "disabled": false,
+      "challenge_verification": "direct UI evidence",
+      "normalized_body_sha256": "fb5bdf6f9d8564e9c30949fc0956dd5668daffa43ba6cfc35743e40cbf285b48"
+    },
+    {
+      "method": "testConfidentialDocumentChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 3,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "f7426d99cd8070c57f366c0abda1ce9fee61421153c14e19f2da31c07dbe2923"
+    },
+    {
+      "method": "testExposedMetricsChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 4,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "7c123cf323665d7f6179fd129c808169284f55fec9eecdea0776d7db73ca7b19"
+    },
+    {
+      "method": "testAdminSectionChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 5,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "73151de0d24019c5867adb2d2f62c1ae194d67f32398ef0660acd9dee538da6b"
+    },
+    {
+      "method": "testSecurityPolicyChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 6,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "393c360447f244302d51a87a44026fee331400572da0340ea9bca1d3ef2ccd99"
+    },
+    {
+      "method": "testMissingEncodingChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 7,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "76342c039f34e6b107edec70f3f8dcf3f2534037a4c189493600b10daf5c785a"
+    },
+    {
+      "method": "testExtraLanguageChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 8,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "7203ea614ecdb33550715603633418efbe39d9e58de26945c01a0bf9d37d774a"
+    },
+    {
+      "method": "testPrivacyPolicyChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 9,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "4d6c7a288bd26784a1028cea450f0e688d60272f52d53eac53366c86ce0627f3"
+    },
+    {
+      "method": "testErrorHandlingChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 11,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "93c2c8d20d34022e6a2ce8cff0fcf8bcd8abc8b608df3642508abf9847b066f3"
+    },
+    {
+      "method": "testPasswordStrengthChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 12,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "cf3d5e2cbba2addf7d94b1c14a20679f00630c9322a6a03993b14549d4ca2ff0"
+    },
+    {
+      "method": "testLoginBenderChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 13,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "dfcc858ee00089c8ef4ef005850c2b3706da5288bbe02e9057cbb01ec1627ad3"
+    },
+    {
+      "method": "testLoginJimChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 14,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "6d27079025dcbc73976dfd17813e85145e12a9efd38a37f00d485f4ea73b1d6a"
+    },
+    {
+      "method": "testAccessLogChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 15,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "d4d76f9fac4760224d86da46379d4ff85811dbbd032ed7860f6413b29e3322ab"
+    },
+    {
+      "method": "testMisplacedIaCFilesChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 16,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "7aa8fc8ce5f3c6d8017016d4f87b18ca2674ee10f9e6ab0206268177b6b94f37"
+    },
+    {
+      "method": "testBonusPayloadChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 17,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "95fde977ee74783182d924d6969b471ac4a84a6d6094afa54a903465203b684e"
+    },
+    {
+      "method": "testEasterEggChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 18,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "584bf809b42402a1c7044c9d4184496ac9d30c19ac46b53d254523a9779caa16"
+    },
+    {
+      "method": "testPoisonNullByteChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 19,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "f552a06d261ca39883454368f2dae7d6a7230489c31d4ab032e96515afcaa02f"
+    },
+    {
+      "method": "testForgottenSalesBackupChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 20,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "ce86e0cff8db207878698a92def010919059bc6037dd7baf9bdcf1bbf812bd50"
+    },
+    {
+      "method": "testMisplacedSignatureFileChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 21,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "74a2a4d2a1511217dbb984e925173b89e9cd5ea2f20e6537c687b4e8214fa272"
+    },
+    {
+      "method": "testOutdatedAllowlistChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 22,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "46100957e02ed4e579a1732080d31285fa5723ce6da723a40da44e47433160bb"
+    },
+    {
+      "method": "testPrivacyPolicyInspectionChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 23,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "59c9d07e7702efde7ff427a96291d5c44f93701036312083d8a85454cf11be86"
+    },
+    {
+      "method": "testRepetitiveRegistrationChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 24,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "9e7870e8f5f72161434b48827458153170045b166b145904821f9ffa18abc5d6"
+    },
+    {
+      "method": "testEmptyUserRegistrationChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 25,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "a13912bb2e7bff10e789b79f65f4e1c467911075a39273a521e31423b43a7bee"
+    },
+    {
+      "method": "testViewBasketChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopCommerceApiTest",
+      "priority": 26,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "ac3e6fc52deee546224012a93458537645595a33c015871708480c97778c4256"
+    },
+    {
+      "method": "testForgedFeedbackChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 27,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "30de19f3dcbf88a89b500c8d77b5b4cbc0bac83a50d64c42607a8312d9076206"
+    },
+    {
+      "method": "testFiveStarFeedbackChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 28,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "64ba040ad5c40bae7a8bd95f26cc05eed0be62c10d28c7c7bb6dc8c06731d7b1"
+    },
+    {
+      "method": "testWeb3SandboxChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 29,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "b0b77dfa44e0f8243d0ec13f9942a44ba80f4ec4277e07af66826dc9a1fdf079"
+    },
+    {
+      "method": "testAdminRegistrationChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 30,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "9fff164676b18c6aaa5e6f7d4b0839fb68c355f79f3a5dfef4eafc636142cbe5"
+    },
+    {
+      "method": "testZeroStarsChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 31,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "b44259634862abc29b28f26195e759f939cdb60edb4865c2a0ae2ce81625915c"
+    },
+    {
+      "method": "testForgedReviewChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 32,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "508bb3f29be82e59c5f45fc85cfa77f05568787ee5832f64cf0ea78cdcdc64f6"
+    },
+    {
+      "method": "testLoginMcSafeSearchChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 33,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "3296221275d4534ba06669ae17185eafca734ad86f3b1eebfb2ec0c02a37766a"
+    },
+    {
+      "method": "testLoginAmyChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 34,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "ebbc8a8ad7decb28f0f6c415478ee56d35fb3a7f539200e95281dd95ea9c0de7"
+    },
+    {
+      "method": "testPasswordHashLeakChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 35,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "8baaf184d2e4067d9b4c09e95ff2f5ad788f4b350c65a43405744d4a2c925a10"
+    },
+    {
+      "method": "testEmailLeakChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 36,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "ce4d0ef178d728eed5bebc363123e84dea350bda6bbf284766ff95dec8b6e91d"
+    },
+    {
+      "method": "testWeirdCryptoChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 37,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "fe7192833b0cb38efd19a653e3966b6f7a7be8609e9c489d51ed002b6822b8bd"
+    },
+    {
+      "method": "testVulnerableLibraryChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 38,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "72463fc37c7089d5fc6c1325f2486229241eb01d2e1a27c7164c3023355b03b4"
+    },
+    {
+      "method": "testNestedEasterEggChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 39,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "739eae60a95aa9ca2bfe0f9940755b2479c0b9d5db46705539a71ce3ebeba9cc"
+    },
+    {
+      "method": "testRetrieveBlueprintChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 40,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "c1d877467f241c10f99a47fdd529eb1d7792abe9db7a2d0b093c67eb6c1d25cf"
+    },
+    {
+      "method": "testBlockchainHypeChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 41,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "b621be0866fa15ef93b91d8250bf1e5f27d37bc915eecd3739a29f541a0af15a"
+    },
+    {
+      "method": "testPremiumPaywallChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 42,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "025676f1132f59c5697e4b191bfff96c2495ef968b33b5c83effa5953a2a1e0f"
+    },
+    {
+      "method": "testImaginaryChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 43,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "4f63028487bf442bbe4aeb6c46542f7556f9ebefc2b58de991ff09af1bc27242"
+    },
+    {
+      "method": "testAllowlistBypassChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 44,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "367752f4669a45825d6bfbc721b4b1332ec31778f6325480e254e72f474bfe11"
+    },
+    {
+      "method": "testLegacyTyposquattingChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 45,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "a6510b63b0d38d1ce681640b9d78fab99a4a1d6c5570367eca14c01649e9e135"
+    },
+    {
+      "method": "testFrontendTyposquattingChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 46,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "2eedc2897c5b8523deb66e4e3adbdc06976885ad00dbdf71b4f31485fcf119bb"
+    },
+    {
+      "method": "testSteganographyChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 47,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "f58811fa03b6c5e6d7501dd9f49d0bc3decb5f4ab7cd3ce2ac284efcec96bb0e"
+    },
+    {
+      "method": "testSupplyChainAttackChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 48,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "8a4a869909e995e95271a653d8de9d3f8aa91d74fc03dc51ca6b36d3f2c9c35d"
+    },
+    {
+      "method": "testLeakedUnsafeProductChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 49,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "9ab6aeaa302abc9d523cb6f635d1a863f01a47bc046b9c4b5e25705f6d0d8d21"
+    },
+    {
+      "method": "testProductTamperingChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 50,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "4e51150359e8a65cc59b588b17f421143f2cfd2bd9dd248cbbd0e74ee718ba6a"
+    },
+    {
+      "method": "testNoSqlManipulationChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 51,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "84785adbf7466131de26527269a4f04cd59efe90945b1eed02849c2560c19178"
+    },
+    {
+      "method": "testDatabaseSchemaChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 52,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "41763b5a17acb2783f107c4d4bdfd98ff39b14ad519c9df7d47f3cf2f3362e7d"
+    },
+    {
+      "method": "testUserCredentialsChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 53,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "fdb5adc52a16bd2b2fafb57ed4165ff7380d2b0467f9d752a237362b2b8e68f1"
+    },
+    {
+      "method": "testNoSqlExfiltrationChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 54,
+      "disabled": true,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "ecf13661dcbee18caac821086678c74e95962e5da35080d005c78d9d1d5e6242"
+    },
+    {
+      "method": "testCaptchaBypassChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 55,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "ca5e0b7240886b978e1f4c89c27d3cd4fd671a5deaaa9dab0ebef80423c768ab"
+    },
+    {
+      "method": "testMultipleLikesChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 56,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "5fbaf4ab6530aa0b305b348d8c0a1ded92bd717637045f3067a8b25475104d34"
+    },
+    {
+      "method": "testUploadTypeChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 57,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "b89ab92edc1e9c333e382e20bc0875db59823ed8b1c9a4c231c134a21cf49c73"
+    },
+    {
+      "method": "testUploadSizeChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 58,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "a520a657eac19a46a3dee9f99dd065a58486b3374e45ac86ecbbbd3bea146c35"
+    },
+    {
+      "method": "testDeprecatedInterfaceChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopStateApiTest",
+      "priority": 59,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "624068ddb1cb22fb978fc2eab90cfaf95e4bfe5a3913558c5cfbab50137562de"
+    },
+    {
+      "method": "testCrossSiteImagingChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 61,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "e15065db8b77bef15e15f9b29672dea7ce0704bf1c99bd26d0f884e99a7bbf0f"
+    },
+    {
+      "method": "testLoginBjoernChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 62,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "8f9ae0ea281eb6c0d92fae8af736cccce82a5ff50f31def655b2936f927f2e81"
+    },
+    {
+      "method": "testLoginSupportTeamChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 63,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "498b8ada384be493d476d7cf0930acda58ef2ff208e970226521a1072c5edd1b"
+    },
+    {
+      "method": "testGdprDataErasureChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 64,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "76fbaa9ddc52841982a40dbb2cfcb648b0b176ff89cfffa10d8e7a66b4662824"
+    },
+    {
+      "method": "testEphemeralAccountantChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopUiChallengeTest",
+      "priority": 65,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "4297460dcd0ff06494630229d208b3cdc7fe203f119eebde559038834fe7ede2"
+    },
+    {
+      "method": "testLeakedApiKeyChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 66,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "2ab9f3fef1c7534b51b5f26ca0c4241c0d7bd23a295005fda3cdcb1d10d9fcb7"
+    },
+    {
+      "method": "testVulnerableInfrastructureChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 67,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "1b8b4f0b355d5ccf05fe9f9016ff8a532d5d123eef5957c7621112a0f0295e2d"
+    },
+    {
+      "method": "testManipulateBasketChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopCommerceApiTest",
+      "priority": 68,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "bbf8dc5188b0db7861a14276e39a73dc09f326d2994bb41152c1ec7f751185b4"
+    },
+    {
+      "method": "testSecurityAdvisoryChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 87,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "4305e676883225bae4c46e0712c59585d2fcc41e0ef280293f780f4ad38dcfd9"
+    },
+    {
+      "method": "testDeluxeFraudChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopCommerceApiTest",
+      "priority": 89,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "3d6495ee3822b3bd46361fa66ed7fb36e280f3681077e94e28d831674c53caac"
+    },
+    {
+      "method": "testChristmasSpecialChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopCommerceApiTest",
+      "priority": 90,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "448a666e7c31922d1d5221360c09169a2f2ed6848914ca3256790dd2b25d8af9"
+    },
+    {
+      "method": "testPaybackTimeChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopCommerceApiTest",
+      "priority": 91,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "e1828eb460d76c7bd0af6d373c10f9287e797fca61f7149440f50e73e32ce025"
+    },
+    {
+      "method": "testExposedCredentialsChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopResourceApiTest",
+      "priority": 92,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "5932884e42177751480f47aaa93d7606c49ae1b9faf4fe9950a6ec1a8b729f56"
+    },
+    {
+      "method": "testForgedCouponChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopCommerceApiTest",
+      "priority": 93,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "2f7611dd5eb04c2b6c07100851fe894cd09fac1906d50fe7f39a9704bf181cd5"
+    },
+    {
+      "method": "testExpiredCouponChallenge",
+      "class": "tests.JuiceShop.api.JuiceShopCommerceApiTest",
+      "priority": 94,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "9e6f62ddaa74800e070ab4bf60affccf096d532c936a3420e5cab8437bcfd6c3"
+    },
+    {
+      "method": "testMassDispelChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopScoreBoardTest",
+      "priority": 999,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "9c89fda404b3262c7afa8016d8a273b2edf7922f349b3ed493d15fb480813c46"
+    },
+    {
+      "method": "testScoreBoardChallenge",
+      "class": "tests.JuiceShop.ui.JuiceShopScoreBoardTest",
+      "priority": 1000,
+      "disabled": false,
+      "challenge_verification": "scoreboard",
+      "normalized_body_sha256": "2952af36fa9efab200ae536e23f3f3d73b706c7fcbf58f917c6f8d4ca9b97e4e"
+    }
+  ],
+  "removed_non_challenge": [
+    "testProductCatalogRead",
+    "testProductDetailRead",
+    "testProductSearchNoMatches",
+    "testSecurityQuestionsCatalogRead",
+    "testDeliveryMethodsRead",
+    "testLanguagesCatalogRead",
+    "testImageCaptchaRead",
+    "testPublicMemoriesRead",
+    "testApplicationVersionRead",
+    "testApplicationConfigurationRead",
+    "testHintCatalogRead",
+    "testAnonymousComplaintAccessDenied",
+    "testAnonymousBasketItemsAccessDenied",
+    "testAnonymousPrivacyRequestsAccessDenied",
+    "testAnonymousUsersAccessDenied",
+    "testSecurityAnswersReadDenied",
+    "testChallengeCreationDenied",
+    "testInvalidPasswordRejected",
+    "testRetrieveAllChallenges"
+  ],
+  "removed_auxiliary_classes": [
+    "tests.JuiceShop.JuiceShopZapAlertsTest",
+    "tests.JuiceShop.ChatbotSecurityTest"
+  ],
+  "workbook_sha256": {
+    "DvwaFileUpload.xlsx": "933ce83c408e17c4fc4753440ae0495b5c8e8b9e3a7c050831d27f16ce24cb35",
+    "DvwaSqlInjection.xlsx": "c7b0cb0ccf8b3e5680ad43c9538dc8f657175da84cf62d0f67d71d34c34b308a",
+    "DvwaXssStored.xlsx": "fb22d4b2eaf41a2099f46b45d2c07eaecfa35065c8bba3ba869f36463e111b38",
+    "Logins.xlsx": "44a5f52d42ef846f27533565c4ede110b755f1bf31ac701729adf000cf050655",
+    "Security_Payloads.xlsx": "5ccc3b5c2b84a1aef7630f52bc47c1a33f4ee3af751d0ee2d74b10ca9d5b847d",
+    "sqli_payloads.xlsx": "741372c0d07baf7728b52510533183eeaa198fb5e9564f7b5c5e7aebdd5ce362",
+    "xss_payloads.xlsx": "78d6f40671087ddccbff7bd1cc912fcdbdb79be7a4cbe9eba01ab4e6514c3964"
+  },
+  "action_bodies": [
+    {
+      "class": "utilities.JuiceShop.AccountActions",
+      "method": "registerWithMismatchedPasswords",
+      "parameters": "",
+      "body_sha256": "624bf721d386a01fe73ebbcc18c3c9d980f9892c0bf07ae1be0a7e108f4dfec6"
+    },
+    {
+      "class": "utilities.JuiceShop.AccountActions",
+      "method": "registerEmptyUser",
+      "parameters": "",
+      "body_sha256": "a588ea056d3376970efb123157efaeb97dcb85a3eb7e757137b4e6517b8e4b7c"
+    },
+    {
+      "class": "utilities.JuiceShop.AccountActions",
+      "method": "registerWithAdminRole",
+      "parameters": "",
+      "body_sha256": "659ee6c8963c501d9de6c5819133ded90d149bbf23e8a71c2675e391521befa9"
+    },
+    {
+      "class": "utilities.JuiceShop.AccountActions",
+      "method": "ephemeralAccountantLogin",
+      "parameters": "",
+      "body_sha256": "7f3a5b8b16782c7725dac8c46f619993c972255ddc967ea4a53346de97ce8d27"
+    },
+    {
+      "class": "utilities.JuiceShop.ActionContext",
+      "method": "encode",
+      "parameters": "String s",
+      "body_sha256": "e480139c1a6d7a86e95a1272294f5386b078302e544b035c5d4cf2fa69fa88c5"
+    },
+    {
+      "class": "utilities.JuiceShop.BasketActions",
+      "method": "viewAnotherBasket",
+      "parameters": "",
+      "body_sha256": "2f101020bd02c8ff2809fe17172b7d7df50bc3ece5a67b017007ed8ed3891d90"
+    },
+    {
+      "class": "utilities.JuiceShop.BasketActions",
+      "method": "addProductsToAnotherBasket",
+      "parameters": "",
+      "body_sha256": "b59d694a5e0fe3270b865ba8dff0e9cf38c45b51ccd196ce1f43a2b84a1ce37c"
+    },
+    {
+      "class": "utilities.JuiceShop.BasketActions",
+      "method": "addProductToAnotherBasket",
+      "parameters": "",
+      "body_sha256": "d70a1af3907da65361c51373ef6fb46fea1f6b90a29fa8a76e5a3bfe2c42357c"
+    },
+    {
+      "class": "utilities.JuiceShop.BrowserActions",
+      "method": "dismissChallengeNotifications",
+      "parameters": "WebDriver driver",
+      "body_sha256": "0bcecdb96145f5c760d11df8bcaf0d39b097b82e7bb33a1a31e96002d2bda60b"
+    },
+    {
+      "class": "utilities.JuiceShop.BrowserActions",
+      "method": "crossSiteImagingUrl",
+      "parameters": "String baseUrl",
+      "body_sha256": "7b66703baf7362ef9cedfdb26fb20438cf32349ca4e7ced28df52d357ba5ac51"
+    },
+    {
+      "class": "utilities.JuiceShop.CatalogActions",
+      "method": "tamperWithProductDescription",
+      "parameters": "",
+      "body_sha256": "b058835da4d2781800eebf3b04f820045442c2f2f3fd9dca531ea5ed62d1f026"
+    },
+    {
+      "class": "utilities.JuiceShop.CatalogActions",
+      "method": "updateAllReviewsViaNoSql",
+      "parameters": "",
+      "body_sha256": "1a6f2fb7b7f05ca8726832d301eafd3830fb9395620cbf402239e5b54635abc5"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "submitForgedFeedback",
+      "parameters": "",
+      "body_sha256": "1228fc7eec87fc7837119ad47b0d182b0b6c743fd149f66923ee5575a4fbb958"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "removeFiveStarFeedback",
+      "parameters": "",
+      "body_sha256": "60b3b6c2d19600349db9274498de39e1678a59f18076961be53baa2e2311f16c"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "submitZeroStarFeedback",
+      "parameters": "",
+      "body_sha256": "9a93f3b5ffffbd5718de1ba8a985588188fa4a838c03c769273fee741439cf54"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "submitForgedProductReview",
+      "parameters": "",
+      "body_sha256": "fe0b9b9a56895ef3761ea4fcef5716cf8b180fed90e735f30ec90f5a9fde80f0"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "submitCryptoComplaint",
+      "parameters": "",
+      "body_sha256": "258db9b7f1622a42dbd289e96dc1259e5973a55c97f43dbdc179295a6ed6f8d3"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "submitVulnerableLibraryComplaint",
+      "parameters": "",
+      "body_sha256": "06fab74ed9eb8d064ff6b08060709db91cfcb00dd35ce35ab784ba01f88d72f8"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "submitFeedback",
+      "parameters": "String comment",
+      "body_sha256": "369dd64f444a92ca7946a2d1a680ef682a95d57302be1514131a535af13f5d7b"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "submitFeedback",
+      "parameters": "String comment;int rating",
+      "body_sha256": "dfb989630b120033828c34238639e5d4127ecddd05092a8f14738818111cc7f8"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "submitRapidFeedback",
+      "parameters": "int count",
+      "body_sha256": "b6e19a0ac8a13c7a95422a0e0aaede5c6494e6c2478b6dab404401c6702c51b6"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "likeReviewConcurrently",
+      "parameters": "",
+      "body_sha256": "6d769b141eed122f63f3c463b5dd0b33ad4ed03d46327b3988f67542202b9e84"
+    },
+    {
+      "class": "utilities.JuiceShop.FeedbackActions",
+      "method": "captcha",
+      "parameters": "",
+      "body_sha256": "14d09509e442f821a01a979acc08c6d58ccf23d74a30b3547c528f6ac2137cd2"
+    },
+    {
+      "class": "utilities.JuiceShop.JuiceShopChallengeActions",
+      "method": "waitForChallenge",
+      "parameters": "String challengeName",
+      "body_sha256": "0100b7305c2bf0bbfeb9e083518b0ee84a0108ed1af241620855f78af70f9fe9"
+    },
+    {
+      "class": "utilities.JuiceShop.ResourceActions",
+      "method": "retrieveNestedEasterEgg",
+      "parameters": "",
+      "body_sha256": "1e7ee628199ff2d30b86fe18f5741bac04eaa1b1a479ca6acb90db4d18b64e90"
+    },
+    {
+      "class": "utilities.JuiceShop.ResourceActions",
+      "method": "retrieveBlueprint",
+      "parameters": "",
+      "body_sha256": "10f4d17535eb9b42662bb39d73c493fe5118a1d0a1e758d240e3c8c9cd91cb6c"
+    },
+    {
+      "class": "utilities.JuiceShop.ResourceActions",
+      "method": "openPremiumPage",
+      "parameters": "",
+      "body_sha256": "c1f67ae6c268a82186f1597cddf59e41f302b8f42979c5caccb56e94b397dfa8"
+    },
+    {
+      "class": "utilities.JuiceShop.ResourceActions",
+      "method": "applyImaginaryContinueCode",
+      "parameters": "",
+      "body_sha256": "2b05f26e3c75216290ca9cf6ba59ce0fa3b89b1b97cec739d6e00fab2facf6b3"
+    },
+    {
+      "class": "utilities.JuiceShop.ResourceActions",
+      "method": "bypassRedirectAllowlist",
+      "parameters": "",
+      "body_sha256": "3b41c040cc2e71ab492dce44a08483cce92007adad6035086657e660499b89a3"
+    },
+    {
+      "class": "utilities.JuiceShop.ResourceActions",
+      "method": "retrieveDatabaseSchema",
+      "parameters": "",
+      "body_sha256": "023b932b5fd246e030a0a768f0c66ac0a4c60a00578b04650beb554033aa62e2"
+    },
+    {
+      "class": "utilities.JuiceShop.ResourceActions",
+      "method": "searchWithUnion",
+      "parameters": "String table;String first;String second;String third",
+      "body_sha256": "fb9efb0636a9f45ff8b0ed59c8f95c3cb993dfff8712d453547451740d6ab9bb"
+    },
+    {
+      "class": "utilities.JuiceShop.ResourceActions",
+      "method": "retrieveUserCredentials",
+      "parameters": "",
+      "body_sha256": "6cf2814cd25d7b552d5b9efadfc6be42b5579d5555a0bbd54a9df82c7c8619ee"
+    },
+    {
+      "class": "utilities.JuiceShop.ResourceActions",
+      "method": "exfiltrateOrdersViaNoSql",
+      "parameters": "",
+      "body_sha256": "c03c1f1d831317a210da8498f90ece825512a795115a20bf4f68ecfd66d4c6f6"
+    },
+    {
+      "class": "utilities.JuiceShop.UploadActions",
+      "method": "uploadUnexpectedFileType",
+      "parameters": "",
+      "body_sha256": "72fda56401f6be94d52bbcb4545889d117043bfe5da44964680a1f092a808c8a"
+    },
+    {
+      "class": "utilities.JuiceShop.UploadActions",
+      "method": "uploadOversizedPdf",
+      "parameters": "",
+      "body_sha256": "23b2ef0b4ecf87f803d4a7cd2cb923e2d8465504106100e683a9d99ee519fe25"
+    },
+    {
+      "class": "utilities.JuiceShop.UploadActions",
+      "method": "useDeprecatedXmlUpload",
+      "parameters": "",
+      "body_sha256": "b3565d4d38730848a74ebf1c313706bff2820f35a44b66e63e87f5dcd1a8ced4"
+    }
+  ]
+}

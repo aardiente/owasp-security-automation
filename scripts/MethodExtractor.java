@@ -7,6 +7,8 @@ import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import javax.tools.JavaCompiler;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
@@ -61,9 +63,9 @@ public class MethodExtractor {
 
         try (StandardJavaFileManager manager = compiler.getStandardFileManager(null, null, StandardCharsets.UTF_8)) {
             Iterable<? extends JavaFileObject> files = manager.getJavaFileObjectsFromFiles(inputs);
+            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
             JavacTask task = (JavacTask) compiler.getTask(null, manager,
-                    diagnostic -> System.err.println(diagnostic.getMessage(null)),
-                    List.of("-proc:none", "-Xlint:none"), null, files);
+                    diagnostics, List.of("--release", "17", "-proc:none", "-Xlint:none"), null, files);
             Trees trees = Trees.instance(task);
             DocTrees docs = DocTrees.instance(task);
             for (CompilationUnitTree unit : task.parse()) {
@@ -115,6 +117,13 @@ public class MethodExtractor {
                     }
                 }.scan(unit, null);
             }
+            for (var diagnostic : diagnostics.getDiagnostics()) {
+                if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
+                    System.err.println(diagnostic);
+                }
+            }
+            if (diagnostics.getDiagnostics().stream().anyMatch(d -> d.getKind() == Diagnostic.Kind.ERROR))
+                throw new IllegalStateException("Java source contains syntax errors");
         }
     }
 }
