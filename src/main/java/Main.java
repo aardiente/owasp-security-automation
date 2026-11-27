@@ -1,11 +1,11 @@
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 /**
- * Contains the console entry point of the example application.
+ * The application's unused starting point. Tests are launched separately through TestNG.
  */
 public class Main {
     /**
-     * Starts the application entry point with the supplied command-line arguments.
+     * Defines the empty application entry point; the project's TestNG suites are launched independently.
      */
     static void main()
     {

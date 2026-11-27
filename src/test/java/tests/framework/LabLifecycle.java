@@ -6,14 +6,17 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** Owns one sequential lab environment and its associated ZAP lifecycle. */
+/**
+ * Manages the shared lab environment for a test suite. Starts the application and scanner, saves reports, and releases resources when finished.
+ */
 public final class LabLifecycle<T extends DockerContainer> {
     private T environment;
     private String baseUrl;
 
     /**
-     * Starts the target once, then initializes ZAP and the application-specific setup.
-     * @param factory constructs the configured container
+     * Starts the lab application once, launches ZAP and runs the application's setup steps.
+     *
+     * @param factory creates the configured container
      * @param starter starts the container using the target's existing strategy
      * @param initializer prepares the running target, receiving its internal URL
      * @return the internal application URL shared by the suite
@@ -41,6 +44,7 @@ public final class LabLifecycle<T extends DockerContainer> {
 
     /**
      * Exports the configured report and releases the scanner and target even if report export fails.
+     *
      * @param reportName report filename for the current suite
      */
     public synchronized void stop(String reportName) {

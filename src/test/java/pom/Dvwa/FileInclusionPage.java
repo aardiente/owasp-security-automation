@@ -8,23 +8,26 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
-/** Models benign local-file inclusion attempts and classifies the observed DVWA response. */
+/**
+ * Represents DVWA's file inclusion practice page. Provides the observations needed by the related security test.
+ */
 public class FileInclusionPage extends BasePage {
     private static final String ENDPOINT = "/vulnerabilities/fi/";
 
-    /** Classifies the result of a local information-page inclusion probe. */
+    /**
+     * Classification of the observed lab result: included, rejected, or inconclusive.
+     */
     public enum InclusionResult { INCLUDED, REJECTED, INCONCLUSIVE }
 
     /**
-     * Creates the DVWA file-inclusion page object.
+     * Sets up the DVWA file inclusion page with the provided browser session.
+     *
      * @param driver active DVWA browser
      */
     public FileInclusionPage(WebDriver driver) { super(driver); }
 
     /**
-     * Requests DVWA's own benign PHP-information page using a mode-appropriate relative path.
-     * The Medium probe checks whether path-filtering normalizes traversal before or after filtering.
-     * No operating-system files, credentials, or external URLs are requested.
+     * Requests DVWA's own benign PHP-information page using a mode-appropriate relative path. The Medium probe checks whether path-filtering standardizes traversal before or after filtering. No operating-system files, credentials, or external URLs are requested.
      *
      * @param baseUrl DVWA application's base URL
      * @param level current DVWA security mode
@@ -41,8 +44,7 @@ public class FileInclusionPage extends BasePage {
     }
 
     /**
-     * Distinguishes included PHP diagnostic output from explicit rejection and empty results.
-     * Empty/ambiguous output must not be treated as proof that file inclusion was blocked.
+     * Distinguishes included PHP diagnostic output from explicit rejection and empty results. Empty/ambiguous output must not be treated as proof that file inclusion was blocked.
      *
      * @return observed inclusion result
      */

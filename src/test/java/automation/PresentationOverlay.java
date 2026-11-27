@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Renders the optional in-browser code/action overlay used during slow-motion presentations.
+ * Shows the current browser action and related source code during a demonstration. Reuses previously loaded display resources and does not stop tests if the overlay fails.
  */
 public final class PresentationOverlay {
 
@@ -25,12 +25,12 @@ public final class PresentationOverlay {
     private static final String CSS_PATH = "presentation/overlay.css";
 
     /**
-     * Prevents direct instantiation of this utility class.
+     * Prevents direct creation of this utility class.
      */
     private PresentationOverlay() {}
 
     /**
-     * Displays the presentation overlay describing the current browser action and related source context.
+     * Displays the optional browser action overlay using cached presentation resources and available source context. Skips headless or disabled presentation runs and treats display failures as non-blocking.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      * @param action the user-facing title for the current action
@@ -70,9 +70,9 @@ public final class PresentationOverlay {
     }
 
     /**
-     * Reads a bundled presentation asset into a UTF-8 string.
+     * Reads a bundled presentation resource as UTF-8 text, failing if the asset cannot be found or read.
      *
-     * @param resource the classpath resource to read
+     * @param resource the project resources resource to read
      * @return the UTF-8 text of the requested bundled presentation asset
      */
     private static String loadResource(String resource) {
@@ -85,7 +85,7 @@ public final class PresentationOverlay {
     }
 
     /**
-     * Resolves source context for a stack-trace frame shown in the presentation overlay.
+     * Finds a Java stack frame to its source file and collects a short statement excerpt for the presentation display when source is available.
      *
      * @param frame the stack-trace frame used to locate source context
      * @return the captured source-code frame, when one can be resolved
@@ -117,7 +117,7 @@ public final class PresentationOverlay {
     }
 
     /**
-     * Reads source lines for an available Java file.
+     * Reads a Java source file as UTF-8 lines for the presentation cache, returning an empty list when the source cannot be read.
      *
      * @param file the file being inspected or written
      * @return the UTF-8 lines read from the selected source file
@@ -131,14 +131,17 @@ public final class PresentationOverlay {
     }
 
     /**
-     * Converts a Java method identifier into readable words for the overlay.
+     * Converts camel-case and underscore-separated Java method names into readable overlay labels.
      *
-     * @param method the HTTP request method or reflected Java method being processed
-     * @return a human-readable label derived from a Java method name
+     * @param method Java method identifier to format for display
+     * @return a readable label derived from a Java method name
      */
     private static String readable(String method) {
         return method.replaceAll("([a-z])([A-Z])", "$1 $2").replace('_', ' ');
     }
 
+    /**
+     * Fixed record of a Java stack frame's class name, method name, and available source excerpt for presentation labels.
+     */
     private record SourceFrame(String className, String method, String code) {}
 }

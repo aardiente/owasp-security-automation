@@ -12,19 +12,20 @@ import java.util.concurrent.TimeUnit;
 import utilities.JuiceShop.JuiceShopChallengeActions.FeedbackAttempt;
 import utilities.JuiceShop.JuiceShopChallengeActions.FeedbackRemoval;
 
-/** Application-specific feedback actions relocated from the original challenge helper. */
+/**
+ * Groups feedback and review operations used by the Juice Shop lab tests.
+ */
 public final class FeedbackActions extends ActionContext {
     /**
-     * Uses the shared per-test HTTP client and JSON serializer.
+     * Uses the shared per-test HTTP client and JSON JSON converter.
+     *
      * @param api configured application client
-     * @param json shared JSON serializer
+     * @param json shared JSON JSON converter
      */
     FeedbackActions(JuiceShopApi api, Json json) { super(api, json); }
 
     /**
-     * Performs the submit forged feedback action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /api/Feedbacks/}.</p>
+     * Collects the feedback attribution observation for the related lab challenge.
      *
      * @return the authenticated and forged user IDs together with the feedback response
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -44,11 +45,9 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Performs the remove five star feedback action against the isolated Juice Shop test application.
+     * Collects the feedback removal observation, including the resulting feedback state.
      *
-     * <p>Uses the Juice Shop endpoint {@code /api/Feedbacks/}.</p>
-     *
-     * @return the feedback deletion response and metadata describing the removed record
+     * @return the feedback deletion response and details describing the removed record
      * @throws IOException if a required file or HTTP stream cannot be read or written
      * @throws InterruptedException if the current thread is interrupted while waiting for the operation
      */
@@ -73,7 +72,7 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Performs the submit zero star feedback action against the isolated Juice Shop test application.
+     * Collects the feedback-rating validation observation for the zero-star case.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -84,9 +83,7 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Performs the submit forged product review action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /rest/products/1/reviews}.</p>
+     * Collects the product-review attribution observation for the related lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -99,7 +96,7 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Performs the submit crypto complaint action against the isolated Juice Shop test application.
+     * Submits the challenge-related feedback entry about cryptography for the isolated lab.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -110,7 +107,7 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Performs the submit vulnerable library complaint action against the isolated Juice Shop test application.
+     * Submits the challenge-related feedback entry about a vulnerable library for the isolated lab.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -121,7 +118,7 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Performs the submit feedback action against the isolated Juice Shop test application.
+     * Submits a feedback entry to the lab and returns the response for verification.
      *
      * @param comment the text placed in a feedback submission
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
@@ -133,9 +130,7 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Performs the submit feedback action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /api/Feedbacks/}.</p>
+     * Submits a feedback entry to the lab and returns the response for verification.
      *
      * @param comment the text placed in a feedback submission
      * @param rating the star rating included in the feedback
@@ -154,9 +149,7 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Performs the submit rapid feedback action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /api/Feedbacks/}.</p>
+     * Collects the feedback rate-control observation for the related lab challenge.
      *
      * @param count the requested number of actions or items
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
@@ -182,9 +175,7 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Performs the like review concurrently action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /rest/products/1/reviews}, {@code /rest/products/reviews}.</p>
+     * Collects the review interaction consistency observation for the related lab challenge.
      *
      * @return the HTTP responses from the concurrent review-like requests
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
@@ -218,9 +209,7 @@ public final class FeedbackActions extends ActionContext {
     }
 
     /**
-     * Requests and parses the captcha challenge used by feedback actions.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /rest/captcha/}.</p>
+     * Requests and parses the captcha challenge used by feedback actions. Uses the Juice Shop endpoint {@code /rest/captcha/}.
      *
      * @return the challenge CAPTCHA identifier and answer data
      * @throws IOException if a required file or HTTP stream cannot be read or written

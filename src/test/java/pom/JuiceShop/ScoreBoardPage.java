@@ -9,16 +9,14 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 
 /**
- * Juice Shop page object exposing Selenium interactions for the score board view.
+ * Represents the Juice Shop Score Board. Opens the challenge overview and checks that it is displayed.
  */
 public class ScoreBoardPage extends BasePage {
     private final By scoreBoard = By.cssSelector("app-score-board");
     private final By challengeCards = By.cssSelector("challenge-card");
 
     /**
-     * Creates the score board page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a score board page instance and initializes its dependencies.</p>
+     * Sets up the Juice Shop score board page with the provided browser session.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -39,7 +37,7 @@ public class ScoreBoardPage extends BasePage {
     }
 
     /**
-     * Checks whether open is present or meets the expected condition.
+     * Checks whether the expected score board view is currently open.
      *
      * @return {@code true} when the Juice Shop Score Board has loaded
      */

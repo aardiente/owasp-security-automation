@@ -4,15 +4,18 @@ import org.openqa.selenium.json.Json;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-/** Holds common dependencies for the application-specific action domains. */
+/**
+ * Provides common tools for Juice Shop helpers, including the shared API client and JSON handling.
+ */
 abstract class ActionContext {
     protected final JuiceShopApi api;
     protected final Json json;
 
     /**
-     * Shares the existing client and serializer across the action domains for one invocation.
+     * Shares the existing client and JSON converter across the action domains for one test run.
+     *
      * @param api configured Juice Shop HTTP client
-     * @param json shared JSON serializer
+     * @param json shared JSON JSON converter
      */
     ActionContext(JuiceShopApi api, Json json) {
         this.api = api;

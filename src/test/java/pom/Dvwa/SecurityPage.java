@@ -9,7 +9,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 
 /**
- * DVWA page object exposing Selenium interactions for the security module.
+ * Represents DVWA's security settings page. Lets tests select a security level and read the current settings.
  */
 public class SecurityPage extends BasePage {
 
@@ -26,9 +26,7 @@ public class SecurityPage extends BasePage {
     private static final By VIEW_IDS_LOG_LINK = By.linkText("View IDS log");
 
     /**
-     * Creates the security page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a security page instance and initializes its dependencies.</p>
+     * Sets up the DVWA security page with the provided browser session.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -83,7 +81,7 @@ public class SecurityPage extends BasePage {
     }
 
     /**
-     * Types the supplied text into the DVWA security module input.
+     * Types the provided text into the DVWA security module input.
      *
      * @param payload the test input submitted to the intentionally vulnerable lab application
      */
@@ -139,6 +137,9 @@ public class SecurityPage extends BasePage {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(PHPIDS_STATUS_LABEL)).getText();
     }
 
+    /**
+     * Enumeration of the four DVWA security configurations used by test data and the settings page.
+     */
     public enum SecurityLevel {
         LOW("low"),
         MEDIUM("medium"),
@@ -148,9 +149,7 @@ public class SecurityPage extends BasePage {
         private final String descriptor;
 
         /**
-         * Creates the security level component and initializes the dependencies required by its methods.
-         *
-         * <p>Stores the configured display value of a DVWA security level.</p>
+         * Stores the lowercase setting value represented by this security-level constant.
          *
          * @param str the descriptive value to store for the enum constant
          */
@@ -159,9 +158,7 @@ public class SecurityPage extends BasePage {
         }
 
         /**
-         * Returns the DVWA security-level code accepted by the settings form.
-         *
-         * <p>Returns the DVWA security level setting represented by this enum constant.</p>
+         * Returns the lowercase setting value used by the DVWA security form.
          *
          * @return the lower-case security level string
          */
@@ -170,9 +167,7 @@ public class SecurityPage extends BasePage {
         }
 
         /**
-         * Returns the DVWA security-level code accepted by the settings form.
-         *
-         * <p>Returns the display value for this DVWA security level.</p>
+         * Returns the same lowercase setting value for display and test run details.
          *
          * @return the lower-case security level string
          */

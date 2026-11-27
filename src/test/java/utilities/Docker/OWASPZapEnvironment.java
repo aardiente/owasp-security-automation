@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 
 /**
- * Starts the proxy and API service used by the test framework to collect HTTP evidence.
+ * Manages the ZAP Docker container and provides the connection details used by tests.
  */
 public class OWASPZapEnvironment extends DockerContainer
 {
@@ -19,9 +19,7 @@ public class OWASPZapEnvironment extends DockerContainer
     private static final int ZAP_Internal_Port = 8080;
 
     /**
-     * Creates the owasp zap environment component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates the Docker environment for the ZAP scanning service.</p>
+     * Sets up the container wrapper for the lab proxy service.
      */
     public OWASPZapEnvironment()
     {

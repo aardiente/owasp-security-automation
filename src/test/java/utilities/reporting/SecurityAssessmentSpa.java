@@ -21,7 +21,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
-/** Local, read-only SPA server. It never starts Docker, Selenium, or ZAP. */
+/**
+ * Runs the local Security Assessment dashboard. Reads saved tests, scan reports and screenshots without starting new tests or scans.
+ */
 public final class SecurityAssessmentSpa {
 
     private final ReportingConfiguration config;
@@ -29,13 +31,14 @@ public final class SecurityAssessmentSpa {
     private final List<ReportingTarget> targets;
     private final Json json = new Json();
 
+    /**
+     * Stores the test results and screenshot details read by the dashboard.
+     */
     private record TestData(List<Map<String, Object>> tests,
                             List<Map<String, Object>> evidence) {}
 
     /**
-     * Creates the security assessment spa component and initializes the dependencies required by its methods.
-     *
-     * <p>Loads the reporting settings and initializes the configured, read-only SPA targets and asset paths.</p>
+     * Loads the report settings, checks the dashboard folder and stores the list of applications.
      *
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
@@ -50,9 +53,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Starts the read-only security assessment web server on the configured loopback interface.
-     *
-     * <p>Starts a loopback-only HTTP server; it does not start ZAP, Selenium, Docker, or new scans.</p>
+     * Starts the local dashboard server for viewing existing reports. Does not launch browsers, containers or scans.
      *
      * @param args the entry-point arguments (not currently used)
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -84,9 +85,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Routes read-only HTTP requests to targets, assessments, screenshots, or static SPA assets.
-     *
-     * <p>Routes read-only target, assessment, screenshot, and static-asset requests; rejects non-GET methods.</p>
+     * Handles requests for applications, assessments, screenshots and dashboard files. Rejects requests that try to change data.
      *
      * @param exchange the incoming HTTP exchange to inspect or respond to
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -130,7 +129,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Returns the configured applications exposed by the SPA selector.
+     * Returns the applications available in the dashboard's selector.
      *
      * @return the configured application targets exposed in the SPA dropdown
      */
@@ -149,9 +148,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Combines the passive and active ZAP results with tests and screenshots for one application.
-     *
-     * <p>Includes {@code scan} (passive), {@code activeFindings}, {@code activeScan}, test executions, and evidence for the same target.</p>
+     * Combines saved scan results, test outcomes and screenshots for the selected application.
      *
      * @param target the configured application/report target
      * @return the JSON-ready assessment containing both scan types, test results, and evidence links for one application
@@ -183,9 +180,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Reads saved active-scan status metadata without starting another scan.
-     *
-     * <p>Reads the scan status JSON separately from the findings file and represents missing files explicitly.</p>
+     * Reads the saved scan status separately from the findings and reports when the status file is missing.
      *
      * @param target the configured application/report target
      * @return the active-scan status fields, or a missing/not-configured status
@@ -219,13 +214,11 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Parses a selected ZAP findings file, filtering each alert instance against the application origin and review rules.
-     *
-     * <p>Separates out-of-scope alert instances from in-scope security findings without modifying the original ZAP JSON.</p>
+     * Reads saved ZAP findings and separates relevant findings from those outside the assessment scope using the report rules. Leaves the original file unchanged.
      *
      * @param target the configured application/report target
      * @param fileName the ZAP findings JSON filename configured for the selected assessment mode
-     * @return separately classified in-scope and out-of-scope ZAP observations with report metadata
+     * @return separately classified within the assessment scope and outside the assessment scope ZAP observations with report details
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
     private Map<String, Object> loadScan(ReportingTarget target, String fileName)
@@ -346,9 +339,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Loads TestNG CSV rows and resolves matching screenshot evidence for the selected application.
-     *
-     * <p>Associates TestNG CSV entries and screenshot evidence without assuming ambiguous parameterized-test images belong to one run.</p>
+     * Reads saved test results for the selected application and links screenshots only when they can be matched to a test reliably.
      *
      * @param target the configured application/report target
      * @return the matching TestNG tests and screenshot references for one application
@@ -456,7 +447,7 @@ public final class SecurityAssessmentSpa {
      * @param target the configured application/report target
      * @param className the fully-qualified name of the TestNG test class
      * @param method the HTTP request method or reflected Java method being processed
-     * @param filename the filename associated with a file upload or screenshot
+     * @param filename the filename linked to a file upload or screenshot
      * @return the safe SPA screenshot URL, or {@code null} when no valid file matches
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
@@ -499,12 +490,12 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Locates screenshot files associated with a test method.
+     * Locates screenshot files linked to a test method.
      *
      * @param target the configured application/report target
      * @param className the fully-qualified name of the TestNG test class
      * @param method the HTTP request method or reflected Java method being processed
-     * @return the newest matching screenshot URLs associated with a test method
+     * @return the newest matching screenshot URLs linked to a test method
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
     private List<String> screenshotLinks(ReportingTarget target, String className,
@@ -557,9 +548,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Returns a screenshot only when its normalized real path is inside the configured evidence directory.
-     *
-     * <p>Normalizes screenshot paths and rejects files outside the configured evidence directory.</p>
+     * Returns screenshots only from the configured evidence folder, preventing access to unrelated files.
      *
      * @param exchange the incoming HTTP exchange to inspect or respond to
      * @param remaining the screenshot path segment after the API route prefix
@@ -607,12 +596,10 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Serves frontend HTML, CSS, and JS only from the configured SPA asset directory.
-     *
-     * <p>Serves only files rooted within the configured SPA frontend directory.</p>
+     * Serves the dashboard's HTML, CSS and JavaScript from its configured folder only.
      *
      * @param exchange the incoming HTTP exchange to inspect or respond to
-     * @param rawPath the request URI path used to locate a frontend asset
+     * @param rawPath the request URI path used to locate a dashboard asset
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
     private void serveStatic(HttpExchange exchange, String rawPath)
@@ -645,7 +632,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Looks up the configured target application with the requested identifier.
+     * Finds the application with the requested ID.
      *
      * @param id the configured identifier to look up
      * @return the matching configured application, or {@code null} if not found
@@ -677,7 +664,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Serializes a value as JSON and sends an HTTP response.
+     * Writes a value as JSON and sends an HTTP response.
      *
      * @param exchange the incoming HTTP exchange to inspect or respond to
      * @param status the HTTP status code or test execution status being recorded
@@ -708,7 +695,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Writes the response headers and bytes to the HTTP exchange.
+     * Sends the response headers and content to the browser.
      *
      * @param exchange the incoming HTTP exchange to inspect or respond to
      * @param status the HTTP status code or test execution status being recorded
@@ -729,7 +716,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Converts a nullable JSON value to a non-null string.
+     * Returns a JSON value as text, using an empty string when no value is present.
      *
      * @param value the input value to convert or display
      * @return the string representation of a value, or an empty string for {@code null}
@@ -804,7 +791,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Reads a file modification timestamp, returning a fallback on I/O failure.
+     * Reads a file modification timestamp, returning a fallback on file access error.
      *
      * @param path the path or URL passed to the request or file operation
      * @return the file modification timestamp in milliseconds, or zero on read failure
@@ -818,7 +805,7 @@ public final class SecurityAssessmentSpa {
     }
 
     /**
-     * Encodes a path component for an HTTP URL.
+     * Encodes a URL path component so evidence links can safely represent filenames containing spaces or special characters.
      *
      * @param value the input value to convert or display
      * @return URL-encoded text suitable for a link path component

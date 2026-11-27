@@ -10,18 +10,22 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
-/** Encapsulates the DOM-based XSS query entry point and observable browser-side marker. */
+/**
+ * Represents DVWA's DOM cross-site scripting practice page. Provides browser interactions and observations for the related tests.
+ */
 public class XssDomPage extends BasePage {
     private static final String ENDPOINT = "/vulnerabilities/xss_d/";
 
     /**
-     * Creates the DOM XSS page object.
+     * Sets up the DVWA xss dom page with the provided browser session.
+     *
      * @param driver the active DVWA WebDriver
      */
     public XssDomPage(WebDriver driver) { super(driver); }
 
     /**
      * Opens the DOM XSS page with an inert SVG event probe that marks its own element.
+     *
      * @param baseUrl the running DVWA application's base URL
      * @param markerId unique identifier of the test's SVG probe
      */
@@ -35,6 +39,7 @@ public class XssDomPage extends BasePage {
 
     /**
      * Checks whether the event handler actually ran, not just whether its HTML was reflected.
+     *
      * @param markerId unique identifier of the submitted SVG probe
      * @return true when browser execution set data-p on the inserted SVG
      */
@@ -52,6 +57,7 @@ public class XssDomPage extends BasePage {
 
     /**
      * Validates a marker before placing it inside a diagnostic HTML attribute.
+     *
      * @param markerId unique alphanumeric marker
      */
     private void validateMarker(String markerId) {

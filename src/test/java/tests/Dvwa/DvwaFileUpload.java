@@ -20,17 +20,15 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Evaluates DVWA file-upload validation using a dedicated Excel workbook.
- * Each workbook case runs independently at its selected security levels; a confirmed
- * non-image upload intentionally fails, while a valid image acts as a control.
+ * Contains DVWA file upload tests. Uses cases from an Excel spreadsheet to check the expected upload restrictions at each security level.
  */
 public class DvwaFileUpload extends BaseDvwaTest {
 
     /**
-     * Represents a workbook-defined upload probe and the levels at which to run it.
+     * Fixed spreadsheet-based upload case and its expected lab behavior across selected security levels.
      *
      * @param id descriptive identifier used in TestNG reporting
-     * @param levels security modes selected by the workbook
+     * @param levels security modes selected by the spreadsheet
      * @param extension the temporary file's extension
      * @param encoding UTF8 or BASE64
      * @param payload harmless test-file bytes, expressed in the selected encoding
@@ -47,10 +45,9 @@ public class DvwaFileUpload extends BaseDvwaTest {
     }
 
     /**
-     * Reads the workbook from the same project data directory used by the existing DVWA tests,
-     * then expands each case across its selected security modes.
+     * Reads the spreadsheet from the same project data directory used by the existing DVWA tests, then expands each case across its selected security modes.
      *
-     * @return TestNG parameter rows of security level and workbook case
+     * @return TestNG parameter rows of security level and spreadsheet case
      */
     @DataProvider(name = "fileUploadCases")
     public Object[][] fileUploadCases() {
@@ -59,11 +56,10 @@ public class DvwaFileUpload extends BaseDvwaTest {
     }
 
     /**
-     * Uploads one workbook-defined file and fails if DVWA stores invalid non-image content.
-     * A legitimate image control is expected to be accepted at every security level.
+     * Uploads one spreadsheet-based file and fails if DVWA stores invalid non-image content. A legitimate image control is expected to be accepted at every security level.
      *
      * @param level the currently assessed DVWA security mode
-     * @param probe the selected workbook test case
+     * @param probe the selected spreadsheet test case
      */
     @Test(dataProvider = "fileUploadCases")
     public void fileUploadValidation(SecurityPage.SecurityLevel level, UploadCase probe) {
@@ -98,9 +94,9 @@ public class DvwaFileUpload extends BaseDvwaTest {
     }
 
     /**
-     * Materializes workbook payload content in a uniquely named temporary file for browser upload.
+     * Materializes spreadsheet payload content in a uniquely named temporary file for browser upload.
      *
-     * @param probe the workbook case containing the file content and extension
+     * @param probe the spreadsheet case containing the file content and extension
      * @return the temporary file to submit through Selenium
      */
     private static Path createTemporaryFile(UploadCase probe) {
@@ -119,10 +115,9 @@ public class DvwaFileUpload extends BaseDvwaTest {
     }
 
     /**
-     * Loads cases from the configured test data directory using the shared reader.
-     * The workbook begins with: case_id, levels, extension, encoding, payload, kind.
+     * Loads cases from the configured test data directory using the shared reader. The spreadsheet begins with: case_id, levels, extension, encoding, payload, kind.
      *
-     * @return validated test cases from the Excel workbook
+     * @return validated test cases from the Excel spreadsheet
      */
     private static List<UploadCase> readCases() {
         Object[][] rows = DvwaCases.load("dvwa.fileUpload.workbook", null);

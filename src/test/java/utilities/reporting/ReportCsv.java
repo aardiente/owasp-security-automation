@@ -3,19 +3,27 @@ package utilities.reporting;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Shared CSV format for TestNG result export and SPA import. */
+/**
+ * Provides shared tools for reading and writing CSV reports so both report views use the same format.
+ */
 final class ReportCsv {
-    /** Prevents instantiation of the CSV codec. */
+    /**
+     * Prevents creation of the CSV reader and writer.
+     */
     private ReportCsv() {}
 
-    /** Quotes one value; normalizes line breaks to preserve one physical row per result. */
+    /**
+     * Quotes one value; standardizes line breaks to preserve one physical row per result.
+     */
     static String quote(String value) {
         if (value == null) return "\"\"";
         return "\"" + value.replace("\"", "\"\"")
                 .replace("\r", "\\r").replace("\n", "\\n") + "\"";
     }
 
-    /** Parses quoted fields, escaped quotes, and CRLF or LF record separators. */
+    /**
+     * Parses quoted fields, escaped quotes, and CRLF or LF record separators.
+     */
     static List<List<String>> parse(String content) {
         List<List<String>> rows = new ArrayList<>();
         List<String> row = new ArrayList<>();

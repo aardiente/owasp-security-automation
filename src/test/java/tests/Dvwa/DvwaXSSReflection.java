@@ -15,14 +15,14 @@ import utilities.ScreenshotManager;
 import java.time.Duration;
 
 /**
- * TestNG test class for the dvwa xss reflection scenarios within the Docker security lab.
+ * Contains DVWA reflected cross-site scripting tests. Uses spreadsheet cases to check protections at each security level.
  */
 public class DvwaXSSReflection extends BaseDvwaTest {
 
     /**
      * Builds the security-level and payload pairs for parameterized reflected-XSS tests.
      *
-     * @return the TestNG data-provider matrix; each row contains the parameters for one test invocation
+     * @return the TestNG data-provider matrix; each row contains the parameters for one test run
      */
     @DataProvider(name = "securityAndPayloads")
     public Object[][] getSecurityAndPayloads() {

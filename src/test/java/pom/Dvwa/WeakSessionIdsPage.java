@@ -5,20 +5,24 @@ import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
-/** Models DVWA's weak-session-ID generation form and its response cookie. */
+/**
+ * Represents DVWA's session ID practice page. Provides access to its controls and results for the related tests.
+ */
 public class WeakSessionIdsPage extends BasePage {
     private static final String ENDPOINT = "/vulnerabilities/weak_id/";
     private static final String SESSION_COOKIE = "dvwaSession";
     private final By generateButton = By.name("generate");
 
     /**
-     * Creates the weak-session-ID page object.
+     * Sets up the DVWA weak session ids page with the provided browser session.
+     *
      * @param driver the active DVWA WebDriver
      */
     public WeakSessionIdsPage(WebDriver driver) { super(driver); }
 
     /**
      * Opens the weak-session-ID lab.
+     *
      * @param baseUrl the running DVWA application's base URL
      */
     public void open(String baseUrl) {
@@ -28,6 +32,7 @@ public class WeakSessionIdsPage extends BasePage {
 
     /**
      * Uses the page's Generate control and returns the browser's resulting DVWA session token.
+     *
      * @return the newly issued dvwaSession cookie value
      */
     public String generateToken() {

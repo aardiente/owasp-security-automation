@@ -17,15 +17,13 @@ import java.net.URI;
 import java.time.Duration;
 import tests.JuiceShop.JuiceShopChallengeTestBase;
 
-/** Browser-driven and mixed-channel challenge checks. */
+/**
+ * Contains Juice Shop challenges tested through the browser. Uses shared page controls and captures evidence of challenge results.
+ */
 public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
 
     /**
-     * Tests whether an SQL injection login input bypasses Juice Shop authentication in the isolated lab.
-     *
-     * <p>Uses the LoginPage page object for browser interaction.</p>
-     * <p>Evaluates assertTrue assertion against the observed response or page state.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks authentication input validation in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      */
     @Test(priority = 1, groups = "juice-challenge")
     public void testSqlInjectionLoginBypass() {
@@ -38,11 +36,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises DOM-based XSS in the isolated Juice Shop lab and verifies the resulting browser alert.
-     *
-     * <p>Uses the SearchPage page object for browser interaction.</p>
-     * <p>Evaluates assertEquals assertion against the observed response or page state.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks browser-side input handling in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      */
     @Test(priority = 2, groups = "juice-challenge")
     public void testDomXssChallenge() {
@@ -59,11 +53,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Exposed Metrics challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Requests {@code /metrics} through the API client.</p>
-     * <p>Checks the Score Board challenge state for {@code Exposed Metrics}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks access restrictions on service metrics in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -82,11 +72,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Admin Section challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage, AdministrationPage page objects for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Admin Section}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks administration-view authorization in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -101,11 +87,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Security Policy challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the ResourcePage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Security Policy}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks availability of security policy information in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -121,11 +103,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Missing Encoding challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the ResourcePage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Missing Encoding}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks browser handling of encoded resource information in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -142,11 +120,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Extra Language challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the ResourcePage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Extra Language}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks the application's extra-language challenge in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -160,11 +134,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Privacy Policy challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the PrivacyPolicyPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Privacy Policy}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks availability of the privacy policy in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -178,11 +148,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Error Handling challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the ResourcePage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Error Handling}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks application error handling in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -198,11 +164,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Password Strength challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Password Strength}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks lab account password strength in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -218,11 +180,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Login Bender challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Login Bender}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks authentication protection for a designated lab account in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -238,11 +196,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Login Jim challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Login Jim}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks authentication protection for a designated lab account in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -258,11 +212,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Access Log challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the ResourcePage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Access Log}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks access restrictions on operational logs in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -280,11 +230,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Misplaced IaC Files challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the ResourcePage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Misplaced IaC Files}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks protection of infrastructure configuration files in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -301,11 +247,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Bonus Payload challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the SearchPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Bonus Payload}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks the application's additional input-handling challenge in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -326,11 +268,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Easter Egg challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Requests {@code /ftp/eastere.gg%2500.md} through the API client.</p>
-     * <p>Checks the Score Board challenge state for {@code Easter Egg}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks the application's Easter Egg completion state in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -349,11 +287,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Forgotten Developer Backup challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Requests {@code /ftp/package.json.bak%2500.md} through the API client.</p>
-     * <p>Checks the Score Board challenge state for {@code Forgotten Developer Backup}, {@code Poison Null Byte}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks resource input validation in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -375,11 +309,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Privacy Policy Inspection challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Requests {@code /assets/private/thank-you.jpg} through the API client.</p>
-     * <p>Checks the Score Board challenge state for {@code Privacy Policy Inspection}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks the application's privacy-policy inspection challenge in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -403,10 +333,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Web3 Sandbox challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Checks the Score Board challenge state for {@code Web3 Sandbox}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks availability of the sandbox view in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -419,11 +346,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Login MC SafeSearch challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Login MC SafeSearch}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks authentication protection for a designated lab account in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -436,11 +359,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Login Amy challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Login Amy}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks authentication protection for a designated lab account in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -453,11 +372,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Password Hash Leak challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage, ResourcePage page objects for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Password Hash Leak}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks protection of password-derived information in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -472,10 +387,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Blockchain Hype challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Checks the Score Board challenge state for {@code Blockchain Hype}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks the application's blockchain-related challenge in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -488,11 +400,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Cross-Site Imaging challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code crossSiteImagingUrl}, {@code waitForChallenge} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Cross-Site Imaging}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks browser handling of cross-site image resources in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -509,11 +417,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Login Bjoern challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Login Bjoern}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks authentication protection for a designated lab account in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -526,11 +430,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Login Support Team challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Login Support Team}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks authentication protection for a designated lab account in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -543,11 +443,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop GDPR Data Erasure challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Uses the LoginPage page object for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code GDPR Data Erasure}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks account-data erasure behavior in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -560,11 +456,7 @@ public class JuiceShopUiChallengeTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Ephemeral Accountant challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code ephemeralAccountantLogin} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Ephemeral Accountant}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Checks account authentication integrity in the Juice Shop lab. Uses the shared browser test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */

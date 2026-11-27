@@ -9,7 +9,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 
 /**
- * Juice Shop page object exposing Selenium interactions for the web3 sandbox view.
+ * Represents the Juice Shop Web3 sandbox. Opens the page and checks that the expected view is displayed.
  */
 public class Web3SandboxPage extends BasePage {
 
@@ -17,9 +17,7 @@ public class Web3SandboxPage extends BasePage {
     private final By application = By.tagName("app-root");
 
     /**
-     * Creates the web3 sandbox page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a Web3 sandbox page instance and initializes its dependencies.</p>
+     * Sets up the Juice Shop web3 sandbox page with the provided browser session.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -41,7 +39,7 @@ public class Web3SandboxPage extends BasePage {
     }
 
     /**
-     * Checks whether open is present or meets the expected condition.
+     * Checks whether the expected web3 sandbox view is currently open.
      *
      * @return {@code true} when the Web3 Sandbox page has loaded
      */

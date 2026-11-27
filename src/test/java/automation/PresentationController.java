@@ -10,11 +10,7 @@ import java.util.Arrays;
 import java.util.Locale;
 
 /**
- * Provides live browser presentation controls through a desktop
- * interface styled consistently with the Security Assessment SPA.
- *
- * <p>Presentation settings are updated through JVM system properties
- * without modifying configuration files or restarting test execution.</p>
+ * Provides a desktop control panel for changing test speed and result display time while tests run. Restores the original settings and closes when testing finishes.
  */
 public final class PresentationController implements IExecutionListener {
 
@@ -46,8 +42,7 @@ public final class PresentationController implements IExecutionListener {
     private String originalResultsOverride;
 
     /**
-     * Opens the presentation controller when visible browser
-     * demonstration mode is enabled.
+     * Opens the control panel when visible slow-motion mode is enabled. Uses Swing's interface thread to create the window safely.
      */
     @Override
     public void onExecutionStart() {
@@ -59,8 +54,7 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Disposes of the controller and restores the original
-     * JVM property overrides when execution finishes.
+     * Restores the original settings and closes the control panel when testing finishes.
      */
     @Override
     public void onExecutionFinish() {
@@ -76,8 +70,7 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Creates and displays the presentation controller using
-     * the effective browser configuration values.
+     * Builds and opens the control panel using the current delay settings.
      */
     private void createWindow() {
         if (frame != null) return;
@@ -202,12 +195,11 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Creates a reusable presentation setting card containing
-     * a live value, styled slider, and optional speed presets.
+     * Creates a settings card with a slider and live value. Changes take effect immediately, and the interaction delay card includes preset speeds.
      *
      * @param parent parent container
      * @param title card heading
-     * @param property JVM property controlled by the slider
+     * @param property runtime setting controlled by the slider
      * @param initial initial configured delay
      * @param maximum suggested maximum delay
      * @param seconds whether to display the value in seconds
@@ -286,8 +278,7 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Creates reusable speed preset buttons and synchronizes
-     * their selected appearance with the interaction slider.
+     * Builds one row of interaction-delay preset buttons and updates each selected state whenever the slider changes.
      *
      * @param slider interaction delay slider
      * @return preset button container
@@ -317,7 +308,7 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Creates the window behavior and configuration reset controls.
+     * Builds the always-on-top toggle and reset button, restoring the starting slider values when reset is selected.
      *
      * @param slowMo interaction delay slider
      * @param results result duration slider
@@ -360,7 +351,7 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Creates the footer describing runtime configuration behavior.
+     * Builds the status and session-only labels displayed below the presentation controls.
      *
      * @return styled status footer
      */
@@ -462,7 +453,7 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Creates a font using the resolved application font family.
+     * Creates a font using the selected application font family.
      *
      * @param size font size
      * @param style font style
@@ -473,10 +464,9 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Resolves an available font using the SPA's preferred
-     * typography and a platform-independent fallback.
+     * Chooses an available font that matches the dashboard, or uses the system's default sans-serif font.
      *
-     * @return available font family
+     * @return available font
      */
     private static String resolveFontFamily() {
         String[] available = GraphicsEnvironment
@@ -507,10 +497,10 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Creates an antialiased graphics context for custom components.
+     * Prepares drawing settings for smooth component edges.
      *
      * @param graphics original graphics context
-     * @return independent antialiased graphics context
+     * @return independent smooth-edged graphics context
      */
     private static Graphics2D prepareGraphics(Graphics graphics) {
         Graphics2D g = (Graphics2D) graphics.create();
@@ -523,9 +513,9 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Restores a JVM property or removes an existing override.
+     * Restores a runtime setting or removes an existing override.
      *
-     * @param property JVM property name
+     * @param property runtime setting name
      * @param value original property value
      */
     private void restoreProperty(String property, String value) {
@@ -537,7 +527,7 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Reusable rounded panel matching the SPA card styling.
+     * A reusable panel that gives the presentation cards their rounded background and border.
      */
     private static final class RoundedPanel extends JPanel {
 
@@ -546,7 +536,7 @@ public final class PresentationController implements IExecutionListener {
         private final int radius;
 
         /**
-         * Initializes a rounded panel.
+         * Sets up a rounded panel.
          *
          * @param surface panel background color
          * @param border panel outline color
@@ -588,12 +578,12 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Reusable button matching the SPA outline and selected states.
+     * A reusable button for presets and reset controls. Changes appearance when selected, hovered over, pressed or focused.
      */
     private static final class StyledButton extends JButton {
 
         /**
-         * Initializes a styled button.
+         * Sets up a styled button.
          *
          * @param text button display text
          */
@@ -660,14 +650,13 @@ public final class PresentationController implements IExecutionListener {
     }
 
     /**
-     * Provides reusable slider rendering with rounded tracks
-     * and blue progress indicators matching the SPA.
+     * Gives the delay sliders their custom appearance while keeping normal slider behavior.
      */
     private static final class PresentationSliderUI
             extends BasicSliderUI {
 
         /**
-         * Initializes the custom slider renderer.
+         * Sets up the custom slider display component.
          *
          * @param slider slider being styled
          */

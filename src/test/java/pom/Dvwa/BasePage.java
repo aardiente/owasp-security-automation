@@ -11,14 +11,12 @@ import pom.common.BrowserPage;
 import java.time.Duration;
 
 /**
- * DVWA page object exposing Selenium interactions for the base module.
+ * Provides common browser controls and navigation for DVWA pages. Shares browser waits and menu interactions across page classes.
  */
 public abstract class BasePage extends BrowserPage {
 
     /**
-     * Creates the base page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a base page instance and initializes its dependencies.</p>
+     * Sets up the DVWA base page with the provided browser session. Uses the configured site-specific wait inherited from the base page.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -50,35 +48,35 @@ public abstract class BasePage extends BrowserPage {
     }
 
     /**
-     * Navigates to the brute force page using the application page object.
+     * Opens the DVWA Brute Force view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToBruteForce() {
         wait.until(ExpectedConditions.elementToBeClickable(bruteForceMenu)).click();
     }
 
     /**
-     * Navigates to the command injection page using the application page object.
+     * Opens the DVWA Command Injection view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToCommandInjection() {
         wait.until(ExpectedConditions.elementToBeClickable(commandInjectionMenu)).click();
     }
 
     /**
-     * Navigates to the SQL injection page using the application page object.
+     * Opens the DVWA SQL Injection view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToSqlInjection() {
         wait.until(ExpectedConditions.elementToBeClickable(sqlInjectionMenu)).click();
     }
 
     /**
-     * Navigates to the DVWA security page using the application page object.
+     * Opens the DVWA Dvwa Security view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToDvwaSecurity() {
         wait.until(ExpectedConditions.elementToBeClickable(dvwaSecurityMenu)).click();
     }
 
     /**
-     * Navigates to the XSS reflected page using the application page object.
+     * Opens the DVWA XSS Reflected view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToXssReflected() {
         wait.until(d -> {
@@ -92,63 +90,63 @@ public abstract class BasePage extends BrowserPage {
     }
 
     /**
-     * Navigates to the XSS stored page using the application page object.
+     * Opens the DVWA XSS Stored view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToXssStored() {
         wait.until(ExpectedConditions.elementToBeClickable(xssStoredMenu)).click();
     }
 
     /**
-     * Navigates to the csrf page using the application page object.
+     * Opens the DVWA CSRF view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToCsrf() {
         wait.until(ExpectedConditions.elementToBeClickable(csrfMenu)).click();
     }
 
     /**
-     * Navigates to the file inclusion page using the application page object.
+     * Opens the DVWA File Inclusion view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToFileInclusion() {
         wait.until(ExpectedConditions.elementToBeClickable(fileInclusionMenu)).click();
     }
 
     /**
-     * Navigates to the CSP bypass page using the application page object.
+     * Opens the DVWA CSP Bypass view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToCspBypass() {
         wait.until(ExpectedConditions.elementToBeClickable(cspBypassMenu)).click();
     }
 
     /**
-     * Navigates to the SQL injection blind page using the application page object.
+     * Opens the DVWA SQL Injection Blind view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToSqlInjectionBlind() {
         wait.until(ExpectedConditions.elementToBeClickable(sqlInjectionBlindMenu)).click();
     }
 
     /**
-     * Navigates to the weak session IDS page using the application page object.
+     * Opens the DVWA Weak Session IDs view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToWeakSessionIds() {
         wait.until(ExpectedConditions.elementToBeClickable(weakSessionMenu)).click();
     }
 
     /**
-     * Navigates to the java script page using the application page object.
+     * Opens the DVWA JavaScript view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToJavaScript() {
         wait.until(ExpectedConditions.elementToBeClickable(javascriptMenu)).click();
     }
 
     /**
-     * Navigates to the PHP info page using the application page object.
+     * Opens the DVWA PHP Info view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToPhpInfo() {
         wait.until(ExpectedConditions.elementToBeClickable(phpInfoMenu)).click();
     }
 
     /**
-     * Navigates to the about page using the application page object.
+     * Opens the DVWA About view through its navigation menu, waiting for the menu interaction to succeed.
      */
     public void navigateToAbout() {
         wait.until(ExpectedConditions.elementToBeClickable(aboutMenu)).click();

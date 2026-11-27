@@ -7,19 +7,20 @@ import java.util.ArrayList;
 import java.util.List;
 import static java.net.HttpURLConnection.HTTP_OK;
 
-/** Application-specific resources actions relocated from the original challenge helper. */
+/**
+ * Groups resource and information-related operations used by the Juice Shop lab tests.
+ */
 public final class ResourceActions extends ActionContext {
     /**
-     * Uses the shared per-test HTTP client and JSON serializer.
+     * Uses the shared per-test HTTP client and JSON JSON converter.
+     *
      * @param api configured application client
-     * @param json shared JSON serializer
+     * @param json shared JSON JSON converter
      */
     ResourceActions(JuiceShopApi api, Json json) { super(api, json); }
 
     /**
-     * Performs the retrieve nested easter egg action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /the/devs/are/so/funny/they/hid/an/easter/egg/within/the/easter/egg}.</p>
+     * Collects the resource observation for the Nested Easter Egg lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -30,9 +31,7 @@ public final class ResourceActions extends ActionContext {
     }
 
     /**
-     * Performs the retrieve blueprint action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /assets/public/images/products/JuiceShop.stl}.</p>
+     * Collects the resource observation for the Retrieve Blueprint lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -43,9 +42,7 @@ public final class ResourceActions extends ActionContext {
     }
 
     /**
-     * Performs the open premium page action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /this/page/is/hidden/behind/an/incredibly/high/paywall/that/could/only/be/unlocked/by/sending/1btc/to/us}.</p>
+     * Collects the access-control observation for the premium-page lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -56,7 +53,7 @@ public final class ResourceActions extends ActionContext {
     }
 
     /**
-     * Performs the apply imaginary continue code action against the isolated Juice Shop test application.
+     * Collects the observation for the Imaginary lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -67,9 +64,7 @@ public final class ResourceActions extends ActionContext {
     }
 
     /**
-     * Performs the bypass redirect allowlist action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /redirect?to=http://kimminich.de?pwned=https://github.com/juice-shop/juice-shop}.</p>
+     * Collects the redirect-policy observation used by the related lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -80,7 +75,7 @@ public final class ResourceActions extends ActionContext {
     }
 
     /**
-     * Performs the retrieve database schema action against the isolated Juice Shop test application.
+     * Collects the information-exposure observation for the Database Schema lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -91,9 +86,7 @@ public final class ResourceActions extends ActionContext {
     }
 
     /**
-     * Performs the search with union action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /rest/products/search?q=}.</p>
+     * Returns the HTTP observation used by the lab's database-related challenge checks.
      *
      * @param table the database table included in the lab-only UNION query
      * @param first the expression selected as the first result column
@@ -118,7 +111,7 @@ public final class ResourceActions extends ActionContext {
     }
 
     /**
-     * Performs the retrieve user credentials action against the isolated Juice Shop test application.
+     * Collects the information-exposure observation for the User Credentials lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -129,9 +122,7 @@ public final class ResourceActions extends ActionContext {
     }
 
     /**
-     * Performs the exfiltrate orders via no SQL action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /rest/track-order/}.</p>
+     * Collects the order-data protection observation for the related lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written

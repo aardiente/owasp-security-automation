@@ -15,11 +15,7 @@ import java.time.Duration;
 import java.util.Map;
 
 /**
- * Starts DVWA in its normal isolated Testcontainers environment or attaches an explicitly named development container.
- *
- * <p>Development reuse is DVWA-specific. The persistent lab container has no published host ports, is verified
- * by an ownership label, and joins the current Testcontainers network so the normal ZAP proxy can still reach it.
- * The network itself and ZAP remain managed by the existing per-suite lifecycle.</p>
+ * Manages the DVWA Docker container. Starts a new lab or reuses an existing one when configured to do so, and handles cleanup.
  */
 public class DvwaEnvironment extends DockerContainer {
 
@@ -70,8 +66,7 @@ public class DvwaEnvironment extends DockerContainer {
     }
 
     /**
-     * Attaches to a lab container only when it bears this framework's DVWA development ownership label.
-     * A newly created lab container is kept between test runs and connected to the current suite's ZAP network.
+     * Attaches to a lab container only when it bears this framework's DVWA development ownership label. A newly created lab container is kept between test runs and connected to the current suite's ZAP network.
      */
     private void startDevelopmentEnvironment() {
         if (developmentId != null) return;
@@ -131,8 +126,7 @@ public class DvwaEnvironment extends DockerContainer {
     }
 
     /**
-     * Stops the normal managed DVWA container. For development reuse, disconnects the lab from this run's
-     * temporary Testcontainers network without stopping or deleting the lab container or its database.
+     * Stops the normal managed DVWA container. For development reuse, disconnects the lab from this run's temporary Testcontainers network without stopping or deleting the lab container or its database.
      */
     @Override
     public void stopEnvironment() {

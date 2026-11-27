@@ -23,7 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 
 /**
- * Wraps Juice Shop HTTP endpoints, login sessions, challenge records, and multipart uploads for the test helpers.
+ * Provides shared tools for communicating with the Juice Shop lab API. Handles requests, responses, sessions and challenge results.
  */
 public final class JuiceShopApi {
 
@@ -31,12 +31,13 @@ public final class JuiceShopApi {
     private final HttpClient client;
     private final Json json = new Json();
 
+    /**
+     * Fixed representation of a Juice Shop lab session returned by the HTTP client.
+     */
     public record JuiceSession(String token, int basketId, int userId) {}
 
     /**
-     * Creates the juice shop api component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates an API helper bound to the specified Juice Shop base URL.</p>
+     * Creates an HTTP client bound to the configured Juice Shop lab URL for shared use by application test helpers.
      *
      * @param baseUrl the base URL of the containerized application under test
      */
@@ -139,9 +140,7 @@ public final class JuiceShopApi {
     }
 
     /**
-     * Builds and sends an HTTP request to the Juice Shop API with optional body and authorization token.
-     *
-     * <p>Builds the HTTP request and optionally attaches the session token; callers receive the unmodified HTTP response.</p>
+     * Builds and sends an HTTP request to the Juice Shop API with optional body and authorization token. Builds the HTTP request and optionally attaches the session token; callers receive the unmodified HTTP response.
      *
      * @param method the HTTP request method or reflected Java method being processed
      * @param path the application-relative HTTP endpoint to request
@@ -236,9 +235,7 @@ public final class JuiceShopApi {
     }
 
     /**
-     * Fetches the current Juice Shop Score Board challenge states from the API.
-     *
-     * <p>Fetches the Juice Shop challenges endpoint.</p>
+     * Fetches the current Juice Shop Score Board challenge states from the API. Fetches the Juice Shop challenges endpoint.
      *
      * @return the HTTP response containing challenge completion records
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -254,9 +251,7 @@ public final class JuiceShopApi {
     }
 
     /**
-     * Writes the returned Juice Shop challenge catalog to a destination file.
-     *
-     * <p>Fetches the challenge status API and writes its JSON response to the requested output file.</p>
+     * Writes the returned Juice Shop challenge catalog to a destination file. Fetches the challenge status API and writes its JSON response to the requested output file.
      *
      * @param outputFile the destination path for generated output
      * @return the path where the current challenge status JSON was saved
@@ -284,7 +279,7 @@ public final class JuiceShopApi {
      * Extracts a user ID from a Juice Shop authentication token.
      *
      * @param token the optional authentication bearer token
-     * @return the user identifier encoded in the supplied session token
+     * @return the user identifier encoded in the provided session token
      */
     @SuppressWarnings("unchecked")
     private int extractUserId(String token) {
@@ -308,9 +303,7 @@ public final class JuiceShopApi {
     }
 
     /**
-     * Parses the submitted API response into feedback objects.
-     *
-     * <p>Parses feedback records from the supplied API response body.</p>
+     * Parses the submitted API response into feedback objects. Parses feedback records from the provided API response body.
      *
      * @param responseBody the raw response body returned from Juice Shop
      * @return the feedback records decoded from the response JSON
@@ -371,13 +364,11 @@ public final class JuiceShopApi {
     }
 
     /**
-     * Submits a multipart file upload to the configured Juice Shop endpoint.
-     *
-     * <p>Formats the multipart request body and returns the server response for assertion in the caller.</p>
+     * Submits a multipart file upload to the configured Juice Shop endpoint. Formats the multipart request body and returns the server response for result check in the caller.
      *
      * @param path the application-relative HTTP endpoint to request
-     * @param filename the filename associated with a file upload or screenshot
-     * @param contentType the uploaded part’s MIME type
+     * @param filename the filename linked to a file upload or screenshot
+     * @param contentType the uploaded part\u2019s MIME type
      * @param fileContent the bytes uploaded as the multipart file part
      * @param token the optional authentication bearer token
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
@@ -424,7 +415,8 @@ public final class JuiceShopApi {
     }
 
     /**
-     * Applies common request metadata for the existing JSON and multipart methods.
+     * Applies common request details for the existing JSON and multipart methods.
+     *
      * @param path application-relative path
      * @param token optional session token
      * @param accept response media type expected by the caller

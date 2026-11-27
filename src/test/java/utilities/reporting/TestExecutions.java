@@ -10,23 +10,38 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
-/** Normalizes TestNG's result buckets for all report producers. */
+/**
+ * Collects passed, failed and skipped test results in a consistent format for the HTML and CSV reports.
+ */
 final class TestExecutions {
-    /** Prevents instantiation of the result adapter. */
+    /**
+     * Prevents creation of the result adapter.
+     */
     private TestExecutions() {}
 
+    /**
+     * Lists the possible test results: passed, failed or skipped.
+     */
     enum Status { PASSED, FAILED, SKIPPED }
 
+    /**
+     * Stores one test result and its suite, test group and status. Reads additional details from the original TestNG result.
+     */
     record Execution(String suite, String test, Status status, ITestResult result) {
-        /** Returns the qualified test class name. */
+        /**
+         * Returns the qualified test class name.
+         */
         String className() { return result.getTestClass().getName(); }
-        /** Returns the TestNG method name. */
+        /**
+         * Returns the TestNG method name.
+         */
         String method() { return result.getMethod().getMethodName(); }
-        /** Returns the nonnegative elapsed time in milliseconds. */
+        /**
+         * Returns the non-negative elapsed time in milliseconds.
+         */
         long durationMs() { return Math.max(0, result.getEndMillis() - result.getStartMillis()); }
         /**
-         * Returns a recognized security level from the first invocation parameter, if present.
-         * Only the level is exported; other invocation arguments are not disclosed.
+         * Reads the security level from the test's first input, if available. Other test inputs are not included in the report.
          *
          * @return the uppercase security level or an empty string if not available
          */
@@ -41,11 +56,15 @@ final class TestExecutions {
                 default -> "";
             };
         }
-        /** Returns the failure summary, or an empty string. */
+        /**
+         * Returns the failure summary, or an empty string.
+         */
         String error() { return result.getThrowable() == null ? "" : result.getThrowable().toString(); }
     }
 
-    /** Collects completed executions from each TestNG result bucket. */
+    /**
+     * Collects completed tests from the passed, failed and skipped result lists.
+     */
     static List<Execution> from(List<ISuite> suites) {
         List<Execution> executions = new ArrayList<>();
         for (ISuite suite : suites) {
@@ -62,7 +81,9 @@ final class TestExecutions {
         return List.copyOf(executions);
     }
 
-    /** Appends executions sharing the same suite, test and status. */
+    /**
+     * Adds executions sharing the same suite, test and status.
+     */
     private static void add(List<Execution> executions, String suite, String test,
                             Status status, Collection<ITestResult> results) {
         for (ITestResult result : results) executions.add(new Execution(suite, test, status, result));

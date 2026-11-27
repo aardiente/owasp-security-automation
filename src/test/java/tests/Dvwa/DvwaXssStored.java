@@ -19,20 +19,27 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-/** Data-driven DVWA stored-XSS tests. The workbook chooses payloads, fields, and security levels. */
+/**
+ * Contains DVWA stored cross-site scripting tests. Uses spreadsheet cases to check the guestbook's behavior at each security level.
+ */
 public class DvwaXssStored extends BaseDvwaTest {
 
+    /**
+     * Fixed spreadsheet-based stored-XSS case, including its identifier, selected levels, field and expected observations.
+     */
     private record XssCase(String id, EnumSet<SecurityPage.SecurityLevel> levels,
                            ProbeField field, String payload) {
         /**
          * Returns a stable case and field identifier for evidence naming.
+         *
          * @return case and field identifier
          */
         @Override public String toString() { return id + "-" + field; }
     }
 
     /**
-     * Loads and validates stored-XSS workbook cases and expands their configured security levels.
+     * Loads and validates stored-XSS spreadsheet cases and expands their configured security levels.
+     *
      * @return security-level and case pairs for TestNG
      */
     @DataProvider(name = "storedXssPayloads")
@@ -70,7 +77,9 @@ public class DvwaXssStored extends BaseDvwaTest {
         return DvwaCases.levelFirst(cases, XssCase::levels, "Stored-XSS");
     }
 
-    /** A successfully executed, persisted event handler is a confirmed finding and fails the test. */
+    /**
+     * A successfully executed, persisted event handler is a confirmed finding and fails the test.
+     */
     @Test(dataProvider = "storedXssPayloads")
     public void storedXssIsBlocked(SecurityPage.SecurityLevel level, XssCase probe) {
         WebDriver driver = ZapManager.getDriver();

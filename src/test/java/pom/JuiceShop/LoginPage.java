@@ -12,7 +12,7 @@ import java.util.List;
 import java.time.Duration;
 
 /**
- * Juice Shop page object exposing Selenium interactions for the login view.
+ * Represents the Juice Shop sign-in page. Opens the login form, enters credentials and checks the visible sign-in state.
  */
 public class LoginPage extends BasePage {
 
@@ -34,9 +34,7 @@ public class LoginPage extends BasePage {
     private final By loginButton = By.id("loginButton");
 
     /**
-     * Creates the login page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a login page instance and initializes its dependencies.</p>
+     * Sets up the Juice Shop login page with the provided browser session.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -88,7 +86,7 @@ public class LoginPage extends BasePage {
     }
 
     /**
-     * Navigates to the login via navbar page using the application page object.
+     * Opens the login form through the navigation layout available in the current browser and waits for its email field.
      */
     @Override
     public void navigateToLoginViaNavbar() {
@@ -110,7 +108,7 @@ public class LoginPage extends BasePage {
     }
 
     /**
-     * Submits the supplied credentials using the Juice Shop login form.
+     * Submits the provided credentials using the Juice Shop login form.
      *
      * @param email the email address submitted as the account identifier
      * @param password the password submitted in the login request
@@ -144,9 +142,9 @@ public class LoginPage extends BasePage {
     }
 
     /**
-     * Checks whether user logged in is present or meets the expected condition.
+     * Checks for the visible logout control in the available account or compact navigation menu. Returns false if the authenticated state cannot be confirmed.
      *
-     * @return {@code true} when user logged in is satisfied; {@code false} otherwise
+     * @return true if a visible logout control confirms an authenticated session; otherwise false
      */
     public boolean isUserLoggedIn() {
         try {

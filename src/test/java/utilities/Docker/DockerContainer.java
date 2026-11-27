@@ -4,7 +4,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
 /**
- * Common lifecycle and addressing helpers for containerized lab services.
+ * Provides shared Docker container settings and startup tools for lab services. Gives related services access to a common network and their connection addresses.
  */
 public abstract class DockerContainer
 {
@@ -16,12 +16,10 @@ public abstract class DockerContainer
     protected String networkAlias;
 
     /**
-     * Creates the docker container component and initializes the dependencies required by its methods.
+     * Stores the Docker image and service port and creates a shared-network alias from the image name.
      *
-     * <p>Configures a reusable Docker container wrapper for an isolated test service.</p>
-     *
-     * @param name the finding, resource, or application name to resolve
-     * @param port the container port exposing the service to the test network
+     * @param name Docker image name, including its configured tag if present
+     * @param port service port inside the container
      */
     protected DockerContainer(String name, Integer port)
     {
@@ -84,9 +82,9 @@ public abstract class DockerContainer
     }
 
     /**
-     * Returns the host-mapped port for a container service.
+     * Returns the configured container-side service port, not the dynamically mapped host port.
      *
-     * @return the container port exposing the application service
+     * @return configured container-side service port
      */
     public Integer getExposedPort()
     {

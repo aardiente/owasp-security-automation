@@ -14,7 +14,7 @@ import org.openqa.selenium.Proxy;
 import org.openqa.selenium.Point;
 
 /**
- * Creates Selenium browser instances and applies viewport or ZAP proxy configuration for test execution.
+ * Creates browsers for automated tests. Applies the requested browser type, window size and other startup settings.
  */
 public class BrowserFactory {
 
@@ -22,7 +22,7 @@ public class BrowserFactory {
     private static final String zapOptions = "--proxy-bypass-list=<-loopback>";
 
     /**
-     * Formats the configured browser viewport as a browser startup window-size argument.
+     * Builds the Chromium startup window-size argument using the configured viewport dimensions.
      *
      * @return the viewport setting used to initialize a new browser
      */
@@ -31,8 +31,7 @@ public class BrowserFactory {
     }
 
     /**
-     * Applies the configured viewport dimensions and positions
-     * non-headless browsers at the top-left corner of the screen.
+     * Applies the configured dimensions to an existing browser window and requests top-left positioning when the browser is visible.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -45,7 +44,7 @@ public class BrowserFactory {
     }
 
     /**
-     * Creates a browser driver of the selected type using the configured headless and viewport settings.
+     * Creates the selected standalone browser driver with its supported headless and window configuration. Rejects unsupported browser choices or headless Safari.
      *
      * @param brow the browser implementation selected for the driver
      * @return a new WebDriver for the requested browser type
@@ -91,7 +90,7 @@ public class BrowserFactory {
     }
 
     /**
-     * Creates a Chrome driver configured to send browser traffic through the supplied ZAP proxy.
+     * Creates a proxy-connected Chrome WebDriver using the provided lab proxy address and the configured browser presentation settings.
      *
      * @param zapProxyAddress the host and port of the ZAP proxy used by Selenium
      * @return a new WebDriver configured to route HTTP(S) traffic through ZAP

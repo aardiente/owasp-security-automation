@@ -3,11 +3,13 @@ package utilities;
 import java.util.Locale;
 
 /**
- * Provides centralized operating system and display server detection
- * for platform-specific framework configuration.
+ * Identifies the operating system and, on Linux, the display system. Lets other classes choose suitable platform-specific settings.
  */
 public final class SystemEnvironment {
 
+    /**
+     * Standardized operating-system categories returned by the JVM platform detector, including a fallback for unrecognized names.
+     */
     public enum OperatingSystem {
         WINDOWS,
         MACOS,
@@ -18,6 +20,9 @@ public final class SystemEnvironment {
         UNKNOWN
     }
 
+    /**
+     * Standardized Linux display-session categories, including unknown and non-Linux states.
+     */
     public enum DisplayServer {
         WAYLAND,
         X11,
@@ -28,7 +33,7 @@ public final class SystemEnvironment {
     private static final OperatingSystem OS = detectOperatingSystem();
 
     /**
-     * Prevents instantiation of this utility class.
+     * Prevents creation of this utility class.
      */
     private SystemEnvironment() {}
 
@@ -72,8 +77,7 @@ public final class SystemEnvironment {
     }
 
     /**
-     * Determines whether the current operating system matches
-     * the specified operating system.
+     * Determines whether the current operating system matches the specified operating system.
      *
      * @param operatingSystem operating system to compare
      * @return true if the operating systems match
@@ -109,8 +113,7 @@ public final class SystemEnvironment {
     }
 
     /**
-     * Determines whether the current environment uses Linux
-     * with a Wayland display server.
+     * Determines whether the current environment uses Linux with a Wayland display server.
      *
      * @return true if Linux and Wayland are detected
      */

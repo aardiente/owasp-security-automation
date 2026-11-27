@@ -6,15 +6,13 @@ import utilities.JuiceShop.JuiceShopApi;
 import java.net.URI;
 import tests.JuiceShop.JuiceShopChallengeTestBase;
 
-/** HTTP-driven challenge checks with shared response evidence. */
+/**
+ * Contains API-based Juice Shop tests for shopping baskets, checkout and pricing challenges. Uses shared tools to check completion and capture results.
+ */
 public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
 
     /**
-     * Exercises the Juice Shop View Basket challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code viewAnotherBasket} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code View Basket}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks basket access authorization in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -31,11 +29,7 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Manipulate Basket challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code addProductToAnotherBasket} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Manipulate Basket}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks basket modification authorization in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -50,11 +44,7 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Deluxe Fraud challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Requests {@code /api/Users/}, {@code /rest/deluxe-membership} through the API client.</p>
-     * <p>Checks the Score Board challenge state for {@code Deluxe Fraud}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks membership and payment validation in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -76,11 +66,7 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Christmas Special challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Requests {@code /rest/products/search?q=}, {@code /rest/basket/} through the API client.</p>
-     * <p>Checks the Score Board challenge state for {@code Christmas Special}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks availability rules for retired catalog items in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -113,11 +99,7 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Payback Time challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Requests {@code /rest/basket/}, {@code /api/Products}, {@code /api/BasketItems/} through the API client.</p>
-     * <p>Checks the Score Board challenge state for {@code Payback Time}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks checkout price and quantity validation in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -189,11 +171,7 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Forged Coupon challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Requests {@code /rest/basket/}, {@code /api/Products} through the API client.</p>
-     * <p>Checks the Score Board challenge state for {@code Forged Coupon}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks coupon authenticity validation in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -259,11 +237,7 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Expired Coupon challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Requests {@code /api/Users/}, {@code /api/Products}, {@code /rest/basket/} through the API client.</p>
-     * <p>Checks the Score Board challenge state for {@code Expired Coupon}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks coupon expiration enforcement in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -332,7 +306,7 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
      * @param session the authenticated Juice Shop session containing the account and bearer token
      * @param productId the numeric product id used by the method
      * @param quantity the numeric quantity used by the method
-     * @return the HTTP response associated with the requested Juice Shop action
+     * @return the HTTP response linked to the requested Juice Shop action
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
     private java.net.http.HttpResponse<String> addProductToOwnBasket(JuiceShopApi.JuiceSession session, int productId, int quantity) throws Exception {
@@ -341,11 +315,11 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Finds the Juice Shop product identifier for a supplied product name.
+     * Finds the Juice Shop product identifier for a provided product name.
      *
      * @param body the request payload being serialized and submitted to the API
      * @param expectedName the product name whose matching identifier is requested
-     * @return the Juice Shop product identifier matching the supplied product name
+     * @return the Juice Shop product identifier matching the provided product name
      */
     @SuppressWarnings("unchecked")
     private int productIdByName(String body, String expectedName) {
@@ -378,7 +352,7 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
      * URL-encodes a request path or query segment for challenge probes.
      *
      * @param value the input value to convert or display
-     * @return the URI query component generated from the supplied request parameter
+     * @return the URI query component generated from the provided request parameter
      */
     private String encodePathQuery(String value) {
         return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
@@ -387,7 +361,7 @@ public class JuiceShopCommerceApiTest extends JuiceShopChallengeTestBase {
     /**
      * Encodes input bytes using the Z85 alphabet for a Juice Shop challenge.
      *
-     * @param text the input string being normalized, sanitized, or rendered
+     * @param text the input string being standardized, sanitized, or rendered
      * @return the Z85-encoded representation of the input bytes
      */
     private String z85Encode(String text) {

@@ -12,7 +12,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /**
- * Utility component for the selenium action logger functionality in the security automation framework.
+ * Records browser actions and errors in the test log to help explain what happened during a run.
  */
 public class SeleniumActionLogger implements WebDriverListener {
 
@@ -20,7 +20,7 @@ public class SeleniumActionLogger implements WebDriverListener {
     private static final Logger log = LoggerFactory.getLogger("org.openqa.selenium");
 
     /**
-     * Handles the pre-action event for get.
+     * Logs a browser navigation before it begins.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      * @param url the URL to navigate to, inspect, or request
@@ -31,7 +31,7 @@ public class SeleniumActionLogger implements WebDriverListener {
     }
 
     /**
-     * Handles the pre-action event for find element.
+     * Logs an element search before it begins.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      * @param locator the Selenium selector identifying the target element
@@ -42,7 +42,7 @@ public class SeleniumActionLogger implements WebDriverListener {
     }
 
     /**
-     * Handles the pre-action event for click.
+     * Logs a browser click before it occurs.
      *
      * @param element the Selenium page element being inspected or acted upon
      */
@@ -52,7 +52,7 @@ public class SeleniumActionLogger implements WebDriverListener {
     }
 
     /**
-     * Handles the pre-action event for send keys.
+     * Logs a browser typing action before it occurs.
      *
      * @param element the Selenium page element being inspected or acted upon
      * @param keysToSend the keystrokes provided to the selected Selenium element
@@ -63,12 +63,12 @@ public class SeleniumActionLogger implements WebDriverListener {
     }
 
     /**
-     * Handles the event for error.
+     * Records a browser error in the log.
      *
      * @param target the configured application/report target
      * @param method the HTTP request method or reflected Java method being processed
      * @param args the entry-point arguments (not currently used)
-     * @param e the Selenium listener exception associated with the failed action
+     * @param e the Selenium listener exception linked to the failed action
      */
     @Override
     public void onError(Object target, Method method, Object[] args, InvocationTargetException e) {

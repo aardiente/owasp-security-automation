@@ -8,15 +8,13 @@ import pom.JuiceShop.ScoreBoardPage;
 import utilities.ScreenshotManager;
 import tests.JuiceShop.JuiceShopChallengeTestBase;
 
-/** Browser-driven and mixed-channel challenge checks. */
+/**
+ * Contains the final Juice Shop notification and Score Board checks. Saves the challenge overview for the report.
+ */
 public class JuiceShopScoreBoardTest extends JuiceShopChallengeTestBase {
 
     /**
-     * Dismisses Juice Shop notifications and verifies completion of the Mass Dispel challenge.
-     *
-     * <p>Calls {@code dismissChallengeNotifications}, {@code waitForChallenge} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Mass Dispel}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
+     * Verifies the Mass Dispel challenge using the final notification state of the Juice Shop lab.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -34,12 +32,7 @@ public class JuiceShopScoreBoardTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Verifies the Juice Shop Score Board after the other challenge tests and exports challenge status JSON.
-     *
-     * <p>Uses the LoginPage, ScoreBoardPage page objects for browser interaction.</p>
-     * <p>Checks the Score Board challenge state for {@code Score Board}.</p>
-     * <p>Saves a browser screenshot for evidence.</p>
-     * <p>Runs at the final TestNG priority and exports challenge completion data after taking the Score Board screenshot.</p>
+     * Opens the final Score Board, checks its recorded completion state, and saves the challenge catalog for reporting.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */

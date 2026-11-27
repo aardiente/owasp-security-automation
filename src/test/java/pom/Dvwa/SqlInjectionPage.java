@@ -23,7 +23,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 
-/** DVWA SQL injection interactions for GET, POST dropdown, and session-popup input modes. */
+/**
+ * Represents DVWA's SQL injection practice page. Provides a shared way for tests to interact with the page and read results at different security levels.
+ */
 public class SqlInjectionPage extends BasePage {
     public static final String endpoint = "/vulnerabilities/sqli/";
     private static final By SQLI_MODULE = By.cssSelector(".vulnerable_code_area");
@@ -38,13 +40,15 @@ public class SqlInjectionPage extends BasePage {
     private final By highInputLink = By.cssSelector(".vulnerable_code_area a[onclick*='session-input.php']");
 
     /**
-     * Initializes the SQL injection page with the current WebDriver.
+     * Sets up the DVWA sql injection page with the provided browser session.
+     *
      * @param driver current test browser
      */
     public SqlInjectionPage(WebDriver driver) { super(driver); }
 
     /**
      * Opens the SQL injection module and waits for its form to appear.
+     *
      * @param baseUrl running application URL
      */
     public void open(String baseUrl) {
@@ -57,7 +61,9 @@ public class SqlInjectionPage extends BasePage {
         }
     }
 
-    /** Submits through DVWA's normal GET form (Low and Impossible). */
+    /**
+     * Submits through DVWA's normal GET form (Low and Impossible).
+     */
     public void injectPayload(String payload) {
         WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(idInput));
         input.clear();
@@ -67,7 +73,9 @@ public class SqlInjectionPage extends BasePage {
         wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
     }
 
-    /** Posts directly to the server because Medium exposes a fixed-value SELECT, not a text box. */
+    /**
+     * Posts directly to the server because Medium provides a fixed-value SELECT, not a text box.
+     */
     public HttpResponse<String> injectMediumPayload(String baseUrl, String payload) {
         List<WebElement> dropdowns = driver.findElements(By.cssSelector(".vulnerable_code_area select[name='id']"));
         if (dropdowns.isEmpty()) throw new IllegalStateException("Medium SQLi dropdown was not found");
@@ -104,7 +112,9 @@ public class SqlInjectionPage extends BasePage {
         }
     }
 
-    /** Uses DVWA's existing popup; submitting it sets the session ID tested on the main page. */
+    /**
+     * Uses DVWA's existing popup; submitting it sets the session ID tested on the main page.
+     */
     public void injectHighPayload(String baseUrl, String payload) {
         String originalHandle = driver.getWindowHandle();
         Set<String> previous = driver.getWindowHandles();
@@ -129,7 +139,9 @@ public class SqlInjectionPage extends BasePage {
         wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
     }
 
-    /** Reads the rendered response without retaining WebElements from a replaced document. */
+    /**
+     * Reads the rendered response without retaining WebElements from a replaced document.
+     */
     public String getInjectionResultText() {
         String html;
         try {
@@ -158,6 +170,7 @@ public class SqlInjectionPage extends BasePage {
 
     /**
      * Summarizes the current browser context for module-loading diagnostics.
+     *
      * @return diagnostic context string
      */
     private String pageContext() {
@@ -173,7 +186,9 @@ public class SqlInjectionPage extends BasePage {
                 + ", body=" + body.substring(0, Math.min(350, body.length()));
     }
 
-    /** Extracts the PRE blocks from Medium's actual HTTP response without executing their HTML. */
+    /**
+     * Extracts the PRE blocks from Medium's actual HTTP response without executing their HTML.
+     */
     public String getHttpResultText(String html) {
         java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?is)<pre\\b[^>]*>(.*?)</pre>").matcher(html);
         StringBuilder output = new StringBuilder();

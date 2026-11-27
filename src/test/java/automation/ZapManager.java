@@ -13,7 +13,7 @@ import utilities.reporting.ReportingConfiguration;
 import java.time.Duration;
 
 /**
- * Manages the per-thread ZAP container, API client, proxied WebDriver, and report export lifecycle.
+ * Manages the ZAP service and browsers that connect through it. Provides shared setup, report export and cleanup for test suites.
  */
 public class ZapManager {
 
@@ -22,12 +22,12 @@ public class ZapManager {
     private static final ThreadLocal<WebDriver> zapDriver = new ThreadLocal<>();
 
     /**
-     * Prevents direct instantiation of this utility class.
+     * Prevents direct creation of this utility class.
      */
     private ZapManager() {}
 
     /**
-     * Starts the ZAP container and initializes its API client for the current thread.
+     * Starts the ZAP container and sets up its API client for the current thread.
      */
     public static void initZap() {
         if (zapEnvironment.get() != null) return;
@@ -86,7 +86,7 @@ public class ZapManager {
     /**
      * Returns the ZAP-proxied WebDriver for the current thread.
      *
-     * @return the current thread’s Selenium driver configured for the ZAP proxy
+     * @return the current thread\u2019s Selenium driver configured for the ZAP proxy
      */
     public static WebDriver getDriver() {
         if (zapDriver.get() == null) {
@@ -109,7 +109,7 @@ public class ZapManager {
     /**
      * Returns the ZAP API client, initializing its environment if necessary.
      *
-     * @return the API client for the current thread’s ZAP instance
+     * @return the API client for the current thread\u2019s ZAP instance
      */
     public static ClientApi getZapClient() {
         if (zapClient.get() == null) {
@@ -133,18 +133,14 @@ public class ZapManager {
     }
 
     /**
-     * Waits for pending ZAP passive-scan records, then exports the captured findings as HTML and JSON.
-     *
-     * <p>Waits for passive processing to finish, then exports both HTML and JSON data from the current ZAP instance.</p>
+     * Waits for pending ZAP passive-scan records, then exports the captured findings as HTML and JSON. Waits for passive processing to finish, then exports both HTML and JSON data from the current ZAP instance.
      */
     public static void generateReport() {
         generateReport(AppConfig.zapDefaultReportName());
     }
 
     /**
-     * Waits for pending ZAP passive-scan records, then exports the captured findings as HTML and JSON.
-     *
-     * <p>Waits for passive processing to finish, then exports both HTML and JSON data from the current ZAP instance.</p>
+     * Waits for pending ZAP passive-scan records, then exports the captured findings as HTML and JSON. Waits for passive processing to finish, then exports both HTML and JSON data from the current ZAP instance.
      *
      * @param fileName the configured source or output filename
      */
@@ -194,7 +190,7 @@ public class ZapManager {
     }
 
     /**
-     * Stops and clears the thread-local ZAP browser, client, and container.
+     * Stops and clears the thread-specific ZAP browser, client, and container.
      */
     public static void quitZap() {
         quitZapDriver();

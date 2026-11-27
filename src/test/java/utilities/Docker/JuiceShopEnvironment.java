@@ -7,14 +7,12 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import java.time.Duration;
 
 /**
- * Starts and stops OWASP Juice Shop for isolated test execution.
+ * Manages the Juice Shop Docker container using the project's application settings.
  */
 public class JuiceShopEnvironment extends DockerContainer
 {
     /**
-     * Creates the juice shop environment component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates the Docker environment for Juice Shop.</p>
+     * Sets up the container wrapper with configured Juice Shop image and service settings.
      */
     public JuiceShopEnvironment()
     {

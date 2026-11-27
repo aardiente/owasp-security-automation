@@ -5,7 +5,9 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
-/** Encapsulates harmless command-injection probes and output verification for DVWA. */
+/**
+ * Represents DVWA's command injection practice page. Provides browser controls and results used by the related security test.
+ */
 public class CommandInjectionPage extends BasePage {
     private static final String ENDPOINT = "/vulnerabilities/exec/";
     private final By addressInput = By.name("ip");
@@ -13,13 +15,15 @@ public class CommandInjectionPage extends BasePage {
     private final By commandOutput = By.cssSelector(".vulnerable_code_area pre");
 
     /**
-     * Creates a page object for DVWA's command-injection exercise.
+     * Sets up the DVWA command injection page with the provided browser session.
+     *
      * @param driver active DVWA browser
      */
     public CommandInjectionPage(WebDriver driver) { super(driver); }
 
     /**
      * Opens the command-injection exercise and checks that its input is available.
+     *
      * @param baseUrl DVWA application's base URL
      */
     public void open(String baseUrl) {
@@ -28,9 +32,7 @@ public class CommandInjectionPage extends BasePage {
     }
 
     /**
-     * Submits a harmless marker probe appropriate to the selected lab level.
-     * Low accepts a statement separator; Medium and higher receive the pipe-based probe.
-     * A returned marker is the only accepted evidence of additional command execution.
+     * Submits a harmless marker probe appropriate to the selected lab level. Low accepts a statement separator; Medium and higher receive the pipe-based probe. A returned marker is the only accepted evidence of additional command execution.
      *
      * @param marker marker consisting exclusively of letters, digits, or underscores
      * @param level DVWA mode currently selected for this test
@@ -52,8 +54,7 @@ public class CommandInjectionPage extends BasePage {
     }
 
     /**
-     * Checks for a marker emitted as a complete output line by the server.
-     * This does not confuse merely echoing the submitted input with execution.
+     * Checks for a marker emitted as a complete output line by the server. This does not confuse merely echoing the submitted input with execution.
      *
      * @param marker the previously submitted output marker
      * @return true if a command-result line matches the marker exactly

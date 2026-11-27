@@ -7,18 +7,29 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-/** Request-level classification; original ZAP JSON is never modified. */
+/**
+ * Organizes saved scanner findings using the report's scope and review settings. Leaves the original scan results unchanged.
+ */
 final class FindingFilter {
 
+    /**
+     * Lists the possible review decisions for saved scanner findings.
+     */
     enum Decision { INCLUDE, REVIEW, SUPPRESS, OUT_OF_SCOPE }
+    /**
+     * Stores a review decision and its explanation.
+     */
     record Classification(Decision decision, String reason) {}
 
+    /**
+     * Stores a rule for matching scanner findings by name or ID and request path.
+     */
     private record Rule(String selector, String glob, Pattern pattern) {
         /**
-         * Performs the matches operation used by this component.
+         * Checks whether a saved finding matches the rule's finding name or ID and request path.
          *
          * @param pluginId the ZAP plugin identifier for the finding
-         * @param findingName the human-readable ZAP alert name
+         * @param findingName the readable ZAP alert name
          * @param path the path or URL passed to the request or file operation
          * @return {@code true} when the finding and URL path match this rule
          */
@@ -27,9 +38,9 @@ final class FindingFilter {
                     && pattern.matcher(path).matches();
         }
         /**
-         * Performs the description operation used by this component.
+         * Formats the rule name and optional path pattern for display in the report.
          *
-         * @return the human-readable selector and path pattern for this rule
+         * @return the readable selector and path pattern for this rule
          */
         String description() { return glob.equals("*") ? selector : selector + "@" + glob; }
     }
@@ -40,13 +51,11 @@ final class FindingFilter {
     private final List<Rule> suppress;
 
     /**
-     * Creates the finding filter component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a per-target scope and triage filter from report settings.</p>
+     * Loads the application address, allowed paths and rules for reviewing or hiding saved findings.
      *
      * @param config the reporting configuration used to resolve paths and rules
      * @param id the configured identifier to look up
-     * @param site the application origin used as the report scope
+     * @param site the application address used as the report scope
      * @throws IOException if a required file or HTTP stream cannot be read or written
      */
     FindingFilter(ReportingConfiguration config, String id, String site) throws IOException {
@@ -68,7 +77,7 @@ final class FindingFilter {
     }
 
     /**
-     * Checks whether the supplied request URL belongs to the configured application origin.
+     * Checks whether the request belongs to the application being assessed.
      *
      * @param url the URL to navigate to, inspect, or request
      * @return {@code true} when the URL shares the configured scheme, hostname, and effective port
@@ -79,14 +88,12 @@ final class FindingFilter {
     }
 
     /**
-     * Assigns a report finding to INCLUDE, REVIEW, SUPPRESS, or OUT_OF_SCOPE based on configured policy.
-     *
-     * <p>A finding can be included, marked for review, suppressed by rule, or excluded when its URL is outside the configured target origin or path.</p>
+     * Applies the report's scope and review rules to a saved request and explains the result.
      *
      * @param url the URL to navigate to, inspect, or request
      * @param pluginId the ZAP plugin identifier for the finding
-     * @param findingName the human-readable ZAP alert name
-     * @return the in-scope, review, suppression, or out-of-scope decision with its reason
+     * @param findingName the readable ZAP alert name
+     * @return the within the assessment scope, review, suppression, or outside the assessment scope decision with its reason
      */
     Classification classify(String url, String pluginId, String findingName) {
         URI uri;
@@ -117,7 +124,7 @@ final class FindingFilter {
     }
 
     /**
-     * Compares a candidate URI against the configured scheme, host, and effective port.
+     * Checks whether a URL uses the same protocol, host and port as the application.
      *
      * @param uri the URI whose scheme, host and port are being examined
      * @return {@code true} when the candidate URI has the configured origin
@@ -140,17 +147,17 @@ final class FindingFilter {
     }
 
     /**
-     * Normalizes a finding name for case-insensitive rule matching.
+     * Standardizes a finding name for case-insensitive rule matching.
      *
      * @param name the finding, resource, or application name to resolve
-     * @return normalized alert text used for case-insensitive rule matching
+     * @return standardized alert text used for case-insensitive rule matching
      */
     private static String normalized(String name) {
         return name == null ? "" : name.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
     /**
-     * Parses the configured review and suppression rules into matchable expressions.
+     * Prepares the review and suppression rules for matching against saved findings.
      *
      * @param raw the unparsed source value or rule expression
      * @return the parsed finding-name/path rules declared in reporting configuration

@@ -7,14 +7,12 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.AfterMethod;
 
 /**
- * Provides the common per-invocation browser lifecycle
- * for tests using the ZAP proxy.
+ * Provides common browser setup and cleanup for tests that use ZAP. Keeps final results visible for the configured time before closing the browser.
  */
 public abstract class ProxiedBrowserTest {
 
     /**
-     * Opens a fresh proxy-backed browser and applies
-     * target-specific browser settings.
+     * Opens a fresh proxy-connected browser and applies target-specific browser settings.
      */
     @BeforeMethod
     public void initBrowser() {
@@ -23,19 +21,14 @@ public abstract class ProxiedBrowserTest {
     }
 
     /**
-     * Allows application-specific browser settings without
-     * duplicating browser setup and teardown.
+     * Allows application-specific browser settings without duplicating browser setup and cleanup.
      *
-     * @param driver active proxy-backed WebDriver
+     * @param driver active proxy-connected WebDriver
      */
     protected void configureBrowser(WebDriver driver) {}
 
     /**
-     * Displays the final browser state for the configured
-     * result presentation duration before closing the browser.
-     *
-     * <p>Browser resources are released regardless of the test
-     * outcome or interruption of the presentation delay.</p>
+     * Displays the final browser state for the configured result presentation duration before closing the browser. Browser resources are released regardless of the test outcome or interruption of the presentation delay.
      */
     @AfterMethod(alwaysRun = true)
     public void closeBrowser() {

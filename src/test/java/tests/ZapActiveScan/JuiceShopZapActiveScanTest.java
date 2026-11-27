@@ -10,7 +10,7 @@ import tests.JuiceShop.JuiceShopBaseTest;
 import java.time.Duration;
 
 /**
- * Standalone Juice Shop assessment that launches a bounded ZAP scan independently of the challenge suite.
+ * Contains the standalone ZAP assessment test for Juice Shop. Records the assessment outcome separately from the challenge tests.
  */
 public class JuiceShopZapActiveScanTest extends JuiceShopBaseTest {
 
@@ -25,9 +25,7 @@ public class JuiceShopZapActiveScanTest extends JuiceShopBaseTest {
     }
 
     /**
-     * Runs the standalone Juice Shop ZAP active scan and verifies completion status.
-     *
-     * <p>Executes only when the standalone active-scan suite is selected; normal challenge execution does not launch this scan.</p>
+     * Runs the standalone Juice Shop ZAP active scan and verifies completion status. Executes only when the standalone active-scan suite is selected; normal challenge execution does not launch this scan.
      */
     @Test
     public void testJuiceShopActiveScan() {

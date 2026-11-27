@@ -9,17 +9,17 @@ import java.io.InputStream;
 import java.io.IOException;
 
 /**
- * Loads Excel worksheets into TestNG-compatible two-dimensional test data.
+ * Reads test data from an Excel worksheet and prepares it for use by TestNG. Can leave out the heading row.
  */
 public class ExcelFileReader {
 
     // 1. Original Signature: Defaults to skipping the header (Keeps JuiceShop/Logins working)
     /**
-     * Reads tabular test payloads from an Excel workbook into a TestNG-compatible two-dimensional array.
+     * Reads table-based test payloads from an Excel spreadsheet into a TestNG-compatible table of values.
      *
      * @param fileName the configured source or output filename
      * @param sheetName the worksheet name, or {@code null} for the default worksheet
-     * @return the TestNG data-provider matrix; each row contains the parameters for one test invocation
+     * @return the TestNG data-provider matrix; each row contains the parameters for one test run
      */
     public static Object[][] extractData(String fileName, String sheetName) {
         return extractData(fileName, sheetName, true);
@@ -27,12 +27,12 @@ public class ExcelFileReader {
 
     // 2. New Signature: Allows you to explicitly say "false" to read row 0
     /**
-     * Reads tabular test payloads from an Excel workbook into a TestNG-compatible two-dimensional array.
+     * Reads table-based test payloads from an Excel spreadsheet into a TestNG-compatible table of values.
      *
      * @param fileName the configured source or output filename
      * @param sheetName the worksheet name, or {@code null} for the default worksheet
      * @param skipHeader whether to omit the first worksheet row
-     * @return the TestNG data-provider matrix; each row contains the parameters for one test invocation
+     * @return the TestNG data-provider matrix; each row contains the parameters for one test run
      */
     public static Object[][] extractData(String fileName, String sheetName, boolean skipHeader) {
         Object[][] data = null;

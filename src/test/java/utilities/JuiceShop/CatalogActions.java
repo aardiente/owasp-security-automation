@@ -5,19 +5,20 @@ import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.Map;
 
-/** Application-specific catalog actions relocated from the original challenge helper. */
+/**
+ * Groups product catalog and review operations used by the Juice Shop lab tests.
+ */
 public final class CatalogActions extends ActionContext {
     /**
-     * Uses the shared per-test HTTP client and JSON serializer.
+     * Uses the shared per-test HTTP client and JSON JSON converter.
+     *
      * @param api configured application client
-     * @param json shared JSON serializer
+     * @param json shared JSON JSON converter
      */
     CatalogActions(JuiceShopApi api, Json json) { super(api, json); }
 
     /**
-     * Performs the tamper with product description action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /api/Products/9}.</p>
+     * Collects the catalog update observation used by the product-integrity challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -29,7 +30,7 @@ public final class CatalogActions extends ActionContext {
     }
 
     /**
-     * Performs the update all reviews via no SQL action against the isolated Juice Shop test application.
+     * Collects the review-integrity observation used by the related lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written

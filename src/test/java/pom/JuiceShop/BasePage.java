@@ -10,7 +10,7 @@ import pom.common.BrowserPage;
 import java.time.Duration;
 
 /**
- * Juice Shop page object exposing Selenium interactions for the base view.
+ * Provides common browser controls and navigation for Juice Shop pages. Shares storefront navigation, dialog handling and product search.
  */
 public abstract class BasePage extends BrowserPage {
 
@@ -22,9 +22,7 @@ public abstract class BasePage extends BrowserPage {
     private final By searchBarInput = By.id("mat-input-0");
 
     /**
-     * Creates the base page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a base page instance and initializes its dependencies.</p>
+     * Sets up the Juice Shop base page with the provided browser session. Uses the configured site-specific wait inherited from the base page.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -47,7 +45,7 @@ public abstract class BasePage extends BrowserPage {
     }
 
     /**
-     * Navigates to the login via navbar page using the application page object.
+     * Opens the storefront account menu and selects the login control using browser waits.
      */
     public void navigateToLoginViaNavbar() {
         wait.until(ExpectedConditions.elementToBeClickable(navAccountMenu)).click();

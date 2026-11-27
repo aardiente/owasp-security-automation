@@ -6,7 +6,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 /**
- * DVWA page object exposing Selenium interactions for the login module.
+ * Represents the DVWA sign-in page. Enters the lab credentials and provides access to the browser used by tests.
  */
 public class LoginPage extends BasePage {
 
@@ -17,9 +17,7 @@ public class LoginPage extends BasePage {
     private final By loginButton = By.name("Login");
 
     /**
-     * Creates the login page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a login page instance and initializes its dependencies.</p>
+     * Sets up the DVWA login page with the provided browser session.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */

@@ -16,19 +16,17 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * Runs a bounded ZAP spider and active scan against a configured lab URL and exports machine-readable completion metadata.
+ * Manages the standalone ZAP assessment of a lab application and saves its completion status for reports.
  */
 public final class ZapActiveScan {
 
     /**
-     * Prevents direct instantiation of this utility class.
+     * Prevents direct creation of this utility class.
      */
     private ZapActiveScan() {}
 
     /**
-     * Spiders and actively scans a configured lab origin within a deadline, writing a JSON execution summary.
-     *
-     * <p>Allocates part of the deadline to a ZAP spider crawl and spends the remainder on active scanning; writes completion, progress, timing, and error fields even on failure.</p>
+     * Spiders and actively scans a configured lab origin within a deadline, writing a JSON execution summary. Allocates part of the deadline to a ZAP spider crawl and spends the remainder on active scanning; writes completion, progress, timing, and error fields even on failure.
      *
      * @param targetUrl the HTTP(S) URL of the authorized lab application to spider and scan
      * @param limit the maximum allowed duration for the spider and active scan
