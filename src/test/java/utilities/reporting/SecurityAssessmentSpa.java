@@ -385,6 +385,7 @@ public final class SecurityAssessmentSpa {
             test.put("securityLevel", row.getOrDefault("SecurityLevel", ""));
             test.put("durationMs", row.getOrDefault("DurationMs", ""));
             test.put("error", row.getOrDefault("Error", ""));
+            test.put("failureKind", row.getOrDefault("FailureKind", ""));
             test.put("screenshots", List.of());
             test.put("ambiguousEvidence", false);
 

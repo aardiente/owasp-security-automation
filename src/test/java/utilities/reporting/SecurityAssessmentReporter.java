@@ -33,7 +33,7 @@ public class SecurityAssessmentReporter implements IReporter {
      * Standardized execution details and evidence links rendered in a static assessment.
      */
     private record TestCase(String method, String className, String variant, String status,
-                            long durationMs, long startMs, String error, List<String> screenshots) {}
+                            long durationMs, long startMs, String error, String failureKind, List<String> screenshots) {}
     /**
      * Report data for one saved scanner finding and its associated evidence.
      */
@@ -128,7 +128,7 @@ public class SecurityAssessmentReporter implements IReporter {
                 if (candidate.matches("[A-Za-z0-9_-]{1,32}")) variant = candidate;
             }
             tests.add(new TestCase(execution.method(), execution.className(), variant, execution.status().name(),
-                    execution.durationMs(), result.getStartMillis(), execution.error(), screenshotLinks(result, config)));
+                    execution.durationMs(), result.getStartMillis(), execution.error(), execution.failureKind(), screenshotLinks(result, config)));
         }
         return tests;
     }
@@ -464,6 +464,8 @@ public class SecurityAssessmentReporter implements IReporter {
         card(html, tests.size(), "Executed tests");
         card(html, passed, "Passed");
         card(html, failed, "Failed");
+        card(html, tests.stream().filter(t -> t.failureKind().equals("EXECUTION_ERROR")).count(),
+                "Execution errors (included in failed)");
         card(html, skipped, "Skipped");
         card(html, screenshots, "Evidence images");
 
@@ -546,7 +548,7 @@ public class SecurityAssessmentReporter implements IReporter {
                     <h2>Automated Test Results &amp; Screenshots</h2>
                     <p class="note">Expand a test to view screenshot evidence captured during
                     that execution. A passed test or screenshot does not independently prove
-                    vulnerability exploitability or challenge completion.</p>
+                    vulnerability exploitability or challenge completion. An execution error is not a security finding.</p>
                     <div class="test-result-list">
                 """);
 
@@ -584,7 +586,12 @@ public class SecurityAssessmentReporter implements IReporter {
                 .append(escape(test.className())).append("</p>");
 
         if (!test.error().isBlank()) {
-            html.append("<h3>Test Error</h3><pre class=\"test-error\">")
+            String heading = switch (test.failureKind()) {
+                case "ASSERTION" -> "Assertion failure";
+                case "EXECUTION_ERROR" -> "Execution error — result not validated";
+                default -> "Test failure";
+            };
+            html.append("<h3>").append(escape(heading)).append("</h3><pre class=\"test-error\">")
                     .append(escape(test.error())).append("</pre>");
         }
 

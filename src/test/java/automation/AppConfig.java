@@ -139,6 +139,15 @@ public final class AppConfig {
     }
 
     /**
+     * Checks whether visible demonstration effects should run.
+     *
+     * @return true only when slow motion is enabled and the browser is visible
+     */
+    public static boolean isPresentationEnabled() {
+        return !isHeadless() && isSlowMoEnabled();
+    }
+
+    /**
      * Returns the current interaction delay in milliseconds. The live presentation controller can override this value without restarting the suite.
      *
      * @return the pause duration in milliseconds
@@ -268,7 +277,7 @@ public final class AppConfig {
      * Keeps the current result visible for the configured time when slow-motion mode is enabled. Skips the pause when the delay is zero and handles interruptions without losing their status.
      */
     public static void pauseForResults() {
-        if (!isSlowMoEnabled()) return;
+        if (!isPresentationEnabled()) return;
 
         int delay = showResultsMs();
         if (delay == 0) return;

@@ -50,7 +50,7 @@ public class CommandInjectionPage extends BasePage {
         input.clear();
         input.sendKeys(inputValue);
         wait.until(ExpectedConditions.elementToBeClickable(submitButton)).click();
-        wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+        waitForNewPage(input, addressInput);
     }
 
     /**

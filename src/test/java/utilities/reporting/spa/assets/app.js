@@ -1020,9 +1020,12 @@ function makeTestExecution(test, ordinal) {
   add(summary, main, meta);
   const body = node("div", "result-content");
 
-  if (test.error)
-    body.append(textSection(
-        "Test failure", test.error.replaceAll("\\n", "\n"), true));
+  if (test.error) {
+    const heading = test.failureKind === "EXECUTION_ERROR"
+        ? "Execution error — result not validated"
+        : test.failureKind === "ASSERTION" ? "Assertion failure" : "Test failure";
+    body.append(textSection(heading, test.error.replaceAll("\\n", "\n"), true));
+  }
 
   const screenshots = Array.isArray(test.screenshots)
       ? test.screenshots : [];

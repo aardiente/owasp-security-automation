@@ -45,27 +45,27 @@ public class SecurityPage extends BasePage {
         String expectedLevel = lvl.getSecurityLevel();
         wait.until(ExpectedConditions.urlContains(securityEndpoint));
 
-        WebElement dropdown = wait.until(ExpectedConditions.visibilityOfElementLocated(SECURITY_LEVEL_DROPDOWN));
-        new Select(dropdown).selectByValue(expectedLevel);
-
-        wait.until(ExpectedConditions.elementToBeClickable(SUBMIT_BUTTON)).click();
-
         try {
-            // An existing cookie can already match the requested level before the form reloads.
-            wait.until(ExpectedConditions.stalenessOf(dropdown));
+            // Repeat only the idempotent selection if navigation detaches the form.
+            WebElement dropdown = waitForPageValue(d -> {
+                WebElement current = d.findElement(SECURITY_LEVEL_DROPDOWN);
+                if (!current.isDisplayed() || !current.isEnabled()) return null;
+                new Select(current).selectByValue(expectedLevel);
+                return current;
+            });
+
+            // Submit once. A failed click must not silently become a successful setup.
+            waitForPageValue(ExpectedConditions.elementToBeClickable(SUBMIT_BUTTON)::apply).click();
+            waitForNewPage(dropdown, SECURITY_LEVEL_DROPDOWN);
             wait.until(ExpectedConditions.urlContains(securityEndpoint));
-            wait.until(d -> {
+            waitForPageValue(d -> {
                 Cookie cookie = d.manage().getCookieNamed("security");
                 if (cookie == null || !expectedLevel.equalsIgnoreCase(cookie.getValue())) return false;
 
                 WebElement currentDropdown = ExpectedConditions.visibilityOfElementLocated(SECURITY_LEVEL_DROPDOWN).apply(d);
                 if (currentDropdown == null) return false;
-                try {
-                    return expectedLevel.equalsIgnoreCase(new Select(currentDropdown)
-                            .getFirstSelectedOption().getAttribute("value"));
-                } catch (org.openqa.selenium.StaleElementReferenceException e) {
-                    return false;
-                }
+                return expectedLevel.equalsIgnoreCase(new Select(currentDropdown)
+                        .getFirstSelectedOption().getDomAttribute("value"));
             });
         } catch (TimeoutException e) {
             Cookie cookie = driver.manage().getCookieNamed("security");

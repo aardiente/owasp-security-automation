@@ -46,8 +46,7 @@ public final class PresentationController implements IExecutionListener {
      */
     @Override
     public void onExecutionStart() {
-        if (AppConfig.isHeadless()
-                || !AppConfig.isSlowMoEnabled()
+        if (!AppConfig.isPresentationEnabled()
                 || GraphicsEnvironment.isHeadless()) return;
 
         SwingUtilities.invokeLater(this::createWindow);

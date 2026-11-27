@@ -28,7 +28,7 @@ public class TestNgResultsReporter implements IReporter {
     @Override
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
         List<String> rows = new ArrayList<>();
-        rows.add("Suite,Test,Class,Method,Status,DurationMs,Error,Screenshot,SecurityLevel");
+        rows.add("Suite,Test,Class,Method,Status,DurationMs,Error,Screenshot,SecurityLevel,FailureKind");
 
         for (TestExecutions.Execution execution : TestExecutions.from(suites)) {
             Object captured = execution.result().getAttribute(ScreenshotManager.EVIDENCE_ATTRIBUTE);
@@ -37,7 +37,7 @@ public class TestNgResultsReporter implements IReporter {
                     ReportCsv.quote(execution.className()), ReportCsv.quote(execution.method()),
                     ReportCsv.quote(execution.status().name()), String.valueOf(execution.durationMs()),
                     ReportCsv.quote(execution.error()), ReportCsv.quote(screenshot),
-                    ReportCsv.quote(execution.securityLevel())));
+                    ReportCsv.quote(execution.securityLevel()), ReportCsv.quote(execution.failureKind())));
         }
 
         try {

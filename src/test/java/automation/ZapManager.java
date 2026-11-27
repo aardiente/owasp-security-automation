@@ -101,8 +101,8 @@ public class ZapManager {
      */
     public static void quitZapDriver() {
         if (zapDriver.get() != null) {
-            zapDriver.get().quit();
-            zapDriver.remove();
+            try { zapDriver.get().quit(); }
+            finally { zapDriver.remove(); }
         }
     }
 

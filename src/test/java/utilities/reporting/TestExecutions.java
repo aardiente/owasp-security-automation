@@ -57,6 +57,19 @@ final class TestExecutions {
             };
         }
         /**
+         * Identifies whether a failed test reached an assertion or stopped
+         * with an execution error. Neither classification alone proves a finding.
+         *
+         * @return the failure category, or an empty string for other results
+         */
+        String failureKind() {
+            if (status != Status.FAILED) return "";
+            Throwable error = result.getThrowable();
+            if (error == null) return "UNCLASSIFIED";
+            return error instanceof AssertionError ? "ASSERTION" : "EXECUTION_ERROR";
+        }
+
+        /**
          * Returns the failure summary, or an empty string.
          */
         String error() { return result.getThrowable() == null ? "" : result.getThrowable().toString(); }

@@ -38,7 +38,7 @@ public final class PresentationOverlay {
      * @param detail the contextual explanation shown beside the presentation overlay action
      */
     public static void show(WebDriver driver, String action, String fallbackCode, String detail) {
-        if (!AppConfig.isSlowMoEnabled() || AppConfig.isHeadless()) return;
+        if (!AppConfig.isPresentationEnabled()) return;
 
         try {
             SourceFrame test = null;

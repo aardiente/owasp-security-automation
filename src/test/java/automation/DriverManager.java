@@ -51,7 +51,7 @@ public class DriverManager {
     public static void quitDriver() {
         if (driver.get() == null) return;
 
-        driver.get().quit();
-        driver.remove();
+        try { driver.get().quit(); }
+        finally { driver.remove(); }
     }
 }

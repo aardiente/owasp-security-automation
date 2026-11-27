@@ -49,7 +49,7 @@ public class SlowMoListener implements WebDriverListener {
      */
     @Override
     public void afterGet(WebDriver driver, String url) {
-        if (!AppConfig.isSlowMoEnabled() || AppConfig.isHeadless()) return;
+        if (!AppConfig.isPresentationEnabled()) return;
 
         // Internal challenge verification isn't a presentation screen.
         if (url != null && url.contains("/api/Challenges")) return;
@@ -78,7 +78,7 @@ public class SlowMoListener implements WebDriverListener {
     public void beforeClick(WebElement element) {
         log.info("Clicking element: {}", element);
 
-        if (AppConfig.isSlowMoEnabled()) {
+        if (AppConfig.isPresentationEnabled()) {
             PresentationOverlay.show(driver, "CLICK", "element.click();", "Clicking page element");
             highlightAndPause(element);
         }
@@ -94,7 +94,7 @@ public class SlowMoListener implements WebDriverListener {
     public void beforeSendKeys(WebElement element, CharSequence... keysToSend) {
         log.debug("Sending keys to element: {}", element);
 
-        if (AppConfig.isSlowMoEnabled()) {
+        if (AppConfig.isPresentationEnabled()) {
             PresentationOverlay.show(driver, "TYPE", "element.sendKeys(...);", inputPreview(element, keysToSend));
             highlightAndPause(element);
         }

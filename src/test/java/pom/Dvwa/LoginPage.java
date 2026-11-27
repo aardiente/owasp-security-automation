@@ -42,14 +42,10 @@ public class LoginPage extends BasePage {
         pass.clear();
         pass.sendKeys(password);
 
-        wait.until(
-                ExpectedConditions.elementToBeClickable(loginButton)).click();
+        waitForPageValue(ExpectedConditions.elementToBeClickable(loginButton)::apply).click();
 
-        // Leaving login.php can also mean a setup or error redirect.
-        // Require evidence of an authenticated page.
-        wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.linkText("Logout")));
+        // Wait for the login form to be replaced and require an authenticated page.
+        waitForNewPage(user, By.linkText("Logout"));
     }
 
     /**

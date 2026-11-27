@@ -293,7 +293,7 @@ public class ScreenshotManager {
      * @param screenshotPath the generated screenshot file to associate with the test
      */
     private static void showResult(WebDriver driver, Path screenshotPath) {
-        if (AppConfig.isSlowMoEnabled() && !AppConfig.isHeadless()) {
+        if (AppConfig.isPresentationEnabled()) {
             PresentationOverlay.show(driver, "RESULT",
                     "ScreenshotManager.capture(driver);",
                     "Evidence captured: " + screenshotPath.getFileName());
