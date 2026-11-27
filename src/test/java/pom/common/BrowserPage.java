@@ -4,15 +4,18 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 
-/** Shared Selenium context for site-specific page objects. */
+/**
+ * Provides common browser and waiting tools for page objects, avoiding repeated setup in each page class.
+ */
 public abstract class BrowserPage {
     protected final WebDriver driver;
     protected final WebDriverWait wait;
 
     /**
-     * Initializes explicit waits for the supplied browser without changing implicit wait policy.
+     * Sets up the shared browser page with the provided browser session.
+     *
      * @param driver current test browser
-     * @param timeout target-specific explicit wait duration
+     * @param timeout target-specific browser wait duration
      */
     protected BrowserPage(WebDriver driver, Duration timeout) {
         this.driver = driver;

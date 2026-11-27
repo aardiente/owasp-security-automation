@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * Captures browser or HTTP response evidence and attaches screenshot paths to TestNG results.
+ * Captures and saves screenshots during tests. Associates each image with its test result and can display it during demonstrations.
  */
 public class ScreenshotManager {
 
@@ -45,11 +45,13 @@ public class ScreenshotManager {
     private static final Pattern LEGACY_TIMESTAMP_NAME = Pattern.compile(".+-\\d{8}-\\d{6}-\\d{3}-\\d+\\.png");
 
     /**
-     * Prevents direct instantiation of this utility class.
+     * Prevents direct creation of this utility class.
      */
     private ScreenshotManager() {}
 
-    /** Uses the same evidence root and target metadata as both report consumers. */
+    /**
+     * Uses the same screenshot folder and target details as both report readers.
+     */
     private static ReportingConfiguration reportingConfig() {
         try {
             return ReportingConfiguration.load();
@@ -59,9 +61,7 @@ public class ScreenshotManager {
     }
 
     /**
-     * Captures the browser viewport, saves it under the current TestNG test, and records the evidence path.
-     *
-     * <p>Writes a screenshot under the current test class/method and attaches the evidence path to its TestNG result.</p>
+     * Takes a screenshot of the browser and saves it with the current test result.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -130,7 +130,7 @@ public class ScreenshotManager {
     }
 
     /**
-     * Captures visual evidence associated with a browser alert and its message.
+     * Captures visual evidence linked to a browser alert and its message.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      * @param alertText the message displayed in the JavaScript alert being captured
@@ -185,7 +185,8 @@ public class ScreenshotManager {
     }
 
     /**
-     * Persists a browser viewport screenshot and associates it with the current test.
+     * Saves a browser viewport screenshot and associates it with the current test.
+     *
      * @param driver browser providing screenshot bytes
      * @param destination resolved evidence path
      * @throws IOException if the screenshot cannot be written
@@ -196,7 +197,8 @@ public class ScreenshotManager {
     }
 
     /**
-     * Applies the common evidence cleanup and TestNG metadata policy after a successful write.
+     * Applies the common evidence cleanup and TestNG details policy after a successful write.
+     *
      * @param destination saved evidence path
      */
     private static void finalizeEvidence(Path destination) {
@@ -207,8 +209,6 @@ public class ScreenshotManager {
     /**
      * Associates an existing screenshot path with the current TestNG execution.
      *
-     * <p>Stores the exact captured screenshot path as metadata on the current TestNG execution.</p>
-     *
      * @param screenshotPath the generated screenshot file to associate with the test
      */
     private static void recordEvidence(Path screenshotPath) {
@@ -217,9 +217,7 @@ public class ScreenshotManager {
     }
 
     /**
-     * Calculates the screenshot destination for the current test and its parameter set.
-     *
-     * <p>Uses the configured target folder and naming mode, class, method, and parameter hash when needed.</p>
+     * Chooses where to save the screenshot using the configured naming rules and the current test details.
      *
      * @return the generated evidence path for the currently executing TestNG method
      */
@@ -306,9 +304,7 @@ public class ScreenshotManager {
     }
 
     /**
-     * Renders an HTTP response in a temporary browser page and captures it as test evidence.
-     *
-     * <p>Creates a temporary HTML preview of an HTTP response and screenshots it with the existing browser.</p>
+     * Displays an API response in a temporary browser page and captures a screenshot for the report.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      * @param response the HTTP response to display as screenshot evidence

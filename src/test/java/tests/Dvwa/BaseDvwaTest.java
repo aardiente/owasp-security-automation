@@ -19,7 +19,7 @@ import tests.framework.ProxiedBrowserTest;
 import java.time.Duration;
 
 /**
- * Provides shared TestNG suite setup and teardown for the Docker-based DVWA tests, including database initialization and ZAP reporting.
+ * Provides the shared setup and cleanup for DVWA tests. Manages the lab, scanner, sign-in and security settings.
  */
 public abstract class BaseDvwaTest extends ProxiedBrowserTest {
 
@@ -29,14 +29,14 @@ public abstract class BaseDvwaTest extends ProxiedBrowserTest {
     /**
      * Selects the output filename for the DVWA suite's ZAP report; standalone subclasses may override it.
      *
-     * @return the HTML report filename selected for DVWA suite teardown
+     * @return the HTML report filename selected for DVWA suite cleanup
      */
     protected String zapReportName() {
         return AppConfig.zapDvwaPassiveReportName();
     }
 
     /**
-     * TestNG suite setup: starts the DVWA container, initializes ZAP, and prepares the DVWA database.
+     * TestNG suite setup: starts the DVWA container, sets up ZAP, and prepares the DVWA database.
      */
     @BeforeSuite
     public void startServer() {
@@ -54,7 +54,9 @@ public abstract class BaseDvwaTest extends ProxiedBrowserTest {
                 });
     }
 
-    /** Exports the DVWA report and releases the shared target and scanner. */
+    /**
+     * Exports the DVWA report and releases the shared target and scanner.
+     */
     @AfterSuite(alwaysRun = true)
     public void stopServer() {
         try { LAB.stop(zapReportName()); }
@@ -62,9 +64,8 @@ public abstract class BaseDvwaTest extends ProxiedBrowserTest {
     }
 
     /**
-     * Opens DVWA setup, creates its database, and performs the initial administrator login.
+     * Opens DVWA setup, creates its database, and performs the initial administrator login. Opens the DVWA setup page, presses the database initialization control, and authenticates to prepare the test suite.
      *
-     * <p>Opens the DVWA setup page, presses the database initialization control, and authenticates to prepare the test suite.</p>
      * @param baseUrl running application URL
      */
     private void initializeDatabase(String baseUrl) {
@@ -105,7 +106,8 @@ public abstract class BaseDvwaTest extends ProxiedBrowserTest {
 
     /**
      * Logs in and selects the requested DVWA mode using the original page objects.
-     * @param level security level for this invocation
+     *
+     * @param level security level for this test run
      * @return authenticated login page for subsequent navigation
      */
     protected LoginPage prepareSecurityLevel(SecurityPage.SecurityLevel level) {
@@ -118,7 +120,9 @@ public abstract class BaseDvwaTest extends ProxiedBrowserTest {
         return loginPage;
     }
 
-    /** Enumerates all existing DVWA modes in the established order. */
+    /**
+     * Enumerates all existing DVWA modes in the established order.
+     */
     @DataProvider(name = "securityModes")
     public Object[][] securityModes() {
         return java.util.Arrays.stream(SecurityPage.SecurityLevel.values())

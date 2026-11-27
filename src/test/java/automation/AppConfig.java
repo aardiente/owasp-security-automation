@@ -9,19 +9,19 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 /**
- * Reads browser, presentation, and ZAP settings from the bundled configuration, with system-property overrides. Invalid required values are rejected early.
+ * Manages the project's settings. Reads the configuration file and allows settings to be overridden while the program is running.
  */
 public final class AppConfig {
 
     private static final Properties properties = loadProperties();
 
     /**
-     * Prevents direct instantiation of this utility class.
+     * Prevents this shared configuration class from being created as an object.
      */
     private AppConfig() {}
 
     /**
-     * Loads the bundled application settings and rejects a missing or unreadable configuration resource.
+     * Loads the configuration file when the class starts. Reports an error if the file cannot be read.
      *
      * @return the loaded key/value configuration, including defaults from the bundled resource
      */
@@ -40,12 +40,10 @@ public final class AppConfig {
     }
 
     /**
-     * Resolves a required setting, allowing a JVM system property to override its configured value.
-     *
-     * <p>Reads system properties first and falls back to the bundled properties file; blank or missing values are rejected.</p>
+     * Reads a required setting, using a runtime override when one is available. Rejects missing or empty settings.
      *
      * @param key the configuration property name to look up
-     * @return the trimmed setting after applying any system-property override
+     * @return the trimmed setting after applying any runtime override
      */
     private static String getProperty(String key) {
         String value = System.getProperty(key, properties.getProperty(key));
@@ -55,7 +53,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads a required boolean setting and rejects values other than true or false.
+     * Reads a true or false setting and rejects invalid values.
      *
      * @param key the configuration property name to look up
      * @return the validated boolean value of the requested setting
@@ -68,7 +66,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads a required integer setting and enforces the caller-supplied minimum.
+     * Reads a whole-number setting and checks that it meets the required minimum.
      *
      * @param key the configuration property name to look up
      * @param minimum the lowest accepted integer value for the setting
@@ -87,9 +85,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reports whether Selenium should run without a visible browser window.
-     *
-     * <p>Checks whether headless is present or meets the expected condition.</p>
+     * Checks whether tests should run without a visible browser window.
      *
      * @return {@code true} when the {@code browser.headless} setting is enabled; otherwise {@code false}
      */
@@ -98,9 +94,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads the configured browser viewport width in pixels.
-     *
-     * <p>Returns the configured browser viewport width in pixels.</p>
+     * Returns the configured browser width in pixels.
      *
      * @return the configured viewport width in pixels
      */
@@ -109,9 +103,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads the configured browser viewport height in pixels.
-     *
-     * <p>Returns the configured browser viewport height in pixels.</p>
+     * Returns the configured browser height in pixels.
      *
      * @return the configured viewport height in pixels
      */
@@ -120,7 +112,7 @@ public final class AppConfig {
     }
 
     /**
-     * Builds the Selenium Dimension used for the configured browser viewport.
+     * Combines the configured width and height for browser sizing.
      *
      * @return the width and height used for the browser window
      */
@@ -129,9 +121,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads the configured Selenium implicit wait interval in seconds.
-     *
-     * <p>Returns the configured Selenium implicit wait in seconds.</p>
+     * Returns the implicit wait time used by new browser sessions.
      *
      * @return the implicit wait duration in seconds
      */
@@ -140,9 +130,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reports whether the optional presentation delays and overlays are enabled.
-     *
-     * <p>Checks whether slow mo enabled is present or meets the expected condition.</p>
+     * Determines whether demonstration timing and visual presentation features are enabled.
      *
      * @return {@code true} if slow-motion demonstration mode is enabled
      */
@@ -151,9 +139,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads the configured pause between demonstrated browser actions.
-     *
-     * <p>Returns the configured delay applied between SlowMo interactions.</p>
+     * Returns the current interaction delay in milliseconds. The live presentation controller can override this value without restarting the suite.
      *
      * @return the pause duration in milliseconds
      */
@@ -162,9 +148,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads the configured time to display an action result during a demonstration.
-     *
-     * <p>Returns the duration for displaying selected results during a SlowMo demonstration.</p>
+     * Returns the current duration in milliseconds for holding a visible result before execution continues or the browser closes.
      *
      * @return the result display duration in milliseconds
      */
@@ -173,9 +157,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads the legacy active-scan enable switch; standalone suites explicitly start scans independently.
-     *
-     * <p>Returns the legacy active-scan flag; standalone TestNG scanners run independently of this setting.</p>
+     * Reads the older active-scan setting. Standalone scan suites do not depend on this setting.
      *
      * @return {@code true} when the legacy active-scan property is enabled
      */
@@ -184,9 +166,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads the Juice Shop standalone active-scan limit in minutes.
-     *
-     * <p>Returns the configured maximum Juice Shop active-scan duration in minutes.</p>
+     * Returns the time limit for the standalone Juice Shop active scan, in minutes.
      *
      * @return the maximum allowed Juice Shop scan duration in minutes
      */
@@ -195,7 +175,7 @@ public final class AppConfig {
     }
 
     /**
-     * Resolves the configured Juice Shop active-scan status JSON destination.
+     * Finds the configured Juice Shop active-scan status JSON destination.
      *
      * @return the configured path for the Juice Shop active-scan status JSON
      */
@@ -222,9 +202,7 @@ public final class AppConfig {
     }
 
     /**
-     * Reads the DVWA standalone active-scan limit in minutes.
-     *
-     * <p>Returns the maximum duration for a standalone DVWA active scan.</p>
+     * Returns the time limit for the standalone DVWA active scan, in minutes.
      *
      * @return the maximum allowed DVWA scan duration in minutes
      */
@@ -233,7 +211,7 @@ public final class AppConfig {
     }
 
     /**
-     * Resolves the configured destination for DVWA active-scan status metadata.
+     * Finds the configured destination for DVWA active-scan status details.
      *
      * @return the configured path for the DVWA active-scan status JSON
      */
@@ -287,9 +265,7 @@ public final class AppConfig {
     }
 
     /**
-     * Pauses the current thread to show results when slow-motion mode is enabled.
-     *
-     * <p>Pauses supported presentation results only when SlowMo mode is enabled; preserves interruption.</p>
+     * Keeps the current result visible for the configured time when slow-motion mode is enabled. Skips the pause when the delay is zero and handles interruptions without losing their status.
      */
     public static void pauseForResults() {
         if (!isSlowMoEnabled()) return;
@@ -305,34 +281,51 @@ public final class AppConfig {
         }
     }
 
-    /** Returns the configured output path for the final Juice Shop challenge catalog. */
+    /**
+     * Returns the configured output path for the final Juice Shop challenge catalog.
+     */
     public static Path juiceShopChallengesOutput() { return Path.of(getProperty("juiceshop.challenges.output")); }
 
-    /** Returns the configured local DVWA lab username. */
+    /**
+     * Returns the configured local DVWA lab username.
+     */
     public static String dvwaUsername() { return getProperty("dvwa.username"); }
 
-    /** Returns the configured local DVWA lab password. */
+    /**
+     * Returns the configured local DVWA lab password.
+     */
     public static String dvwaPassword() { return getProperty("dvwa.password"); }
 
-    /** Returns the configured Juice Shop Docker image. */
+    /**
+     * Returns the configured Juice Shop Docker image.
+     */
     public static String juiceShopImage() { return getProperty("juiceshop.image"); }
 
-    /** Returns the configured Juice Shop internal service port. */
+    /**
+     * Returns the configured Juice Shop internal service port.
+     */
     public static int juiceShopPort() { return getInt("juiceshop.port", 1); }
 
-    /** Returns the configured DVWA Docker image. */
+    /**
+     * Returns the configured DVWA Docker image.
+     */
     public static String dvwaImage() { return getProperty("dvwa.image"); }
 
-    /** Returns the configured DVWA internal service port. */
+    /**
+     * Returns the configured DVWA internal service port.
+     */
     public static int dvwaPort() { return getInt("dvwa.port", 1); }
 
-    /** Returns the default data directory for external workbook overrides. */
+    /**
+     * Returns the default data directory for external spreadsheet overrides.
+     */
     public static Path testDataDirectory() { return Path.of(getProperty("test.data.directory")); }
 
     /**
-     * Resolves the default workbook or an explicitly configured override.
-     * @param key system property for the specific workbook
-     * @return path or classpath resource name consumed by ExcelFileReader
+     * Finds the default spreadsheet or an explicitly configured override.
+     *
+     * @param key system property for the specific spreadsheet
+     * @return path or project resources resource name consumed by ExcelFileReader
      */
     public static String testWorkbook(String key) {
         String override = System.getProperty(key);
@@ -340,27 +333,43 @@ public final class AppConfig {
         return testDataDirectory().resolve(getProperty(key)).toString().replace(java.io.File.separatorChar, '/');
     }
 
-    /** Returns the configured base wait duration for Juice Shop pages, in seconds. */
+    /**
+     * Returns the configured base wait duration for Juice Shop pages, in seconds.
+     */
     public static int juiceShopPageWaitSeconds() { return getInt("juiceshop.page.waitSeconds", 1); }
 
-    /** Returns the configured base wait duration for DVWA pages, in seconds. */
+    /**
+     * Returns the configured base wait duration for DVWA pages, in seconds.
+     */
     public static int dvwaPageWaitSeconds() { return getInt("dvwa.page.waitSeconds", 1); }
 
-    /** Returns the configured default ZAP report filename. */
+    /**
+     * Returns the configured default ZAP report filename.
+     */
     public static String zapDefaultReportName() { return getProperty("zap.default.reportName"); }
 
-    /** Returns the output directory for ZAP HTML reports. */
+    /**
+     * Returns the output directory for ZAP HTML reports.
+     */
     public static Path zapHtmlReportDirectory() { return Path.of(getProperty("zap.htmlReportDirectory")); }
 
-    /** Returns the connection timeout used by the existing Juice Shop API client. */
+    /**
+     * Returns the connection timeout used by the existing Juice Shop API client.
+     */
     public static int juiceShopApiConnectSeconds() { return getInt("juiceshop.api.connectSeconds", 1); }
 
-    /** Returns the timeout for existing Juice Shop JSON requests. */
+    /**
+     * Returns the timeout for existing Juice Shop JSON requests.
+     */
     public static int juiceShopApiRequestSeconds() { return getInt("juiceshop.api.requestSeconds", 1); }
 
-    /** Returns the timeout for existing Juice Shop multipart requests. */
+    /**
+     * Returns the timeout for existing Juice Shop multipart requests.
+     */
     public static int juiceShopApiUploadSeconds() { return getInt("juiceshop.api.uploadSeconds", 1); }
 
-    /** Returns the user-agent value shared by existing Juice Shop requests. */
+    /**
+     * Returns the user-agent value shared by existing Juice Shop requests.
+     */
     public static String juiceShopApiUserAgent() { return getProperty("juiceshop.api.userAgent"); }
 }

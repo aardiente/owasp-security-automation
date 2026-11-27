@@ -5,7 +5,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 /**
- * Juice Shop page object exposing Selenium interactions for the shop dashboard view.
+ * Represents the Juice Shop storefront. Reads the displayed search label and first product title for tests.
  */
 public class ShopDashboardPage extends BasePage
 {
@@ -15,9 +15,7 @@ public class ShopDashboardPage extends BasePage
     private final By firstProductCardTitle = By.cssSelector(".mat-card .item-name");
 
      /**
-      * Creates the shop dashboard page component and initializes the dependencies required by its methods.
-      *
-      * <p>Creates a shop dashboard page instance and initializes its dependencies.</p>
+      * Sets up the Juice Shop shop dashboard page with the provided browser session.
       *
       * @param driver the Selenium WebDriver controlling the application browser
       */
@@ -31,20 +29,16 @@ public class ShopDashboardPage extends BasePage
      * Essential for validating Reflected XSS exploits.
      */
      /**
-      * Reads the search term displayed in the Juice Shop dashboard header.
-      *
-      * <p>Reads the search term echoed in the Juice Shop dashboard header.</p>
-      *
-      * @return the visible search term from the search-value header
-      */
+     * Reads the displayed search value from the storefront header for UI verification.
+     *
+     * @return the visible search term from the search-value header
+     */
     public String getActiveSearchValueText() {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(searchValueHeader)).getText();
     }
 
      /**
-      * Reads the title text of the first product card currently displayed.
-      *
-      * <p>Reads the first product title displayed in the Juice Shop search results.</p>
+      * Reads the first visible product title for storefront result checks.
       *
       * @return the visible title of the first search-result product
       */

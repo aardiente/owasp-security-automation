@@ -210,6 +210,7 @@ def js_entries():
                 "path": path.relative_to(ROOT).as_posix(),
                 "name": name,
                 "signature": f"{name}({params})",
+                "params": params,
                 "line": source.count("\n", 0, match.start()) + 1,
                 "doc": parse_doc(docs[-1].group())
             })
@@ -265,7 +266,7 @@ def class_doc(path):
     )
 
     if not match:
-        return name
+        return {"summary": name, "description": [], "tags": []}
 
     comments = list(re.finditer(
         r"/\*\*[\s\S]*?\*/",
@@ -273,89 +274,165 @@ def class_doc(path):
     ))
 
     if not comments:
-        return name
+        return {"summary": name, "description": [], "tags": []}
 
     last = comments[-1]
 
     if len(source[last.end():match.start()]) > 250:
-        return name
+        return {"summary": name, "description": [], "tags": []}
 
-    return parse_doc(last.group())["summary"] or name
+    return parse_doc(last.group())
 
 
 def section_for_source(path):
-    """Categorize source files by their responsibility in the framework."""
+    """Group source files by their top-level package for the documentation cards."""
     if path.startswith("scripts/"):
         return "Documentation tooling"
     if path.startswith("src/main/"):
-        return "Application entry point"
-    if "/automation/" in path:
-        return "Browser and ZAP automation"
-    if "/pom/Dvwa/" in path:
-        return "DVWA page objects"
-    if "/pom/JuiceShop/" in path:
-        return "Juice Shop page objects"
-    if "/tests/Dvwa/" in path:
-        return "DVWA test suites"
-    if "/tests/JuiceShop/" in path:
-        return "Juice Shop test suites"
-    if "/tests/ZapScan/" in path:
-        return "Dedicated active scanners"
-    if "/utilities/Docker/" in path:
-        return "Container environments"
-    if "/utilities/reporting/" in path:
-        return "Reporting and SPA backend"
-    if "/utilities/" in path:
-        return "Shared test utilities"
-
+        return "Application"
+    packages = {
+        "automation": "Automation",
+        "pom": "POM · Page objects",
+        "tests": "Tests",
+        "utilities": "Utilities",
+    }
+    for package, label in packages.items():
+        if path.startswith(f"src/test/java/{package}/"):
+            return label
     return "Other source files"
 
 
-def method_tags_html(tags):
-    """Render @param, @return, @throws, and related documentation tags."""
-    if not tags:
-        return ""
+def section_anchor(category):
+    """Create a readable, stable link to a package card."""
+    return "package-" + re.sub(r"[^a-z0-9]+", "-", category.lower()).strip("-")
 
-    result = ['<dl class="method-doc-tags">']
 
+def parameter_declarations(entry, language):
+    """Return parameter names and declared types in signature order."""
+    raw = entry.get("params", "").strip()
+    if not raw:
+        return []
+    if language == "java":
+        # MethodExtractor separates Java declarations with semicolons, so
+        # commas inside generic types are not mistaken for argument separators.
+        return [(name, declared_type) for declared_type, name in
+                (part.strip().rsplit(None, 1) for part in raw.split(";"))]
+    # The existing JavaScript extractor supports simple named arguments.
+    return [(part.split("=", 1)[0].strip().removeprefix("..."), None)
+            for part in raw.split(",")]
+
+
+def split_parameter_tag(text):
+    """Separate an optional JSDoc type, parameter name and description."""
+    match = re.match(r"^(?:\{([^}]*)\}\s+)?(\S+)(?:\s+(.*))?$", text)
+    if not match:
+        return text, None, ""
+    declared_type, name, description = match.groups()
+    name = name.removeprefix("...")
+    if name.startswith("[") and name.endswith("]"):
+        name = name[1:-1].split("=", 1)[0]
+    return name, declared_type, description or ""
+
+
+def method_tags_html(tags, entry=None, language=None):
+    """Render uniform definition rows with names and types beside descriptions.
+
+    Java types are read from declarations and JavaScript types from JSDoc.
+    Missing descriptions remain explicit, including for undocumented arguments.
+    """
+    groups = defaultdict(list)
     for kind, description in tags:
-        heading = kind
+        if kind in ("@param", "@arg", "@argument"):
+            group = "Parameters"
+        elif kind in ("@return", "@returns"):
+            group = "Return value"
+        elif kind in ("@throws", "@exception"):
+            group = "Exceptions"
+        else:
+            group = "Additional documentation"
+        groups[group].append((kind, description))
 
-        if kind in ("@param", "@throws", "@exception"):
-            symbol, separator, remainder = description.partition(" ")
+    def row(heading, description, declared_type=None):
+        """Build a definition row with an optional inline type label."""
+        label = html.escape(heading)
+        if declared_type is not None:
+            label += ' : <span class="definition-type">' + html.escape(declared_type) + '</span>'
+        return '<div><dt>' + label + '</dt><dd>' + strip_java_markup(description) + '</dd></div>'
 
-            if separator:
-                heading += " " + symbol
-                description = remainder
-
-        result.append(
-            '<div><dt>'
-            + html.escape(heading)
-            + '</dt><dd>'
-            + strip_java_markup(description)
-            + '</dd></div>'
-        )
-
-    result.append("</dl>")
-
+    result = []
+    for group in ("Parameters", "Return value", "Exceptions", "Additional documentation"):
+        mandatory = entry is not None and group in ("Parameters", "Return value")
+        if not groups[group] and not mandatory:
+            continue
+        result.append('<section class="definition-section"><h5>' + group + '</h5>'
+                      '<dl class="method-doc-tags">')
+        if mandatory and group == "Parameters":
+            declared = parameter_declarations(entry, language)
+            documented = [split_parameter_tag(text) for _, text in groups[group]]
+            if not declared:
+                result.append(row("None", "Takes no arguments."))
+            used = set()
+            for name, source_type in declared:
+                matches = [(i, typ, desc) for i, (key, typ, desc) in enumerate(documented) if key == name]
+                if matches:
+                    for i, doc_type, description in matches:
+                        used.add(i)
+                        result.append(row(name, description or "No parameter description is documented.",
+                                          source_type or doc_type or "Not documented"))
+                else:
+                    result.append(row(name, "No parameter description is documented.",
+                                      source_type or "Not documented"))
+            # Preserve type-parameter and additional JSDoc entries without inventing types.
+            for i, (name, doc_type, description) in enumerate(documented):
+                if i not in used:
+                    label_type = "Type parameter" if name.startswith("<") and name.endswith(">") else (doc_type or "Not documented")
+                    result.append(row(name, description, label_type))
+        elif mandatory and group == "Return value":
+            constructor = language == "java" and entry["name"] == "<init>"
+            if constructor:
+                return_type = entry["owner"]
+                fallback = f"An instance of the {return_type} class."
+            elif language == "java":
+                return_type = entry.get("returnType") or "Not declared"
+                fallback = ("Does not return a value." if return_type == "void" else
+                            "No return value description is provided in the source comment.")
+            else:
+                declared = [re.match(r"^\{([^}]+)\}(?:\s|$)", text) for _, text in groups[group]]
+                return_type = " / ".join(dict.fromkeys(m.group(1) for m in declared if m)) or "Not documented (JavaScript)"
+                fallback = "No return value is documented in the source comment."
+            descriptions = [re.sub(r"^\{[^}]+\}\s*", "", text) if language == "js" else text
+                            for _, text in groups[group]]
+            result.append(row("Returns", " ".join(filter(None, descriptions)) or fallback, return_type))
+        else:
+            for kind, description in groups[group]:
+                heading = kind
+                if kind in ("@param", "@arg", "@argument", "@throws", "@exception"):
+                    match = re.match(r"^(\{[^}]*\}\s+)?(\S+)(?:\s+(.*))?$", description)
+                    if match:
+                        heading = (match.group(1) or "") + match.group(2)
+                        description = match.group(3) or ""
+                elif kind in ("@return", "@returns"):
+                    heading = "Returns"
+                result.append(row(heading, description))
+        result.append('</dl></section>')
     return "".join(result)
+
+
+def description_html(doc):
+    """Render the complete description, including subsequent paragraphs."""
+    content = " ".join(doc["description"])
+    # Source comments are plain text with optional Javadoc paragraph markers.
+    # Split those markers before escaping so HTML paragraphs are never nested.
+    paragraphs = re.split(r"</?p\s*>", content, flags=re.IGNORECASE)
+    return "".join('<p class="method-desc">' + strip_java_markup(part.strip()) + '</p>'
+                   for part in paragraphs if part.strip())
 
 
 def methods_section(entries, js, link_prefix=""):
     """Generate the searchable source API reference from method comments."""
     categories = [
-        "Application entry point",
-        "Browser and ZAP automation",
-        "DVWA page objects",
-        "Juice Shop page objects",
-        "DVWA test suites",
-        "Juice Shop test suites",
-        "Dedicated active scanners",
-        "Container environments",
-        "Shared test utilities",
-        "Reporting and SPA backend",
-        "Documentation tooling",
-        "Other source files",
+        "Application", "Automation", "POM · Page objects", "Tests",
+        "Utilities", "Documentation tooling", "Other source files",
         "JavaScript and presentation"
     ]
 
@@ -375,9 +452,12 @@ def methods_section(entries, js, link_prefix=""):
     total = len(entries) + len(js)
 
     pieces = [
-        '<section class="doc-section" id="method-reference">',
+        '<details class="doc-section guide-section" id="method-reference" open>',
+        '<summary class="guide-heading"><div>',
         '<div class="section-kicker">10 / Source API index</div>',
-        '<h2>Searchable method reference</h2>',
+        '<h2>Searchable method reference</h2></div>',
+        '<span class="chevron" aria-hidden="true">⌄</span></summary>',
+        '<div class="guide-body">',
         '<p class="section-intro">'
         'Generated from the Javadoc and JSDoc directly above declarations '
         'in the project. The source comments are authoritative: edit those '
@@ -390,17 +470,18 @@ def methods_section(entries, js, link_prefix=""):
         'placeholder="Search method, class, file, or purpose…">',
         f'<span id="methodCount" class="ref-count">'
         f'{total} / {total} declarations</span>',
-        '<button type="button" class="action" id="clearSearch" '
-        'style="border:0;cursor:pointer">Clear</button>',
-        '<button type="button" id="expandAll" '
-        'style="padding:9px;border:1px solid #c8d7e4;'
-        'border-radius:8px;background:white;cursor:pointer">'
-        'Expand all</button>',
-        '<button type="button" id="collapseAll" '
-        'style="padding:9px;border:1px solid #c8d7e4;'
-        'border-radius:8px;background:white;cursor:pointer">'
-        'Collapse all</button>',
-        '</div>'
+        '<button type="button" class="ref-button" id="clearSearch">Clear</button>',
+        '<button type="button" class="ref-button" id="expandAll">Expand all</button>',
+        '<button type="button" class="ref-button" id="collapseAll">Collapse all</button>',
+        '</div>',
+        '<nav class="package-nav" aria-label="Source packages">',
+        *(
+            f'<a href="#{section_anchor(category)}">'
+            f'<strong>{html.escape(category)}</strong>'
+            f'<span>{len(grouped[category])} files</span></a>'
+            for category in categories if grouped.get(category)
+        ),
+        '</nav>'
     ]
 
     for category in categories:
@@ -412,11 +493,13 @@ def methods_section(entries, js, link_prefix=""):
         number = sum(len(x) for x in files.values())
 
         pieces.append(
-            '<div class="ref-section">'
-            '<div class="ref-section-heading">'
-            f'<h3>{html.escape(category)}</h3>'
-            f'<span>{number} declarations</span>'
-            '</div>'
+            f'<details class="ref-section" id="{section_anchor(category)}">'
+            '<summary class="ref-section-heading">'
+            '<div><div class="package-kicker">SOURCE PACKAGE</div>'
+            f'<h3>{html.escape(category)}</h3></div>'
+            f'<span class="package-count">{len(files)} files · {number} declarations</span>'
+            '<span class="chevron" aria-hidden="true">⌄</span>'
+            '</summary><div class="source-grid">'
         )
 
         for path, declarations in sorted(files.items()):
@@ -429,31 +512,30 @@ def methods_section(entries, js, link_prefix=""):
 
             filename = Path(path).name
 
-            source_description = (
-                class_doc(path)
-                if path.endswith(".java")
-                else "JavaScript source functions"
+            source_doc = (
+                class_doc(path) if path.endswith(".java") else
+                {"summary": "JavaScript source functions", "description": [], "tags": []}
             )
+            source_description = source_doc["summary"] or filename
 
             pieces.append(
                 f'<details class="source-group" id="{fid}">'
                 '<summary>'
-                f'<span class="source-title">'
-                f'{html.escape(filename)}</span>'
-                f'<span class="source-meta">'
-                f'{html.escape(path)} · '
-                f'{len(declarations)} declarations</span>'
+                '<span class="file-heading">'
+                f'<span class="file-kind">{html.escape(Path(path).suffix.lstrip(".").upper())}</span>'
+                f'<span class="source-title">{html.escape(filename)}</span>'
                 '<span class="chevron" aria-hidden="true">⌄</span>'
+                '</span>'
+                f'<span class="method-source-info">{strip_java_markup(source_description)}</span>'
+                f'<span class="source-meta">{html.escape(path)}</span>'
+                f'<span class="file-count">{len(declarations)} declarations</span>'
                 '</summary>'
                 '<div class="method-stack">'
             )
-
-            if path.endswith(".java"):
-                pieces.append(
-                    '<p class="method-source-info">'
-                    + strip_java_markup(source_description)
-                    + '</p>'
-                )
+            if source_doc["description"] or source_doc["tags"]:
+                pieces.append('<section class="class-details">'
+                              '<h4>About this class</h4>' + description_html(source_doc)
+                              + method_tags_html(source_doc["tags"]) + '</section>')
 
             for entry, language in declarations:
                 doc = entry["doc"]
@@ -471,6 +553,9 @@ def methods_section(entries, js, link_prefix=""):
 
                 searchable = " ".join([
                     path,
+                    category,
+                    source_description,
+                    " ".join(source_doc["description"]),
                     entry.get("owner", ""),
                     entry["name"],
                     signature,
@@ -488,27 +573,18 @@ def methods_section(entries, js, link_prefix=""):
                 )
 
                 pieces.append(
-                    f'<article class="method-entry" '
+                    f'<details class="method-entry" '
                     f'id="{anchor(entry, language)}" '
                     f'data-search="{html.escape(searchable, quote=True)}">'
-                    '<div class="method-header">'
+                    '<summary class="method-header">'
                     f'<code>{html.escape(signature)}</code>'
                     f'<span class="method-type">{label}</span>'
-                    '</div>'
-                    f'<p class="method-desc">'
-                    f'{strip_java_markup(description)}</p>'
+                    '<span class="chevron" aria-hidden="true">⌄</span>'
+                    '</summary><div class="method-body">'
                 )
-
-                for line in doc["description"][1:]:
-                    pieces.append(
-                        '<p class="method-desc-more">'
-                        + strip_java_markup(line)
-                        + '</p>'
-                    )
-
-                pieces.append(
-                    method_tags_html(doc["tags"])
-                )
+                pieces.append('<section class="definition-section"><h5>Description</h5>'
+                              + description_html(doc) + '</section>')
+                pieces.append(method_tags_html(doc["tags"], entry, language))
 
                 line_number = entry["line"]
 
@@ -520,14 +596,14 @@ def methods_section(entries, js, link_prefix=""):
                     f'{html.escape(path)} · line {line_number}'
                     '</a>'
                     '</div>'
-                    '</article>'
+                    '</div></details>'
                 )
 
             pieces.append('</div></details>')
 
-        pieces.append('</div>')
+        pieces.append('</div></details>')
 
-    pieces.append('</section>')
+    pieces.append('</div></details>')
 
     return "\n".join(pieces)
 

@@ -6,9 +6,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-/** Dependency-free regression checks for reporting configuration and formats. */
+/**
+ * Checks that the reporting tools work as expected without launching the browsers, lab applications or scanner.
+ */
 public final class ReportingSmokeCheck {
-    /** Runs the dependency-free regression checks. */
+    /**
+     * Runs the dependency-free regression checks.
+     */
     public static void main(String[] args) throws IOException {
         ReportingConfiguration config = ReportingConfiguration.load();
         check(config.targets().size() == 2, "default target count");
@@ -47,7 +51,9 @@ public final class ReportingSmokeCheck {
         System.out.println("Reporting smoke checks passed.");
     }
 
-    /** Verifies that loading the current invalid configuration fails. */
+    /**
+     * Verifies that loading the current invalid configuration fails.
+     */
     private static void expectInvalid() throws IOException {
         try {
             ReportingConfiguration.load();
@@ -57,7 +63,9 @@ public final class ReportingSmokeCheck {
         throw new AssertionError("Expected invalid configuration rejection");
     }
 
-    /** Throws an assertion error if a regression check fails. */
+    /**
+     * Throws an result check error if a regression check fails.
+     */
     private static void check(boolean condition, String name) {
         if (!condition) throw new AssertionError(name);
     }

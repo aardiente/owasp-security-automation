@@ -8,14 +8,14 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
-/** Browser presentation of raw resources (FTP listings, logs, text files, JSON). */
+/**
+ * Provides browser access to Juice Shop resources. Helps tests read visible text and wait for expected content or links.
+ */
 public class ResourcePage extends BasePage {
     private final By body = By.tagName("body");
 
     /**
-     * Creates the resource page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a resource page instance and initializes its dependencies.</p>
+     * Sets up the Juice Shop resource page with the provided browser session.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -42,9 +42,9 @@ public class ResourcePage extends BasePage {
     }
 
     /**
-     * Waits until the resource page contains the supplied text.
+     * Waits until the resource page contains the provided text.
      *
-     * @param text the input string being normalized, sanitized, or rendered
+     * @param text the input string being standardized, sanitized, or rendered
      * @param seconds the maximum wait duration in seconds
      */
     public void waitForBodyText(String text, int seconds) {

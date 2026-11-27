@@ -7,15 +7,23 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Locale;
 
-/** Shared, stable filename conventions for screenshot producers and report readers. */
+/**
+ * Creates consistent screenshot filenames so saved evidence can be matched to the correct test in reports.
+ */
 public final class EvidenceNames {
-    /** Prevents instantiation of the naming utility. */
+    /**
+     * Prevents creation of the naming utility.
+     */
     private EvidenceNames() {}
 
-    /** Naming rules for method-level, parameter-level, and individual captures. */
+    /**
+     * Filename modes used by the screenshot naming policy: one per method, one per test inputs, or individual screenshots named by time.
+     */
     public enum Mode { METHOD, PARAMETERS, TIMESTAMP }
 
-    /** Generates a deterministic filename, or null for timestamp-based evidence. */
+    /**
+     * Creates a consistent screenshot filename, or leaves timestamp-based naming to the caller.
+     */
     public static String deterministicName(Mode mode, String method, Object[] parameters) {
         String name = sanitize(method);
         return switch (mode) {
@@ -27,7 +35,9 @@ public final class EvidenceNames {
         };
     }
 
-    /** Derives a folder for unregistered test packages. */
+    /**
+     * Creates a folder for unregistered test packages.
+     */
     public static String defaultFolder(String packageName) {
         String[] parts = packageName.split("\\.");
         String application = parts.length > 1 && parts[0].equalsIgnoreCase("tests")
@@ -35,7 +45,9 @@ public final class EvidenceNames {
         return application.isBlank() ? "default" : sanitize(application.toLowerCase(Locale.ROOT));
     }
 
-    /** Returns the existing 12-character SHA-256 parameter identifier. */
+    /**
+     * Returns a short, consistent identifier based on the test inputs.
+     */
     public static String parameterHash(Object[] parameters) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
@@ -46,7 +58,9 @@ public final class EvidenceNames {
         }
     }
 
-    /** Preserves the existing filesystem-safe naming convention. */
+    /**
+     * Preserves the existing filesystem-safe naming convention.
+     */
     public static String sanitize(String value) {
         return value.replaceAll("[^A-Za-z0-9._-]", "_");
     }

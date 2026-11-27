@@ -19,7 +19,9 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Encapsulates DVWA's upload form and verifies the completed server response. */
+/**
+ * Represents DVWA's file upload page. Provides access to the form and collects results for the file upload tests.
+ */
 public class FileUploadPage extends BasePage {
     private static final String ENDPOINT = "/vulnerabilities/upload/";
     private final By fileInput = By.name("uploaded");
@@ -30,20 +32,26 @@ public class FileUploadPage extends BasePage {
     private String storedName;
     private static final Pattern STORED_FILE = Pattern.compile("hackable/uploads/([A-Za-z0-9._-]+)", Pattern.CASE_INSENSITIVE);
 
-    /** Confirmed decision returned by the DVWA upload form. */
+    /**
+     * Confirmed upload decision reported by the lab form.
+     */
     public enum Status { ACCEPTED, REJECTED }
 
-    /** Result of a submitted upload, including a short server-response excerpt. */
+    /**
+     * Fixed upload outcome and accompanying response evidence used by validation tests.
+     */
     public record UploadResult(Status status, String evidence) {}
 
     /**
-     * Creates the DVWA file upload page object.
+     * Sets up the DVWA file upload page with the provided browser session.
+     *
      * @param driver active DVWA browser
      */
     public FileUploadPage(WebDriver driver) { super(driver); }
 
     /**
      * Opens the upload exercise and waits for the file input to be present.
+     *
      * @param baseUrl root URL of the running DVWA application
      */
     public void open(String baseUrl) {
@@ -56,12 +64,9 @@ public class FileUploadPage extends BasePage {
     }
 
     /**
-     * Uploads the supplied local file and waits for DVWA's POST response.
-     * A browser click can return before the response page is available, so
-     * the wait examines fresh page source on each poll rather than holding
-     * a WebElement across navigation. No JavaScript execution is required.
+     * Uploads the provided local file and waits for DVWA's POST response. A browser click can return before the response page is available, so the wait examines fresh page source on each poll rather than holding a WebElement across navigation. No JavaScript execution is required.
      *
-     * @param file harmless local test file supplied by the TestNG test
+     * @param file harmless local test file provided by the TestNG test
      * @return confirmed upload decision and a short server response excerpt
      */
     public UploadResult submitFile(Path file) {
@@ -108,8 +113,7 @@ public class FileUploadPage extends BasePage {
     }
 
     /**
-     * Retrieves the file DVWA confirmed storing, through the same ZAP proxy used by Selenium.
-     * This only downloads an uploaded file for inspection and never executes its contents.
+     * Reads the file DVWA confirmed storing, through the same ZAP proxy used by Selenium. This only downloads an uploaded file for inspection and never executes its contents.
      *
      * @return bytes served by the DVWA uploaded-file endpoint
      */
@@ -143,12 +147,9 @@ public class FileUploadPage extends BasePage {
     }
 
     /**
-     * Determines whether DVWA confirmed storing the submitted file.
-     * Recognizes either success-message spelling and both long and short upload
-     * rejection messages. The accepted file may have a server-generated name.
-     * An ambiguous response raises an automation error, not a passing result.
+     * Determines whether DVWA confirmed storing the submitted file. Recognizes either success-message spelling and both long and short upload rejection messages. The accepted file may have a server-generated name. An ambiguous response raises an automation error, not a passing result.
      *
-     * @param fileName local basename supplied by the TestNG test
+     * @param fileName local basename provided by the TestNG test
      * @return true for a confirmed upload, false for an explicit rejection
      */
     public boolean nonImageUploadAccepted(String fileName) {
@@ -167,7 +168,7 @@ public class FileUploadPage extends BasePage {
     /**
      * Recognizes both the standard success wording and DVWA 1.9's misspelling.
      *
-     * @param response page source normalized to lowercase
+     * @param response page source standardized to lowercase
      * @return whether the response contains the server upload-success message
      */
     private static boolean hasUploadSuccessText(String response) {
@@ -175,8 +176,7 @@ public class FileUploadPage extends BasePage {
     }
 
     /**
-     * Reads the actual stored filename from DVWA's own upload confirmation.
-     * Impossible may assign a generated name instead of retaining the local filename.
+     * Reads the actual stored filename from DVWA's own upload confirmation. Impossible may assign a generated name instead of retaining the local filename.
      *
      * @param response HTML response containing the upload status
      * @return stored basename, or null if DVWA did not report a stored file

@@ -4,7 +4,9 @@ import org.openqa.selenium.json.Json;
 import java.io.IOException;
 import java.net.http.HttpResponse;
 
-/** Composes the existing Juice Shop action domains around one per-test HTTP client. */
+/**
+ * Brings together the Juice Shop challenge helpers. Shares common tools between them and provides access to recorded challenge progress.
+ */
 public final class JuiceShopChallengeActions {
     private final JuiceShopApi api;
     private final AccountActions account;
@@ -15,12 +17,22 @@ public final class JuiceShopChallengeActions {
     private final UploadActions uploads;
     private final BrowserActions browser;
 
+    /**
+     * Fixed record of the basket-domain lab observation and its HTTP response.
+     */
     public record BasketAttempt(int ownBasketId, int targetBasketId, HttpResponse<String> response) {}
+    /**
+     * Fixed record of the feedback-domain lab observation and its HTTP response.
+     */
     public record FeedbackAttempt(int authenticatedUserId, int forgedUserId, HttpResponse<String> response) {}
+    /**
+     * Fixed feedback-domain result containing the removal count, response, and remaining-state observation.
+     */
     public record FeedbackRemoval(int deletedCount, HttpResponse<String> response, boolean fiveStarsRemain) {}
 
     /**
-     * Creates the action domains for a test invocation, sharing one client and serializer.
+     * Creates the action domains for a test run, sharing one client and JSON converter.
+     *
      * @param api configured application client
      */
     public JuiceShopChallengeActions(JuiceShopApi api) {
@@ -35,31 +47,43 @@ public final class JuiceShopChallengeActions {
         this.browser = new BrowserActions(api, json);
     }
 
-    /** Returns the account action domain for this test invocation. */
+    /**
+     * Returns the account action domain for this test run.
+     */
     public AccountActions account() { return account; }
 
-    /** Returns the basket action domain for this test invocation. */
+    /**
+     * Returns the basket action domain for this test run.
+     */
     public BasketActions basket() { return basket; }
 
-    /** Returns the feedback action domain for this test invocation. */
+    /**
+     * Returns the feedback action domain for this test run.
+     */
     public FeedbackActions feedback() { return feedback; }
 
-    /** Returns the resources action domain for this test invocation. */
+    /**
+     * Returns the resources action domain for this test run.
+     */
     public ResourceActions resources() { return resources; }
 
-    /** Returns the catalog action domain for this test invocation. */
+    /**
+     * Returns the catalog action domain for this test run.
+     */
     public CatalogActions catalog() { return catalog; }
 
-    /** Returns the uploads action domain for this test invocation. */
+    /**
+     * Returns the uploads action domain for this test run.
+     */
     public UploadActions uploads() { return uploads; }
 
-    /** Returns the browser action domain for this test invocation. */
+    /**
+     * Returns the browser action domain for this test run.
+     */
     public BrowserActions browser() { return browser; }
 
     /**
-     * Polls challenge progress until the named Juice Shop challenge is recorded as solved.
-     *
-     * <p>Polls the challenge status before failing with an error if completion is not observed within the fixed retry count.</p>
+     * Polls challenge progress until the named Juice Shop challenge is recorded as solved. Polls the challenge status before failing with an error if completion is not observed within the fixed retry count.
      *
      * @param challengeName the Score Board name of the Juice Shop challenge to inspect
      * @throws IOException if a required file or HTTP stream cannot be read or written

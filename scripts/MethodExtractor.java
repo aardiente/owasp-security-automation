@@ -24,9 +24,7 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * Extracts Java declaration positions and attached Javadoc using the JDK parser.
- * The generator reads these records to build documentation without compiling
- * application classes or resolving external Selenium, TestNG, or ZAP libraries.
+ * Reads Java source files for the documentation generator. Collects class and method details along with their comments without running the tests.
  */
 public class MethodExtractor {
 
@@ -41,10 +39,7 @@ public class MethodExtractor {
     }
 
     /**
-     * Parses all Java source files under the supplied directory and writes one
-     * tab-separated Base64-encoded metadata record per method or constructor.
-     * Records include the source path, owner, name, return type, parameters,
-     * source offsets, and source-attached Javadoc text.
+     * Parses all Java source files under the provided directory and writes one tab-separated Base64-encoded details record per method or constructor. Records include the source path, owner, name, return type, parameters, source offsets, and source-attached Javadoc text.
      *
      * @param args one argument: project source root to inspect
      * @throws Exception if Java sources cannot be enumerated or parsed
@@ -90,7 +85,7 @@ public class MethodExtractor {
                     }
 
                     /**
-                     * Emits the metadata for a declared Java method or constructor.
+                     * Emits the details for a declared Java method or constructor.
                      *
                      * @param method method declaration encountered by the syntax tree scanner
                      * @param unused scanner context, unused by this extractor

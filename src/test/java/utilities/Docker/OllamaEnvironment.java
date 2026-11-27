@@ -6,7 +6,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import java.time.Duration;
 
 /**
- * Starts the optional local Ollama test dependency.
+ * Manages the optional local Ollama service through the shared Docker tools.
  */
 public class OllamaEnvironment extends DockerContainer
 {
@@ -14,9 +14,7 @@ public class OllamaEnvironment extends DockerContainer
     public static final String CHAT_MODEL = "juiceshop-qwen";
 
     /**
-     * Creates the ollama environment component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates the optional Docker environment for Ollama.</p>
+     * Sets up the container wrapper for the optional local Ollama service.
      */
     public OllamaEnvironment()
     {

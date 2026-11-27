@@ -9,17 +9,20 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 
-/** Application-specific browser actions relocated from the original challenge helper. */
+/**
+ * Groups browser-related tasks used by Juice Shop challenges so they can be shared across tests.
+ */
 public final class BrowserActions extends ActionContext {
     /**
-     * Uses the shared per-test HTTP client and JSON serializer.
+     * Uses the shared per-test HTTP client and JSON JSON converter.
+     *
      * @param api configured application client
-     * @param json shared JSON serializer
+     * @param json shared JSON JSON converter
      */
     BrowserActions(JuiceShopApi api, Json json) { super(api, json); }
 
     /**
-     * Performs the dismiss challenge notifications action against the isolated Juice Shop test application.
+     * Dismisses the visible challenge notifications so the presentation and subsequent browser interactions are not obstructed.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -48,7 +51,7 @@ public final class BrowserActions extends ActionContext {
     }
 
     /**
-     * Builds the cross-site imaging URL used in the corresponding Juice Shop challenge.
+     * Builds the cross-site imaging URL used in the related Juice Shop challenge.
      *
      * @param baseUrl the base URL of the containerized application under test
      * @return the URL constructed for the Cross-Site Imaging challenge

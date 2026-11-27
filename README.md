@@ -251,10 +251,10 @@ The project is actively being expanded beyond basic browser automation toward a 
 - [x] DVWA security-level selection and verification
 - [x] Additional DVWA vulnerability page objects and tests
 - [x] Complete coverage of feasible OWASP Juice Shop challenges
-- [ ] Expand DVWA testing across all supported vulnerability pages
+- [x] Expand DVWA testing across all supported vulnerability pages
 - [x] Improve security-level-specific test cases and payload coverage
 - [ ] Expand API security testing
-- [ ] Improve automation reliability and regression coverage
+- [x] Improve automation reliability and regression coverage
 
 ### Phase 3 — Security Scanning and Reporting
 
@@ -267,27 +267,24 @@ The project is actively being expanded beyond basic browser automation toward a 
 - [x] Add target-based findings filtering
 - [x] Separate in-scope and out-of-scope observations
 - [x] Group automated test results into class-based cards
-- [ ] Improve correlation of individual tests, payloads, and screenshot evidence
-- [ ] Add run identifiers to associate results from the same assessment
-- [ ] Improve vulnerability classification and eliminate false positives
-- [ ] Distinguish confirmed findings, unverified observations, and automation errors
+- [x] Improve correlation of individual tests, payloads, and screenshot evidence
+- [x] Add run identifiers to associate results from the same assessment
+- [x] Improve vulnerability classification and eliminate false positives
+- [x] Distinguish confirmed findings, unverified observations, and automation errors
 
 ### Phase 4 — Advanced Vulnerability Validation
 
 - [ ] Validate ZAP findings against actual application behavior
-- [ ] Implement evidence-based finding prioritization
-- [ ] Improve the handling and documentation of suppressed findings
-- [ ] Explore controlled local LLM-assisted vulnerability analysis
-- [ ] Expand Ollama integration
-- [ ] Improve report accuracy and reduce unnecessary findings
+- [x] Implement evidence-based finding prioritization
+- [x] Improve the handling and documentation of suppressed findings
+- [x] Improve report accuracy and reduce unnecessary findings
 
 ### Phase 5 — Framework Maturity
 
-- [ ] Expand automated regression coverage
-- [ ] Improve development-environment startup performance
-- [ ] Improve automated verification of the reporting pipeline
-- [ ] Add continuous integration support
-- [ ] Continue improving framework documentation
+- [x] Expand automated regression coverage
+- [x] Improve development-environment startup performance
+- [x] Improve automated verification of the reporting pipeline
+- [x] Continue improving framework documentation
 
 Roadmap items represent development goals, not guarantees of future functionality.
 

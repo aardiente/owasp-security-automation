@@ -8,12 +8,16 @@ import utilities.JuiceShop.JuiceShopChallengeActions;
 import utilities.ScreenshotManager;
 import java.net.http.HttpResponse;
 
-/** Shared challenge context, verification and evidence for all Juice Shop challenge classes. */
+/**
+ * Provides shared tools for Juice Shop challenge tests. Checks challenge completion and captures evidence without repeating the same setup in every test.
+ */
 public abstract class JuiceShopChallengeTestBase extends JuiceShopBaseTest {
     protected JuiceShopApi api;
     protected JuiceShopChallengeActions actions;
 
-    /** Creates fresh test helpers for each invocation without sharing mutable sessions. */
+    /**
+     * Creates fresh test helpers for each test run without sharing mutable sessions.
+     */
     @BeforeMethod
     public void prepareChallengeUtilities() {
         api = new JuiceShopApi(baseUrl);
@@ -22,6 +26,7 @@ public abstract class JuiceShopChallengeTestBase extends JuiceShopBaseTest {
 
     /**
      * Verifies a named challenge against the application scoreboard.
+     *
      * @param challengeName exact name in the lab challenge catalog
      * @throws Exception if the catalog cannot be retrieved
      */
@@ -31,7 +36,8 @@ public abstract class JuiceShopChallengeTestBase extends JuiceShopBaseTest {
     }
 
     /**
-     * Renders an HTTP response using the configured evidence browser, without changing the API test's assertions.
+     * Displays an HTTP response using the configured evidence browser, without changing the API test's result checks.
+     *
      * @param response HTTP response to preserve as visual evidence
      */
     protected void captureResponseEvidence(HttpResponse<String> response) {

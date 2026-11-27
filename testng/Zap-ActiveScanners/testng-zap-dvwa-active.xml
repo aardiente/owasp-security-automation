@@ -6,7 +6,7 @@
 
     <test name="DVWA Active Security Assessment">
         <classes>
-            <class name="tests.ZapScan.DvwaZapActiveScanTest"/>
+            <class name="tests.ZapActiveScan.DvwaZapActiveScanTest"/>
         </classes>
     </test>
 </suite>

@@ -10,16 +10,21 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.function.Function;
 
-/** Common workbook loading, cell conversion, level validation and invocation expansion. */
+/**
+ * Prepares DVWA test cases from Excel spreadsheets. Organizes the cases by security level before passing them to the tests.
+ */
 final class DvwaCases {
-    /** Prevents instantiation of this utility. */
+    /**
+     * Prevents creation of this utility.
+     */
     private DvwaCases() { }
 
     /**
-     * Reads a configured workbook from the test classpath or an external override.
-     * @param key workbook configuration key
+     * Reads a configured spreadsheet from the test project resources or an external override.
+     *
+     * @param key spreadsheet configuration key
      * @param sheet worksheet name, or null for the first worksheet
-     * @return rows excluding the workbook header
+     * @return rows excluding the spreadsheet header
      */
     static Object[][] load(String key, String sheet) {
         return ExcelFileReader.extractData(AppConfig.testWorkbook(key), sheet);
@@ -27,17 +32,19 @@ final class DvwaCases {
 
     /**
      * Converts a cell to trimmed text, treating missing optional columns as empty.
-     * @param row workbook row
+     *
+     * @param row spreadsheet row
      * @param column zero-based column index
-     * @return normalized cell text
+     * @return standardized cell text
      */
     static String cell(Object[] row, int column) {
         return column >= row.length || row[column] == null ? "" : row[column].toString().trim();
     }
 
     /**
-     * Parses the existing ALL or pipe-separated security-level workbook syntax.
-     * @param value workbook security-level field
+     * Parses the existing ALL or pipe-separated security-level spreadsheet syntax.
+     *
+     * @param value spreadsheet security-level field
      * @param row one-based Excel row for validation diagnostics
      * @return selected security modes in enum order
      */
@@ -56,9 +63,10 @@ final class DvwaCases {
 
     /**
      * Expands cases level-first, preserving the ordering used by upload and stored-XSS tests.
-     * @param cases validated workbook cases
+     *
+     * @param cases validated spreadsheet cases
      * @param levels extracts each case's selected modes
-     * @param label case family for an empty-workbook error
+     * @param label case family for an empty-spreadsheet error
      * @return TestNG level/case parameter pairs
      */
     static <T> Object[][] levelFirst(List<T> cases, Function<T, ? extends Set<SecurityLevel>> levels, String label) {
@@ -71,7 +79,8 @@ final class DvwaCases {
     }
 
     /**
-     * Appends the selected modes for one case, preserving SQLi's original case-first order.
+     * Adds the selected modes for one case, preserving SQLi's original case-first order.
+     *
      * @param invocations destination parameter rows
      * @param probe case object
      * @param levels selected security modes

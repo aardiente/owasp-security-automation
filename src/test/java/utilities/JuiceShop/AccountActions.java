@@ -5,19 +5,20 @@ import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.Map;
 
-/** Application-specific account actions relocated from the original challenge helper. */
+/**
+ * Groups account-related operations used by the Juice Shop lab tests, keeping the test classes focused on checking results.
+ */
 public final class AccountActions extends ActionContext {
     /**
-     * Uses the shared per-test HTTP client and JSON serializer.
+     * Uses the shared per-test HTTP client and JSON JSON converter.
+     *
      * @param api configured application client
-     * @param json shared JSON serializer
+     * @param json shared JSON JSON converter
      */
     AccountActions(JuiceShopApi api, Json json) { super(api, json); }
 
     /**
-     * Performs the register with mismatched passwords action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /api/Users/}.</p>
+     * Collects the lab response for the mismatched-password registration validation case.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -29,9 +30,7 @@ public final class AccountActions extends ActionContext {
     }
 
     /**
-     * Performs the register empty user action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /api/Users/}.</p>
+     * Collects the lab response for the empty-registration validation case.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -42,9 +41,7 @@ public final class AccountActions extends ActionContext {
     }
 
     /**
-     * Performs the register with admin role action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /api/Users/}.</p>
+     * Collects the lab response for the account-role validation case.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -56,9 +53,9 @@ public final class AccountActions extends ActionContext {
     }
 
     /**
-     * Performs the ephemeral accountant login flow and returns the relevant credential or token.
+     * Provides the account-domain observation used by the Ephemeral Accountant lab challenge.
      *
-     * @return the login result associated with the ephemeral accountant challenge
+     * @return the login result linked to the ephemeral accountant challenge
      */
     public String ephemeralAccountantLogin() {
         return "' UNION SELECT * FROM (SELECT 15 as 'id', '' as 'username', "

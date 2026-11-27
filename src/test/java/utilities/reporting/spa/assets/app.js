@@ -7,7 +7,7 @@ const state = {
 };
 
 /**
- * Returns the DOM element with the supplied identifier.
+ * Returns the DOM element with the provided identifier.
  *
  * @param {string} id the DOM element identifier
  * @returns {HTMLElement|null} the matching element, or null if none exists
@@ -30,7 +30,7 @@ const node = (tag, className = "", text = "") => {
 };
 
 /**
- * Appends the supplied child nodes to a parent element and returns the parent.
+ * Adds the provided child nodes to a parent element and returns the parent.
  *
  * @param {HTMLElement} parent the DOM element receiving the new children
  * @param {HTMLElement[]} children child elements appended in order
@@ -42,13 +42,13 @@ const add = (parent, ...children) => {
 };
 
 /**
- * Removes all child nodes from the supplied element.
+ * Removes all child nodes from the provided element.
  *
  * @param {HTMLElement} element the DOM element to modify
  */
 const clear = element => element.replaceChildren();
 /**
- * Counts entries whose named property equals the supplied value.
+ * Counts entries whose named property equals the provided value.
  *
  * @param {Object[]} items the data collection to count
  * @param {string} key the property name used for matching
@@ -75,7 +75,8 @@ function activeScanStatus() {
 
 /**
  * Maps the scanner status identifier to a readable display label.
- * @returns {string} a human-readable scanner state such as Completed or Timed out
+ *
+ * @returns {string} a readable scanner state such as Completed or Timed out
  */
 function activeScanLabel() {
   switch (activeScanStatus()) {
@@ -113,7 +114,7 @@ function activeScanDescription() {
 }
 
 /**
- * Retrieves a fresh JSON resource from the local read-only SPA API and rejects unsuccessful responses.
+ * Reads a fresh JSON resource from the local read-only SPA API and rejects unsuccessful responses.
  *
  * @param {string} url the relative local SPA API endpoint
  * @returns {Promise<any>} the parsed JSON response body
@@ -127,7 +128,8 @@ async function request(url) {
 }
 
 /**
- * Initializes target selection, navigation, finding filters, and refresh actions before loading the first assessment.
+ * Sets up target selection, navigation, finding filters, and refresh actions before loading the first assessment.
+ *
  * @returns {Promise<void>} the computed result
  */
 async function initialize() {
@@ -309,7 +311,7 @@ function renderAssessment() {
 }
 
 /**
- * Displays a user-readable SPA loading or rendering error.
+ * Displays a user-readable SPA loading or display error.
  *
  * @param {Error|string} error the error whose message should be shown to the user
  */
@@ -320,7 +322,7 @@ function showError(error) {
 }
 
 /**
- * Selects one of the overview, findings, out-of-scope, tests, or evidence views.
+ * Selects one of the overview, findings, outside the assessment scope, tests, or evidence views.
  *
  * @param {string} view the target dashboard panel
  */
@@ -347,7 +349,7 @@ function showView(view) {
 }
 
 /**
- * Builds a styled label describing severity, status, or triage.
+ * Builds a styled label describing severity, status, or review.
  *
  * @param {any} value the value to compare or render
  * @param {string} kind the style key for the badge
@@ -418,7 +420,7 @@ function activeScanMetric() {
 }
 
 /**
- * Groups alert instances by scanner plugin, name, and triage decision before sorting by severity.
+ * Groups alert instances by scanner plugin, name, and review decision before sorting by severity.
  *
  * @param {Object[]} findings the alert instances to group and sort
  * @returns {Array<Object>} grouped alerts sorted by severity
@@ -443,7 +445,7 @@ function groupFindings(findings) {
 }
 
 /**
- * Renders severity metrics, triage counts, top findings, and the active-scan navigation tile.
+ * Displays severity metrics, review counts, top findings, and the active-scan navigation tile.
  */
 function renderOverview() {
   const all = state.data.scan.findings;
@@ -758,7 +760,7 @@ function makeFinding(group) {
 }
 
 /**
- * Filters and renders the saved ZAP findings for the selected scan mode.
+ * Filters and displays the saved ZAP findings for the selected scan mode.
  */
 function renderFindings() {
   if (!state.data) return;
@@ -792,8 +794,7 @@ function renderFindings() {
 }
 
 /**
- * Renders out-of-scope ZAP observations separately from in-scope security findings.
- * The original scan JSON and reporting classification are never modified.
+ * Displays outside the assessment scope ZAP observations separately from within the assessment scope security findings. The original scan JSON and reporting classification are never modified.
  */
 function renderOutOfScope() {
   if (!state.data) return;
@@ -819,8 +820,7 @@ function renderOutOfScope() {
 }
 
 /**
- * Filters recorded TestNG executions and displays either a grid of test-class tiles
- * or the individual test cases belonging to the selected class.
+ * Filters saved TestNG executions by class, method, status, and security level. Displays class tiles or the selected class detail, using level cards for DVWA and ordinary execution rows for other targets.
  */
 function renderTests() {
   if (!state.data) return;
@@ -930,7 +930,7 @@ function renderTests() {
  *
  * @param {number} amount matching test execution count
  * @param {string} kind result status used for styling
- * @param {string} label human-readable status label
+ * @param {string} label readable status label
  * @returns {HTMLElement} compact status display
  */
 function testTileCount(amount, kind, label) {
@@ -940,8 +940,7 @@ function testTileCount(amount, kind, label) {
 }
 
 /**
- * Builds the security-level result grid for a selected DVWA test class.
- * Unclassified executions from older CSV reports remain visible separately.
+ * Groups the filtered DVWA test runs into four security-level cards using the recorded level value. Preserves test order and places missing or unrecognized levels in a separate Unclassified card.
  *
  * @param {Object[]} cases the filtered test executions
  * @returns {HTMLElement} grid of security-level cards
@@ -970,7 +969,7 @@ function makeSecurityLevelGrid(cases) {
 }
 
 /**
- * Renders a security level summary and its original expandable execution rows.
+ * Builds a security-level card with execution totals and status counts. Reuses the shared execution display component so errors and evidence behave consistently with the other test views.
  *
  * @param {string} level the displayed security level
  * @param {Object[]} executions test records paired with their visible ordinals
@@ -997,7 +996,7 @@ function makeSecurityLevelCard(level, executions) {
 }
 
 /**
- * Creates one expandable execution row, preserving errors and screenshot handling.
+ * Builds the expandable detail for one saved TestNG test run. Shows its method, status, timing, error information, and linked screenshot evidence when available.
  *
  * @param {Object} test one saved TestNG execution from the report API
  * @param {number} ordinal its visible order within the selected class

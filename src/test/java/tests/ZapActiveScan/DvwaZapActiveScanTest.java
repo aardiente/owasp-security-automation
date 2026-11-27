@@ -1,5 +1,5 @@
 
-package tests.ZapScan;
+package tests.ZapActiveScan;
 
 import automation.AppConfig;
 import automation.ZapActiveScan;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Standalone DVWA security assessment: seeds browser routes then launches an explicit ZAP spider/active scan.
+ * Contains the standalone ZAP assessment test for DVWA. Records the assessment outcome separately from the individual DVWA module tests.
  */
 public class DvwaZapActiveScanTest extends BaseDvwaTest {
 
@@ -33,9 +33,7 @@ public class DvwaZapActiveScanTest extends BaseDvwaTest {
     }
 
     /**
-     * Visits authenticated DVWA routes through the proxy, then runs a bounded standalone ZAP active scan.
-     *
-     * <p>Seeds selected DVWA routes through the proxied browser before launching the bounded ZAP scanner. This alone does not configure scan-as-user authentication.</p>
+     * Visits authenticated DVWA routes through the proxy, then runs a bounded standalone ZAP active scan. Seeds selected DVWA routes through the browser connected through ZAP before launching the bounded ZAP scanner. This alone does not configure scan-as-user authentication.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -106,9 +104,7 @@ public class DvwaZapActiveScanTest extends BaseDvwaTest {
     }
 
     /**
-     * Normalizes explicit and implicit URI ports for same-origin comparisons.
-     *
-     * <p>Returns the explicit URL port or the default HTTP(S) port.</p>
+     * Standardizes explicit and implicit URI ports for same-origin comparisons. Returns the explicit URL port or the default HTTP(S) port.
      *
      * @param uri the URI whose scheme, host and port are being examined
      * @return the URI port, default 80/443 for HTTP(S), or {@code -1} for unsupported schemes

@@ -9,7 +9,7 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 /**
- * Juice Shop page object exposing Selenium interactions for the search view.
+ * Represents Juice Shop product search. Manages search controls and reads the displayed results.
  */
 public class SearchPage extends BasePage
 {
@@ -20,9 +20,7 @@ public class SearchPage extends BasePage
     private final By productCards = By.cssSelector("app-product.product");
 
     /**
-     * Creates the search page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a search page instance and initializes its dependencies.</p>
+     * Sets up the Juice Shop search page with the provided browser session.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -127,7 +125,7 @@ public class SearchPage extends BasePage
     }
 
     /**
-     * Checks whether products displayed is present or meets the expected condition.
+     * Checks whether the current search view displays product results for UI verification.
      *
      * @return {@code true} when a product result is visible after searching
      */

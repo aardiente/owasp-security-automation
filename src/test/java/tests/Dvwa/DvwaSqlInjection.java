@@ -19,7 +19,9 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** XLSX-driven DVWA SQLi checks. A confirmed vulnerability is a failing security test. */
+/**
+ * Contains DVWA SQL injection tests. Uses spreadsheet cases to evaluate protections at each security level.
+ */
 public class DvwaSqlInjection extends BaseDvwaTest {
     private static final Pattern RESULT_ROW = Pattern.compile(
             "(?m)First name:[ \\t]*([^\\r\\n]*)\\r?\\n[ \\t]*Surname:[ \\t]*([^\\r\\n]*)");
@@ -30,21 +32,32 @@ public class DvwaSqlInjection extends BaseDvwaTest {
     private static final List<String> SIGNALS = List.of(
             "CANARY", "ROW_EXPANSION", "BOOLEAN_DIFFERENTIAL", "PREFIX_CANARY", "SQL_ERROR", "TIME_DELAY");
 
+    /**
+     * Fixed spreadsheet-based SQL injection validation case and expected observation details.
+     */
     private record SqlCase(String id, EnumSet<SecurityPage.SecurityLevel> levels, String payload,
                            String signal, String expectedFirst, String expectedLast, String controlPayload,
                            long minDelayMs, String technique) {
         /**
-         * Returns the stable workbook case identifier for reports.
+         * Returns the stable spreadsheet case identifier for reports.
+         *
          * @return case identifier
          */
         @Override public String toString() { return id; }
     }
+    /**
+     * Fixed pair of display values from a lab result row.
+     */
     private record ResultRow(String firstName, String surname) {}
+    /**
+     * Fixed observation collected for SQL injection validation, including response text, parsed rows, and error information.
+     */
     private record ProbeResult(String text, List<ResultRow> rows, boolean sqlError,
                                HttpResponse<String> response, long durationMs) {}
 
     /**
-     * Loads and validates SQLi workbook cases in the original case-first order.
+     * Loads and validates SQLi spreadsheet cases in the original case-first order.
+     *
      * @return security-level and case pairs for TestNG
      */
     @DataProvider(name = "sqliCases")
@@ -79,8 +92,9 @@ public class DvwaSqlInjection extends BaseDvwaTest {
 
     /**
      * Compares the existing test and control observations and asserts the expected protection.
+     *
      * @param level DVWA security mode
-     * @param test validated workbook case
+     * @param test validated spreadsheet case
      */
     @Test(dataProvider = "sqliCases")
     public void sqlInjectionValidation(SecurityPage.SecurityLevel level, SqlCase test) {
@@ -129,8 +143,10 @@ public class DvwaSqlInjection extends BaseDvwaTest {
                 + " | maskedError=" + maskedError + " | delayMs=" + firstDeltaMs
                 + " | repeatDelayMs=" + repeatDeltaMs + " | confirmed=" + confirmed, true);
 
-        if (evidence.response() != null) ScreenshotManager.captureResponse(driver, evidence.response());
-        else ScreenshotManager.captureSqlResults(driver);
+        if (evidence.response() != null)
+            ScreenshotManager.captureResponse(driver, evidence.response());
+        else
+            ScreenshotManager.captureSqlResults(driver);
 
         // A masked query failure is not evidence that a non-error injection was safely blocked.
         if (injected.text().contains("Something went wrong.") && !test.signal().equals("SQL_ERROR"))
@@ -153,9 +169,10 @@ public class DvwaSqlInjection extends BaseDvwaTest {
     }
 
     /**
-     * Compares observed rows to the expected workbook markers.
+     * Compares observed rows to the expected spreadsheet markers.
+     *
      * @param result observed result
-     * @param test workbook case
+     * @param test spreadsheet case
      * @param prefix whether a prefix match is requested
      * @return whether a matching row exists
      */
@@ -167,11 +184,12 @@ public class DvwaSqlInjection extends BaseDvwaTest {
     }
 
     /**
-     * Submits an existing workbook input using the selected page flow and records the observed result.
+     * Submits an existing spreadsheet input using the selected page flow and records the observed result.
+     *
      * @param page current SQL injection page
      * @param level selected security mode
-     * @param payload workbook or control input
-     * @return normalized observation and elapsed time
+     * @param payload spreadsheet or control input
+     * @return standardized observation and elapsed time
      */
     private ProbeResult submit(SqlInjectionPage page, SecurityPage.SecurityLevel level, String payload) {
         page.open(baseUrl);

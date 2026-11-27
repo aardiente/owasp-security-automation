@@ -10,10 +10,13 @@ import pom.Dvwa.SecurityPage;
 import utilities.ScreenshotManager;
 
 
-/** Verifies whether DVWA includes an unintended but harmless local PHP-information page. */
+/**
+ * Contains DVWA file inclusion tests. Checks the lab's protection at each configured security level.
+ */
 public class DvwaFileInclusion extends BaseDvwaTest {
     /**
      * Fails on confirmed file inclusion, passes on explicit rejection, and skips ambiguous output.
+     *
      * @param level DVWA security mode to assess
      */
     @Test(dataProvider = "securityModes")

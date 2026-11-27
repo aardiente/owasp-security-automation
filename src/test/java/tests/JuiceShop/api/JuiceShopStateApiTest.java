@@ -4,15 +4,13 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import tests.JuiceShop.JuiceShopChallengeTestBase;
 
-/** HTTP-driven challenge checks with shared response evidence. */
+/**
+ * Contains API-based Juice Shop tests for account, feedback, catalog and file upload challenges. Uses shared tools to check completion and capture results.
+ */
 public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
 
     /**
-     * Exercises the Juice Shop Repetitive Registration challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code registerWithMismatchedPasswords} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Repetitive Registration}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks consistency of registration input validation in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -24,11 +22,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Empty User Registration challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code registerEmptyUser} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Empty User Registration}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks enforcement of required account fields in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -40,11 +34,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Forged Feedback challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code submitForgedFeedback} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Forged Feedback}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks feedback attribution integrity in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -61,11 +51,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Five-Star Feedback challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code removeFiveStarFeedback} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Five-Star Feedback}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks feedback removal authorization in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -80,11 +66,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Admin Registration challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code registerWithAdminRole} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Admin Registration}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks account-role assignment authorization in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -96,11 +78,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Zero Stars challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code submitZeroStarFeedback} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Zero Stars}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks feedback rating bounds in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -112,11 +90,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Forged Review challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code submitForgedProductReview} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Forged Review}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks review attribution integrity in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -128,11 +102,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Weird Crypto challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code submitCryptoComplaint} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Weird Crypto}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks recognition of weak cryptographic practices in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -144,11 +114,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Vulnerable Library challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code submitVulnerableLibraryComplaint} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Vulnerable Library}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks recognition of vulnerable application dependencies in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -160,11 +126,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Product Tampering challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code tamperWithProductDescription}, {@code waitForChallenge} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Product Tampering}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks catalog update authorization in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -180,11 +142,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop NoSQL Manipulation challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code updateAllReviewsViaNoSql} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code NoSQL Manipulation}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks review-data integrity in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -196,11 +154,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop CAPTCHA Bypass challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code submitRapidFeedback} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code CAPTCHA Bypass}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks feedback abuse-control enforcement in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -212,11 +166,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Multiple Likes challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code likeReviewConcurrently} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Multiple Likes}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks review interaction consistency in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -229,11 +179,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Upload Type challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code uploadUnexpectedFileType} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Upload Type}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks accepted file-type policy in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -245,11 +191,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Upload Size challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code uploadOversizedPdf} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Upload Size}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks file-size limits in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */
@@ -261,11 +203,7 @@ public class JuiceShopStateApiTest extends JuiceShopChallengeTestBase {
     }
 
     /**
-     * Exercises the Juice Shop Deprecated Interface challenge in the isolated lab and records the test outcome.
-     *
-     * <p>Calls {@code useDeprecatedXmlUpload} through the shared challenge-action helper.</p>
-     * <p>Checks the Score Board challenge state for {@code Deprecated Interface}.</p>
-     * <p>Captures a rendered HTTP response as screenshot evidence.</p>
+     * Checks legacy interface security in the Juice Shop lab. Uses the shared API test tools to verify and report the recorded outcome.
      *
      * @throws Exception if a browser, HTTP, container, or scanner operation fails
      */

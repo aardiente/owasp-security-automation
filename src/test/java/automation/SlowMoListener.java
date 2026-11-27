@@ -14,7 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Observes Selenium actions and optionally displays an overlay and delays interactions for demonstrations.
+ * Makes browser demonstrations easier to follow by adding optional pauses and visual highlights to browser actions.
  */
 public class SlowMoListener implements WebDriverListener {
 
@@ -22,9 +22,7 @@ public class SlowMoListener implements WebDriverListener {
     private final WebDriver driver;
 
     /**
-     * Creates the slow mo listener component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a slow mo listener instance and initializes its dependencies.</p>
+     * Retains the underlying WebDriver used by the listener to display presentation cues without requiring callers to supply a driver for every event.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */
@@ -33,7 +31,7 @@ public class SlowMoListener implements WebDriverListener {
     }
 
     /**
-     * Provides a SlowMo presentation cue before navigating to a URL.
+     * Logs the requested navigation URL before Selenium starts loading the page.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      * @param url the URL to navigate to, inspect, or request
@@ -44,7 +42,7 @@ public class SlowMoListener implements WebDriverListener {
     }
 
     /**
-     * Waits for the configured presentation delay after a page navigation.
+     * After a visible demonstration navigation, displays the navigation overlay and applies the current configured delay; internal challenge verification requests are excluded.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      * @param url the URL to navigate to, inspect, or request
@@ -61,7 +59,7 @@ public class SlowMoListener implements WebDriverListener {
     }
 
     /**
-     * Records or highlights the element search about to be performed.
+     * Logs the requested Selenium locator at debug level before element lookup.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      * @param locator the Selenium selector identifying the target element
@@ -72,7 +70,7 @@ public class SlowMoListener implements WebDriverListener {
     }
 
     /**
-     * Highlights the element and pauses before Selenium clicks it.
+     * Logs the click and, when presentation mode is enabled, shows its overlay and highlights the element before the action.
      *
      * @param element the Selenium page element being inspected or acted upon
      */
@@ -87,7 +85,7 @@ public class SlowMoListener implements WebDriverListener {
     }
 
     /**
-     * Highlights the input field and previews the content before typing.
+     * Logs the input action and, in presentation mode, shows an input preview and applies the configured highlight delay.
      *
      * @param element the Selenium page element being inspected or acted upon
      * @param keysToSend the keystrokes provided to the selected Selenium element
@@ -103,9 +101,9 @@ public class SlowMoListener implements WebDriverListener {
     }
 
     /**
-     * Displays a cue before accepting a browser alert.
+     * Logs acceptance of a browser alert and invokes the configured presentation result pause.
      *
-     * @param alert the ZAP alert entry being converted into a report finding
+     * @param alert browser JavaScript alert linked to this event
      */
     @Override
     public void beforeAccept(Alert alert) {
@@ -114,9 +112,9 @@ public class SlowMoListener implements WebDriverListener {
     }
 
     /**
-     * Displays a cue before dismissing a browser alert.
+     * Logs dismissal of a browser alert and invokes the configured presentation result pause.
      *
-     * @param alert the ZAP alert entry being converted into a report finding
+     * @param alert browser JavaScript alert linked to this event
      */
     @Override
     public void beforeDismiss(Alert alert) {
@@ -125,12 +123,12 @@ public class SlowMoListener implements WebDriverListener {
     }
 
     /**
-     * Handles a Selenium listener error without altering the underlying test assertion.
+     * Handles a Selenium listener error without altering the underlying test result check.
      *
      * @param target the configured application/report target
      * @param method the HTTP request method or reflected Java method being processed
      * @param args the entry-point arguments (not currently used)
-     * @param e the Selenium listener exception associated with the failed action
+     * @param e the Selenium listener exception linked to the failed action
      */
     @Override
     public void onError(Object target, Method method, Object[] args, InvocationTargetException e) {

@@ -14,17 +14,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Exports per-suite TestNG execution records to CSV without launching new security scans.
+ * Saves test results to a CSV file, including status, duration, errors and screenshot information.
  */
 public class TestNgResultsReporter implements IReporter {
 
     /**
-     * Writes a CSV summary of executed TestNG methods to the configured report location.
+     * Saves test results to CSV, including status, duration, errors, screenshots and security level. The suite can choose a different output filename.
      *
-     * <p>Writes a CSV with execution status, duration, error summary, screenshot filename, and security level; a suite-level parameter can select an alternate output name.</p>
-     *
-     * @param xmlSuites the TestNG XML suite definitions supplied to the reporter
-     * @param suites the TestNG suite results supplied to the reporter
+     * @param xmlSuites the TestNG XML suite definitions provided to the reporter
+     * @param suites the TestNG suite results provided to the reporter
      * @param outputDirectory the default TestNG reporter output directory
      */
     @Override

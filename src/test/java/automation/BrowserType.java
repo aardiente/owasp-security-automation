@@ -1,7 +1,7 @@
 package automation;
 
 /**
- * Names the browser implementations accepted by the WebDriver factory.
+ * Lists the browsers supported by the project and their display names.
  */
 public enum BrowserType
 {
@@ -13,9 +13,7 @@ public enum BrowserType
     private final String descriptor;
 
     /**
-     * Creates the browser type component and initializes the dependencies required by its methods.
-     *
-     * <p>Stores the human-readable browser type label for the enum constant.</p>
+     * Stores the browser name returned by the enum’s display method.
      *
      * @param str the descriptive value to store for the enum constant
      */
@@ -25,9 +23,9 @@ public enum BrowserType
     }
 
     /**
-     * Returns a human-readable representation of this value.
+     * Returns a readable representation of this value.
      *
-     * @return the human-readable label of this browser type
+     * @return the readable label of this browser type
      */
     public String toString()
     {

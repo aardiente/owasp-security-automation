@@ -9,19 +9,20 @@ import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_OK;
 import utilities.JuiceShop.JuiceShopChallengeActions.BasketAttempt;
 
-/** Application-specific basket actions relocated from the original challenge helper. */
+/**
+ * Groups shopping basket operations used by the Juice Shop lab tests and provides results for the related checks.
+ */
 public final class BasketActions extends ActionContext {
     /**
-     * Uses the shared per-test HTTP client and JSON serializer.
+     * Uses the shared per-test HTTP client and JSON JSON converter.
+     *
      * @param api configured application client
-     * @param json shared JSON serializer
+     * @param json shared JSON JSON converter
      */
     BasketActions(JuiceShopApi api, Json json) { super(api, json); }
 
     /**
-     * Performs the view another basket action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /rest/basket/}.</p>
+     * Collects the basket-access lab observation used by the related authorization challenge.
      *
      * @return the request status and basket identifiers describing the access attempt
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -35,9 +36,7 @@ public final class BasketActions extends ActionContext {
     }
 
     /**
-     * Performs the add products to another basket action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /rest/basket/}, {@code /api/Products/}.</p>
+     * Collects the basket modification observation used by the commerce challenge test.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -90,7 +89,7 @@ public final class BasketActions extends ActionContext {
     }
 
     /**
-     * Performs the add product to another basket action against the isolated Juice Shop test application.
+     * Returns the observation for the single-product basket modification case.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written

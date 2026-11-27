@@ -10,7 +10,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 
 /**
- * Juice Shop page object exposing Selenium interactions for the chatbot view.
+ * Represents the Juice Shop chatbot. Opens the conversation, sends messages and waits for replies.
  */
 public class ChatbotPage extends BasePage
 {
@@ -21,9 +21,7 @@ public class ChatbotPage extends BasePage
     private final By botMessageContents = By.cssSelector(".chat-bubble.assistant .message-content");
 
     /**
-     * Creates the chatbot page component and initializes the dependencies required by its methods.
-     *
-     * <p>Creates a chatbot page instance and initializes its dependencies.</p>
+     * Sets up the Juice Shop chatbot page with the provided browser session.
      *
      * @param driver the Selenium WebDriver controlling the application browser
      */

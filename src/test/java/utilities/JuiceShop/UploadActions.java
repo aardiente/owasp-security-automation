@@ -6,19 +6,20 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-/** Application-specific uploads actions relocated from the original challenge helper. */
+/**
+ * Groups file upload operations used by the Juice Shop lab tests and provides results for the related checks.
+ */
 public final class UploadActions extends ActionContext {
     /**
-     * Uses the shared per-test HTTP client and JSON serializer.
+     * Uses the shared per-test HTTP client and JSON JSON converter.
+     *
      * @param api configured application client
-     * @param json shared JSON serializer
+     * @param json shared JSON JSON converter
      */
     UploadActions(JuiceShopApi api, Json json) { super(api, json); }
 
     /**
-     * Performs the upload unexpected file type action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /file-upload}.</p>
+     * Collects the upload-policy observation for the file-type validation challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -30,9 +31,7 @@ public final class UploadActions extends ActionContext {
     }
 
     /**
-     * Performs the upload oversized PDF action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /file-upload}.</p>
+     * Collects the upload-policy observation for the file-size validation challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written
@@ -47,9 +46,7 @@ public final class UploadActions extends ActionContext {
     }
 
     /**
-     * Performs the use deprecated XML upload action against the isolated Juice Shop test application.
-     *
-     * <p>Uses the Juice Shop endpoint {@code /file-upload}.</p>
+     * Collects the file-handling observation for the deprecated-interface lab challenge.
      *
      * @return the HTTP response containing the status code, headers, and response body from the requested endpoint
      * @throws IOException if a required file or HTTP stream cannot be read or written

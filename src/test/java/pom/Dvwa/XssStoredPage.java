@@ -22,8 +22,13 @@ import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Encapsulates independent stored-XSS probes and evidence for each DVWA guestbook field. */
+/**
+ * Represents DVWA's stored cross-site scripting practice page. Provides access to the guestbook and collects results for the related tests.
+ */
 public class XssStoredPage extends BasePage {
+    /**
+     * Guestbook field identifier used to associate a spreadsheet case with the intended lab field.
+     */
     public enum ProbeField { NAME, MESSAGE }
 
     private static final String ENDPOINT = "/vulnerabilities/xss_s/";
@@ -32,13 +37,15 @@ public class XssStoredPage extends BasePage {
     private final By signButton = By.name("btnSign");
 
     /**
-     * Initializes the stored-XSS page with the current WebDriver.
+     * Sets up the DVWA xss stored page with the provided browser session.
+     *
      * @param driver current test browser
      */
     public XssStoredPage(WebDriver driver) { super(driver); }
 
     /**
      * Opens the guestbook and waits for the message field.
+     *
      * @param baseUrl running application URL
      */
     public void open(String baseUrl) {
@@ -46,7 +53,9 @@ public class XssStoredPage extends BasePage {
         wait.until(ExpectedConditions.visibilityOfElementLocated(messageInput));
     }
 
-    /** Submits a workbook-defined, self-marking probe with a unique plain-text identifier. */
+    /**
+     * Submits a spreadsheet-based, self-marking probe with a unique plain-text identifier.
+     */
     public void submitMarkerProbe(String markerId, ProbeField field, String payloadTemplate, String baseUrl) {
         validateMarker(markerId);
         if (field == null) throw new IllegalArgumentException("Probe field cannot be null");
@@ -75,7 +84,9 @@ public class XssStoredPage extends BasePage {
         }
     }
 
-    /** Routes a Name-field probe through ZAP with the current authenticated browser session. */
+    /**
+     * Routes a Name-field probe through ZAP with the current authenticated browser session.
+     */
     private void submitNameProbe(String baseUrl, String payload, String markerId) {
         String cookieHeader = driver.manage().getCookies().stream()
                 .map(cookie -> cookie.getName() + "=" + cookie.getValue())
@@ -110,15 +121,20 @@ public class XssStoredPage extends BasePage {
 
     /**
      * Encodes an existing form value for HTTP submission.
+     *
      * @param value form field value
      * @return URL-encoded value
      */
     private String encode(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8); }
 
-    /** Reloads to distinguish stored execution from the immediate submission response. */
+    /**
+     * Reloads to distinguish stored execution from the immediate submission response.
+     */
     public void reloadStoredEntries(String baseUrl) { open(baseUrl); }
 
-    /** Locates the exact guestbook entry by its plain-text identifier, not by old probes. */
+    /**
+     * Locates the exact guestbook entry by its plain-text identifier, not by old probes.
+     */
     private By entryLocator(String markerId, ProbeField field) {
         validateMarker(markerId);
         if (field == null) throw new IllegalArgumentException("Probe field cannot be null");
@@ -128,7 +144,8 @@ public class XssStoredPage extends BasePage {
 
     /**
      * Checks whether the uniquely identified guestbook entry is present.
-     * @param markerId identifier of this test invocation
+     *
+     * @param markerId identifier of this test run
      * @param field guestbook field under assessment
      * @return whether the entry was found
      */
@@ -141,7 +158,9 @@ public class XssStoredPage extends BasePage {
         }
     }
 
-    /** Checks the current probe's DOM execution signal instead of matching earlier entries. */
+    /**
+     * Checks the current probe's DOM execution signal instead of matching earlier entries.
+     */
     public boolean didStoredProbeExecute(String markerId, ProbeField field) {
         By locator = entryLocator(markerId, field);
         try {
@@ -156,7 +175,9 @@ public class XssStoredPage extends BasePage {
         }
     }
 
-    /** Scrolls the browser to the current test's entry before ScreenshotManager captures it. */
+    /**
+     * Scrolls the browser to the current test's entry before ScreenshotManager captures it.
+     */
     public void focusStoredEntry(String markerId, ProbeField field) {
         WebElement entry = wait.until(ExpectedConditions.presenceOfElementLocated(entryLocator(markerId, field)));
         List<WebElement> markers = entry.findElements(By.id(markerId));
@@ -165,6 +186,7 @@ public class XssStoredPage extends BasePage {
 
     /**
      * Rejects malformed test markers before they are used in selectors.
+     *
      * @param markerId identifier to validate
      */
     private void validateMarker(String markerId) {

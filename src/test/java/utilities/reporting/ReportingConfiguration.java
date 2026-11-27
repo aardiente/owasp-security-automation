@@ -18,12 +18,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 /**
- * Loads reporting configuration and resolves directories used by
- * the HTML assessment generator and Security Assessment SPA.
- *
- * <p>Configuration is loaded from the test classpath by default.
- * An external properties file can be selected using the
- * security.reporting.config JVM property.</p>
+ * Loads the settings used by the security reports. Defines the applications, output folders and screenshot rules shared by both report views.
  */
 public final class ReportingConfiguration {
 
@@ -38,13 +33,10 @@ public final class ReportingConfiguration {
     private final List<ReportingTarget> targets;
 
     /**
-     * Validates loaded settings and resolves report and asset
-     * directories relative to the project root.
+     * Validates loaded settings and finds report and asset directories relative to the project root.
      *
-     * @param properties settings loaded from the classpath or
-     *                   an explicitly selected file
-     * @throws IOException if a required property is missing or
-     *                     a configured filename is invalid
+     * @param properties settings loaded from the project resources or an explicitly selected file
+     * @throws IOException if a required property is missing or a configured filename is invalid
      */
     private ReportingConfiguration(Properties properties) throws IOException {
         settings.putAll(properties);
@@ -66,11 +58,7 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Loads reporting configuration from the test classpath or an
-     * explicitly selected external file.
-     *
-     * <p>The external file takes precedence when the JVM property
-     * security.reporting.config is supplied.</p>
+     * Loads reporting configuration from the test project resources or an explicitly selected external file. The external file takes precedence when the runtime setting security.reporting.config is provided.
      *
      * @return validated reporting configuration
      * @throws IOException if configuration cannot be loaded or validated
@@ -107,7 +95,7 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Retrieves a required configuration property.
+     * Reads a required configuration property.
      *
      * @param key the property name
      * @return the trimmed property value
@@ -123,7 +111,7 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Retrieves an optional configuration property.
+     * Reads an optional configuration property.
      *
      * @param key the property name
      * @param fallback value used when the property is absent
@@ -134,8 +122,7 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Returns the directory where generated security assessment reports
-     * are stored.
+     * Returns the directory where generated security assessment reports are stored.
      *
      * @return directory containing generated assessment reports
      */
@@ -144,8 +131,7 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Returns the directory containing screenshots captured during
-     * automated security tests.
+     * Returns the directory containing screenshots captured during automated security tests.
      *
      * @return directory containing screenshot evidence
      */
@@ -154,28 +140,25 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Returns the configured directory containing CSS and JavaScript
-     * assets for generated security reports.
+     * Returns the configured directory containing CSS and JavaScript resources for generated security reports.
      *
-     * @return configured source directory for report assets
+     * @return configured source directory for report resources
      */
     Path assetSourceDirectory() {
         return assetSourceDirectory;
     }
 
     /**
-     * Returns the name of the directory used to store generated
-     * report assets.
+     * Returns the name of the directory used to store generated report resources.
      *
-     * @return name of the generated report assets directory
+     * @return name of the generated report resources directory
      */
     String assetFolderName() {
         return assetSourceDirectory.getFileName().toString();
     }
 
     /**
-     * Returns the configured filename for the security assessment
-     * index page.
+     * Returns the configured filename for the security assessment index page.
      *
      * @return assessment index filename
      */
@@ -184,8 +167,7 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Returns the configured filename used to store TestNG execution
-     * results as CSV.
+     * Returns the configured filename used to store TestNG execution results as CSV.
      *
      * @return configured TestNG results filename
      */
@@ -194,7 +176,7 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Resolves the generated HTML report path for an application.
+     * Finds the generated HTML report path for an application.
      *
      * @param id configured application identifier
      * @return path to the application's assessment report
@@ -209,7 +191,7 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Resolves a ZAP report filename within the configured report directory.
+     * Finds a ZAP report filename within the configured report directory.
      *
      * @param fileName name of the report
      * @return path to the ZAP report
@@ -219,10 +201,14 @@ public final class ReportingConfiguration {
         return zapDirectory.resolve(fileName(fileName));
     }
 
-    /** Reads target metadata once through a common schema, in configured order. */
+    /**
+     * Reads target details once through a common schema, in configured order.
+     */
     List<ReportingTarget> targets() { return targets; }
 
-    /** Validates and loads all configured targets in declaration order. */
+    /**
+     * Validates and loads all configured targets in declaration order.
+     */
     private List<ReportingTarget> loadTargets() throws IOException {
         List<ReportingTarget> targets = new ArrayList<>();
         Set<String> seen = new HashSet<>();
@@ -241,7 +227,9 @@ public final class ReportingConfiguration {
         return List.copyOf(targets);
     }
 
-    /** Reads and validates the evidence policy for a target. */
+    /**
+     * Reads and validates the evidence policy for a target.
+     */
     private EvidencePolicy evidencePolicy(String prefix, String id) throws IOException {
         String mode = optional(prefix + "screenshotNaming", "timestamp");
         String cleanup = optional(prefix + "screenshotCleanupLegacy", "false");
@@ -255,7 +243,9 @@ public final class ReportingConfiguration {
         }
     }
 
-    /** Finds evidence settings by configured test package; most specific prefix wins. */
+    /**
+     * Finds evidence settings by configured test package; most specific prefix wins.
+     */
     public EvidencePolicy evidencePolicyFor(Class<?> testClass) throws IOException {
         String name = testClass.getName();
         return targets().stream().filter(target -> name.startsWith(target.packagePrefix()))
@@ -265,22 +255,26 @@ public final class ReportingConfiguration {
                         EvidenceNames.Mode.TIMESTAMP, false));
     }
 
-    /** Validates an optional filename if one is supplied. */
+    /**
+     * Validates an optional filename if one is provided.
+     */
     private String optionalFile(String key) throws IOException {
         String value = optional(key, "");
         return value.isEmpty() ? value : fileName(value);
     }
 
-    /** Resolves a configured asset path relative to the working directory. */
+    /**
+     * Finds a configured asset path relative to the working directory.
+     */
     Path path(String key) throws IOException {
         return resolve(Path.of("").toAbsolutePath().normalize(), required(key));
     }
 
     /**
-     * Retrieves the CSS and JavaScript assets used by generated reports.
+     * Reads the CSS and JavaScript resources used by generated reports.
      *
      * @return sorted list of report asset paths
-     * @throws IOException if the asset directory is unavailable
+     * @throws IOException if the resource folder is unavailable
      */
     List<Path> assets() throws IOException {
         if (!Files.isDirectory(assetSourceDirectory))
@@ -303,11 +297,11 @@ public final class ReportingConfiguration {
     }
 
     /**
-     * Resolves a relative or absolute path.
+     * Finds a relative or absolute path.
      *
      * @param base base directory for relative paths
      * @param path configured path
-     * @return normalized absolute path
+     * @return standardized absolute path
      */
     private static Path resolve(Path base, String path) {
         Path value = Path.of(path);

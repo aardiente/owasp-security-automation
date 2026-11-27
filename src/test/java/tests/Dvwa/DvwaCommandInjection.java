@@ -9,10 +9,13 @@ import pom.Dvwa.SecurityPage;
 import utilities.ScreenshotManager;
 
 
-/** Verifies whether DVWA executes a harmless command marker at each security level. */
+/**
+ * Contains DVWA command injection tests. Records how the lab's protections behave at each configured security level.
+ */
 public class DvwaCommandInjection extends BaseDvwaTest {
     /**
      * Fails when DVWA emits the marker from the additional command.
+     *
      * @param level security mode under test
      */
     @Test(dataProvider = "securityModes")

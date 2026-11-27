@@ -9,22 +9,30 @@ import tests.framework.ProxiedBrowserTest;
 import utilities.Docker.JuiceShopEnvironment;
 import java.time.Duration;
 
-/** Owns the Juice Shop suite context, shared by API, UI and standalone scanner tests. */
+/**
+ * Provides common setup and cleanup for Juice Shop tests. Manages the application, scanner and browser sessions.
+ */
 public abstract class JuiceShopBaseTest extends ProxiedBrowserTest {
     private static final LabLifecycle<JuiceShopEnvironment> LAB = new LabLifecycle<>();
     protected static String baseUrl;
 
-    /** Returns the configured ZAP passive report name; standalone scans may override it. */
+    /**
+     * Returns the configured ZAP passive report name; standalone scans may override it.
+     */
     protected String zapReportName() { return AppConfig.zapPassiveReportName(); }
 
-    /** Starts the application and its scanner once per sequential suite. */
+    /**
+     * Starts the application and its scanner once per sequential suite.
+     */
     @BeforeSuite
     public void startServer() {
         baseUrl = LAB.start(JuiceShopEnvironment::new, JuiceShopEnvironment::startServer,
                 (environment, url) -> { });
     }
 
-    /** Exports the selected report and stops the shared application environment. */
+    /**
+     * Exports the selected report and stops the shared application environment.
+     */
     @AfterSuite(alwaysRun = true)
     public void stopServer() {
         try { LAB.stop(zapReportName()); }
@@ -32,8 +40,9 @@ public abstract class JuiceShopBaseTest extends ProxiedBrowserTest {
     }
 
     /**
-     * Keeps Juice Shop on explicit waits, as in the original suite.
-     * @param driver current ZAP-proxied browser
+     * Keeps Juice Shop on browser waits, as in the original suite.
+     *
+     * @param driver current ZAP-browser connected through ZAP
      */
     @Override
     protected void configureBrowser(WebDriver driver) {

@@ -9,7 +9,7 @@ import org.testng.ITestResult;
 import java.util.Arrays;
 
 /**
- * Utility component for the test log listener functionality in the security automation framework.
+ * Records when tests start and finish, including whether they pass, fail or are skipped.
  */
 public class TestLogListener implements ITestListener {
 
@@ -17,7 +17,7 @@ public class TestLogListener implements ITestListener {
     private static final Logger log = LoggerFactory.getLogger("tests");
 
     /**
-     * Handles the event for start.
+     * Logs the start of a TestNG test group.
      *
      * @param context the TestNG context for the current suite or test
      */
@@ -28,7 +28,7 @@ public class TestLogListener implements ITestListener {
     }
 
     /**
-     * Handles the TestNG test start event and records the result in the test log.
+     * Logs when an individual test starts.
      *
      * @param result the TestNG test result whose status or evidence is recorded
      */
@@ -51,7 +51,7 @@ public class TestLogListener implements ITestListener {
     }
 
     /**
-     * Handles the TestNG test success event and records the result in the test log.
+     * Logs a passed test.
      *
      * @param result the TestNG test result whose status or evidence is recorded
      */
@@ -65,7 +65,7 @@ public class TestLogListener implements ITestListener {
     }
 
     /**
-     * Handles the TestNG test failure event and records the result in the test log.
+     * Logs a failed test.
      *
      * @param result the TestNG test result whose status or evidence is recorded
      */
@@ -81,7 +81,7 @@ public class TestLogListener implements ITestListener {
     }
 
     /**
-     * Handles the TestNG test skipped event and records the result in the test log.
+     * Logs a skipped test.
      *
      * @param result the TestNG test result whose status or evidence is recorded
      */
@@ -95,7 +95,7 @@ public class TestLogListener implements ITestListener {
     }
 
     /**
-     * Handles the event for finish.
+     * Logs the end of a TestNG test group.
      *
      * @param context the TestNG context for the current suite or test
      */
